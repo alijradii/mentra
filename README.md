@@ -40,8 +40,8 @@ bun install
 
 | Command | Description |
 |--------|-------------|
-| `bun run dev:frontend` | Start Next.js dev server (default: http://localhost:3000) |
-| `bun run dev:backend`  | Start Express dev server with watch (default: http://localhost:4000) |
+| `bun run dev:frontend` | Start Next.js dev server (default: http://localhost:3011) |
+| `bun run dev:backend`  | Start Express dev server with watch (default: http://localhost:3010) |
 | `bun run build`        | Build frontend and backend |
 | `bun run build:frontend` | Build Next.js app |
 | `bun run build:backend`  | Build Express app |
@@ -49,7 +49,7 @@ bun install
 ## Environment
 
 - **Backend** (optional): create `apps/backend/.env` or set:
-  - `PORT` – server port (default: 4000)
+  - `PORT` – server port (default: 3010)
   - `MONGODB_URI` – MongoDB connection string (default: `mongodb://localhost:27017`)
   - `MONGODB_DB` – database name (default: `mentra`)
 
