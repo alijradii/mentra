@@ -1,10 +1,2 @@
-import { z } from "zod";
-import { sectionSchema } from "../schemas/section";
-
-/**
- * Section DTOs (for adding/updating sections within a node)
- */
-export const createSectionSchema = sectionSchema;
-
-// Note: For updating sections, use the appropriate section schema directly
-export type CreateSectionDto = z.infer<typeof createSectionSchema>;
+// Section schemas are defined in schemas/section.ts
+// Import and use sectionSchema directly from there to avoid duplicate exports

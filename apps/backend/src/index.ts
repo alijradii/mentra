@@ -1,9 +1,11 @@
 import express from "express";
+import swaggerUi from "swagger-ui-express";
 import { connectToDatabase } from "./db";
 import exampleRoutes from "./routes/example";
 import authRoutes from "./routes/auth";
 import courseRoutes from "./routes/courses";
 import { getEnvNumber, getEnv } from "./utils/env";
+import { swaggerSpec } from "./swagger.js";
 
 const app = express();
 const PORT = getEnvNumber("PORT", 3010);
@@ -26,6 +28,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// Swagger documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: ".swagger-ui .topbar { display: none }",
+  customSiteTitle: "Mentra API Documentation",
+}));
+
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
@@ -39,6 +47,7 @@ async function main() {
     await connectToDatabase();
     app.listen(PORT, () => {
       console.log(`Backend listening on http://localhost:${PORT}`);
+      console.log(`Swagger documentation available at http://localhost:${PORT}/api-docs`);
     });
   } catch (err) {
     console.error("Failed to start server:", err);

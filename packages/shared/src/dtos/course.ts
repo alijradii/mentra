@@ -1,14 +1,4 @@
 import { z } from "zod";
-import { courseSchema } from "../schemas/course";
-
-/**
- * Course DTOs
- */
-export const createCourseSchema = courseSchema.omit({ modules: true });
-export const updateCourseSchema = createCourseSchema.partial();
-
-export type CreateCourseDto = z.infer<typeof createCourseSchema>;
-export type UpdateCourseDto = z.infer<typeof updateCourseSchema>;
 
 /**
  * Query/filter DTOs

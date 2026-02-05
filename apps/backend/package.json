@@ -14,7 +14,9 @@
     "express": "5.2.1",
     "mongodb": "^6.12.0",
     "resend": "^6.9.1",
-    "shared": "workspace:*"
+    "shared": "workspace:*",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",

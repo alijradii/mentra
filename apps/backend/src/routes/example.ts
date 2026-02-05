@@ -4,6 +4,30 @@ import { getDb } from "../db";
 
 const router = Router();
 
+/**
+ * @swagger
+ * /api/examples:
+ *   get:
+ *     summary: Get all examples
+ *     tags: [Examples]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: List of examples
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       500:
+ *         description: Server error
+ */
 router.get("/", async (_req, res) => {
   try {
     const db = getDb();
@@ -14,6 +38,45 @@ router.get("/", async (_req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/examples:
+ *   post:
+ *     summary: Create a new example
+ *     tags: [Examples]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: Example Title
+ *               description:
+ *                 type: string
+ *                 example: Example description
+ *     responses:
+ *       201:
+ *         description: Example created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Server error
+ */
 router.post("/", async (req, res) => {
   const parsed = createExampleSchema.safeParse(req.body);
   if (!parsed.success) {

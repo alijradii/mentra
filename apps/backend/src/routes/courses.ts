@@ -50,152 +50,754 @@ const router = Router();
 // ==================== Course Routes ====================
 
 /**
- * @route   POST /api/courses
- * @desc    Create a new course
- * @access  Private (Authenticated users)
+ * @swagger
+ * /api/courses:
+ *   post:
+ *     summary: Create a new course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Introduction to Programming
+ *               description:
+ *                 type: string
+ *                 example: Learn the basics of programming
+ *               isPublic:
+ *                 type: boolean
+ *                 default: false
+ *     responses:
+ *       201:
+ *         description: Course created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Course'
+ *       401:
+ *         description: Not authenticated
+ *       500:
+ *         description: Server error
  */
 router.post("/", authenticate, createCourse);
 
 /**
- * @route   GET /api/courses
- * @desc    Get all public courses and user's courses
- * @access  Private (Authenticated users)
+ * @swagger
+ * /api/courses:
+ *   get:
+ *     summary: Get all public courses and user's courses
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of courses
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Course'
+ *       401:
+ *         description: Not authenticated
+ *       500:
+ *         description: Server error
  */
 router.get("/", authenticate, getAllCourses);
 
 /**
- * @route   GET /api/courses/:id
- * @desc    Get course by ID
- * @access  Private (Authenticated users with view permission)
+ * @swagger
+ * /api/courses/{id}:
+ *   get:
+ *     summary: Get course by ID
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     responses:
+ *       200:
+ *         description: Course details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Course'
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized to view this course
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
  */
 router.get("/:id", authenticate, getCourseById);
 
 /**
- * @route   PATCH /api/courses/:id
- * @desc    Update course
- * @access  Private (Course mentors only)
+ * @swagger
+ * /api/courses/{id}:
+ *   patch:
+ *     summary: Update course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               isPublic:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Course updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Course'
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized (must be course mentor)
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
  */
 router.patch("/:id", authenticate, updateCourse);
 
 /**
- * @route   DELETE /api/courses/:id
- * @desc    Delete course
- * @access  Private (Course owner only)
+ * @swagger
+ * /api/courses/{id}:
+ *   delete:
+ *     summary: Delete course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     responses:
+ *       200:
+ *         description: Course deleted successfully
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized (must be course owner)
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
  */
 router.delete("/:id", authenticate, deleteCourse);
 
 // ==================== Mentor Routes ====================
 
 /**
- * @route   POST /api/courses/:id/mentors
- * @desc    Add a mentor to course
- * @access  Private (Course owner only)
+ * @swagger
+ * /api/courses/{id}/mentors:
+ *   post:
+ *     summary: Add a mentor to course
+ *     tags: [Mentors]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - mentorId
+ *             properties:
+ *               mentorId:
+ *                 type: string
+ *                 description: User ID of the mentor to add
+ *     responses:
+ *       200:
+ *         description: Mentor added successfully
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized (must be course owner)
+ *       404:
+ *         description: Course or user not found
+ *       500:
+ *         description: Server error
  */
 router.post("/:id/mentors", authenticate, addMentor);
 
 /**
- * @route   DELETE /api/courses/:id/mentors/:mentorId
- * @desc    Remove a mentor from course
- * @access  Private (Course owner only)
+ * @swagger
+ * /api/courses/{id}/mentors/{mentorId}:
+ *   delete:
+ *     summary: Remove a mentor from course
+ *     tags: [Mentors]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *       - in: path
+ *         name: mentorId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Mentor user ID
+ *     responses:
+ *       200:
+ *         description: Mentor removed successfully
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized (must be course owner)
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
  */
 router.delete("/:id/mentors/:mentorId", authenticate, removeMentor);
 
 // ==================== Student Routes ====================
 
 /**
- * @route   POST /api/courses/:id/students
- * @desc    Add a student to private course
- * @access  Private (Course mentors only)
+ * @swagger
+ * /api/courses/{id}/students:
+ *   post:
+ *     summary: Add a student to private course
+ *     tags: [Students]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - studentId
+ *             properties:
+ *               studentId:
+ *                 type: string
+ *                 description: User ID of the student to add
+ *     responses:
+ *       200:
+ *         description: Student added successfully
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized (must be course mentor)
+ *       404:
+ *         description: Course or user not found
+ *       500:
+ *         description: Server error
  */
 router.post("/:id/students", authenticate, addStudent);
 
 /**
- * @route   DELETE /api/courses/:id/students/:studentId
- * @desc    Remove a student from private course
- * @access  Private (Course mentors only)
+ * @swagger
+ * /api/courses/{id}/students/{studentId}:
+ *   delete:
+ *     summary: Remove a student from private course
+ *     tags: [Students]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *       - in: path
+ *         name: studentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Student user ID
+ *     responses:
+ *       200:
+ *         description: Student removed successfully
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized (must be course mentor)
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
  */
 router.delete("/:id/students/:studentId", authenticate, removeStudent);
 
 /**
- * @route   GET /api/courses/:id/students
- * @desc    Get enrolled students for course
- * @access  Private (Users who can view the course)
+ * @swagger
+ * /api/courses/{id}/students:
+ *   get:
+ *     summary: Get enrolled students for course
+ *     tags: [Students]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     responses:
+ *       200:
+ *         description: List of enrolled students
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized to view this course
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
  */
 router.get("/:id/students", authenticate, getEnrolledStudents);
 
 // ==================== Enrollment Routes ====================
 
 /**
- * @route   POST /api/courses/:id/enroll
- * @desc    Enroll in a course
- * @access  Private (Authenticated users)
+ * @swagger
+ * /api/courses/{id}/enroll:
+ *   post:
+ *     summary: Enroll in a course
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     responses:
+ *       201:
+ *         description: Enrolled successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Enrollment'
+ *       400:
+ *         description: Already enrolled or invalid request
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized to enroll
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
  */
 router.post("/:id/enroll", authenticate, enrollInCourse);
 
 /**
- * @route   GET /api/courses/:id/enrollment
- * @desc    Get user's enrollment in course
- * @access  Private (Authenticated users)
+ * @swagger
+ * /api/courses/{id}/enrollment:
+ *   get:
+ *     summary: Get user's enrollment in course
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     responses:
+ *       200:
+ *         description: Enrollment details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Enrollment'
+ *       401:
+ *         description: Not authenticated
+ *       404:
+ *         description: Enrollment not found
+ *       500:
+ *         description: Server error
  */
 router.get("/:id/enrollment", authenticate, getMyEnrollment);
 
 // ==================== Module Routes ====================
 
 /**
- * @route   POST /api/courses/:courseId/modules
- * @desc    Create a module in course
- * @access  Private (Course mentors only)
+ * @swagger
+ * /api/courses/{courseId}/modules:
+ *   post:
+ *     summary: Create a module in course
+ *     tags: [Modules]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Week 1 - Introduction
+ *               order:
+ *                 type: number
+ *                 example: 1
+ *     responses:
+ *       201:
+ *         description: Module created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Module'
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized (must be course mentor)
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
  */
 router.post("/:courseId/modules", authenticate, createModule);
 
 /**
- * @route   GET /api/courses/:courseId/modules
- * @desc    Get modules for course
- * @access  Private (Users who can view the course)
+ * @swagger
+ * /api/courses/{courseId}/modules:
+ *   get:
+ *     summary: Get modules for course
+ *     tags: [Modules]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Course ID
+ *     responses:
+ *       200:
+ *         description: List of modules
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Module'
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized to view this course
+ *       404:
+ *         description: Course not found
+ *       500:
+ *         description: Server error
  */
 router.get("/:courseId/modules", authenticate, getModulesByCourse);
 
 /**
- * @route   PATCH /api/courses/modules/:id
- * @desc    Update a module
- * @access  Private (Course mentors only)
+ * @swagger
+ * /api/courses/modules/{id}:
+ *   patch:
+ *     summary: Update a module
+ *     tags: [Modules]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Module ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               order:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Module updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Module'
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized (must be course mentor)
+ *       404:
+ *         description: Module not found
+ *       500:
+ *         description: Server error
  */
 router.patch("/modules/:id", authenticate, updateModule);
 
 /**
- * @route   DELETE /api/courses/modules/:id
- * @desc    Delete a module
- * @access  Private (Course mentors only)
+ * @swagger
+ * /api/courses/modules/{id}:
+ *   delete:
+ *     summary: Delete a module
+ *     tags: [Modules]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Module ID
+ *     responses:
+ *       200:
+ *         description: Module deleted successfully
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized (must be course mentor)
+ *       404:
+ *         description: Module not found
+ *       500:
+ *         description: Server error
  */
 router.delete("/modules/:id", authenticate, deleteModule);
 
 // ==================== Node Routes ====================
 
 /**
- * @route   POST /api/courses/modules/:moduleId/nodes
- * @desc    Create a node in module
- * @access  Private (Course mentors only)
+ * @swagger
+ * /api/courses/modules/{moduleId}/nodes:
+ *   post:
+ *     summary: Create a node in module
+ *     tags: [Nodes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: moduleId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Module ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Variables and Data Types
+ *               content:
+ *                 type: string
+ *                 example: Learn about different data types in programming
+ *               order:
+ *                 type: number
+ *                 example: 1
+ *     responses:
+ *       201:
+ *         description: Node created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Node'
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized (must be course mentor)
+ *       404:
+ *         description: Module not found
+ *       500:
+ *         description: Server error
  */
 router.post("/modules/:moduleId/nodes", authenticate, createNode);
 
 /**
- * @route   GET /api/courses/modules/:moduleId/nodes
- * @desc    Get nodes for module
- * @access  Private (Users who can view the course)
+ * @swagger
+ * /api/courses/modules/{moduleId}/nodes:
+ *   get:
+ *     summary: Get nodes for module
+ *     tags: [Nodes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: moduleId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Module ID
+ *     responses:
+ *       200:
+ *         description: List of nodes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Node'
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized to view this course
+ *       404:
+ *         description: Module not found
+ *       500:
+ *         description: Server error
  */
 router.get("/modules/:moduleId/nodes", authenticate, getNodesByModule);
 
 /**
- * @route   PATCH /api/courses/nodes/:id
- * @desc    Update a node
- * @access  Private (Course mentors only)
+ * @swagger
+ * /api/courses/nodes/{id}:
+ *   patch:
+ *     summary: Update a node
+ *     tags: [Nodes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Node ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               content:
+ *                 type: string
+ *               order:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Node updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Node'
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized (must be course mentor)
+ *       404:
+ *         description: Node not found
+ *       500:
+ *         description: Server error
  */
 router.patch("/nodes/:id", authenticate, updateNode);
 
 /**
- * @route   DELETE /api/courses/nodes/:id
- * @desc    Delete a node
- * @access  Private (Course mentors only)
+ * @swagger
+ * /api/courses/nodes/{id}:
+ *   delete:
+ *     summary: Delete a node
+ *     tags: [Nodes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Node ID
+ *     responses:
+ *       200:
+ *         description: Node deleted successfully
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized (must be course mentor)
+ *       404:
+ *         description: Node not found
+ *       500:
+ *         description: Server error
  */
 router.delete("/nodes/:id", authenticate, deleteNode);
 
