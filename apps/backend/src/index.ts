@@ -2,6 +2,7 @@ import express from "express";
 import { connectToDatabase } from "./db";
 import exampleRoutes from "./routes/example";
 import authRoutes from "./routes/auth";
+import courseRoutes from "./routes/courses";
 import { getEnvNumber, getEnv } from "./utils/env";
 
 const app = express();
@@ -31,6 +32,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/examples", exampleRoutes);
+app.use("/api/courses", courseRoutes);
 
 async function main() {
   try {

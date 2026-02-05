@@ -1,5 +1,5 @@
 import { Collection, ObjectId, type Db } from "mongodb";
-import type { Course as CourseBase, Module as ModuleBase, Node as NodeBase, Enrollment as EnrollmentBase } from "shared";
+import type { Course as CourseBase, Enrollment as EnrollmentBase, Module as ModuleBase, Node as NodeBase } from "shared";
 
 // MongoDB-specific type aliases with ObjectId
 export type Course = CourseBase<ObjectId>;
@@ -48,6 +48,9 @@ export async function createCourseIndexes(db: Db): Promise<void> {
   // Course indexes
   await courses.createIndexes([
     { key: { "author.id": 1 } },
+    { key: { ownerId: 1 } },
+    { key: { mentorIds: 1 } },
+    { key: { allowedStudentIds: 1 } },
     { key: { status: 1 } },
     { key: { visibility: 1 } },
     { key: { "metadata.category": 1 } },
@@ -91,7 +94,7 @@ export async function createCourseIndexes(db: Db): Promise<void> {
  * Helper functions for common database operations
  */
 export class CourseModel {
-  constructor(private db: Db) {}
+  constructor(private db: Db) { }
 
   /**
    * Create a new course

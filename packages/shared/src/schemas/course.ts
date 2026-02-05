@@ -36,11 +36,61 @@ export const courseSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   description: z.string().min(1, "Description is required").max(5000),
   author: courseAuthorSchema,
+  ownerId: z.string().min(1, "Owner ID is required"),
+  mentorIds: z.array(z.string()).default([]),
+  allowedStudentIds: z.array(z.string()).optional(),
   modules: z.array(z.string()).default([]),
   thumbnail: z.string().url().optional(),
   coverImage: z.string().url().optional(),
   status: z.enum(["draft", "published", "archived"]).default("draft"),
-  visibility: z.enum(["public", "private", "unlisted"]).default("public"),
+  visibility: z.enum(["public", "private"]).default("public"),
   pricing: coursePricingSchema.optional(),
   metadata: courseMetadataSchema.optional(),
 });
+
+/**
+ * DTOs for course operations
+ */
+export const createCourseSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200),
+  description: z.string().min(1, "Description is required").max(5000),
+  thumbnail: z.string().url().optional(),
+  coverImage: z.string().url().optional(),
+  visibility: z.enum(["public", "private"]).default("public"),
+  pricing: coursePricingSchema.optional(),
+  metadata: courseMetadataSchema.optional(),
+});
+
+export const updateCourseSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200).optional(),
+  description: z.string().min(1, "Description is required").max(5000).optional(),
+  thumbnail: z.string().url().optional(),
+  coverImage: z.string().url().optional(),
+  status: z.enum(["draft", "published", "archived"]).optional(),
+  visibility: z.enum(["public", "private"]).optional(),
+  pricing: coursePricingSchema.optional(),
+  metadata: courseMetadataSchema.optional(),
+});
+
+export const addMentorSchema = z.object({
+  mentorId: z.string().min(1, "Mentor ID is required"),
+});
+
+export const removeMentorSchema = z.object({
+  mentorId: z.string().min(1, "Mentor ID is required"),
+});
+
+export const addStudentSchema = z.object({
+  studentId: z.string().min(1, "Student ID is required"),
+});
+
+export const removeStudentSchema = z.object({
+  studentId: z.string().min(1, "Student ID is required"),
+});
+
+export type CreateCourseDto = z.infer<typeof createCourseSchema>;
+export type UpdateCourseDto = z.infer<typeof updateCourseSchema>;
+export type AddMentorDto = z.infer<typeof addMentorSchema>;
+export type RemoveMentorDto = z.infer<typeof removeMentorSchema>;
+export type AddStudentDto = z.infer<typeof addStudentSchema>;
+export type RemoveStudentDto = z.infer<typeof removeStudentSchema>;

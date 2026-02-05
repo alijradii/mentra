@@ -66,3 +66,20 @@ bun install
 - **DTOs**: Request/response validation in `shared/dtos` (e.g. `createExampleSchema`, `CreateExampleDto`)
 
 The shared package uses TypeScript source files directly (no build step required). Add new types, schemas, or DTOs in `packages/shared/src` and re-export from `packages/shared/src/index.ts`. Bun and Next.js will load the TypeScript files natively.
+
+## Backend Architecture
+
+The backend follows an **MVC (Model-View-Controller)** architecture for better organization and maintainability:
+
+- **Controllers** (`/controllers`) - Handle HTTP requests and responses
+- **Services** (`/services`) - Business logic and permission checks
+- **Models** (`/models`) - Database operations and data access
+- **Routes** (`/routes`) - API endpoint definitions
+- **Middleware** (`/middleware`) - Authentication and request processing
+
+See [Backend Architecture Documentation](apps/backend/ARCHITECTURE.md) for detailed information.
+
+## API Documentation
+
+- **Courses API**: See [COURSES_API.md](COURSES_API.md) for complete endpoint documentation
+- **Authentication**: JWT-based authentication with email verification

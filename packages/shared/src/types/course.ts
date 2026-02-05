@@ -10,11 +10,14 @@ export interface Course<TId = string> {
     name: string;
     avatar?: string;
   };
+  ownerId: TId; // The course owner (creator)
+  mentorIds: TId[]; // Mentors who can edit the course
+  allowedStudentIds?: TId[]; // For private courses - students who can enroll
   modules: TId[]; // References to Module documents
   thumbnail?: string;
   coverImage?: string;
   status: "draft" | "published" | "archived";
-  visibility: "public" | "private" | "unlisted";
+  visibility: "public" | "private";
   pricing?: {
     type: "free" | "paid";
     price?: number;

@@ -21,3 +21,29 @@ export const nodeSchema = z.object({
   status: z.enum(["draft", "published", "archived"]).default("draft"),
   metadata: nodeMetadataSchema.optional(),
 });
+
+/**
+ * DTOs for node operations
+ */
+export const createNodeSchema = z.object({
+  moduleId: z.string().min(1, "Module ID is required"),
+  title: z.string().min(1, "Title is required").max(200),
+  description: z.string().max(1000).optional(),
+  sections: z.array(sectionSchema).default([]),
+  order: z.number().int().min(0),
+  estimatedDuration: z.number().int().min(0).optional(),
+  metadata: nodeMetadataSchema.optional(),
+});
+
+export const updateNodeSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200).optional(),
+  description: z.string().max(1000).optional(),
+  sections: z.array(sectionSchema).optional(),
+  order: z.number().int().min(0).optional(),
+  estimatedDuration: z.number().int().min(0).optional(),
+  status: z.enum(["draft", "published", "archived"]).optional(),
+  metadata: nodeMetadataSchema.optional(),
+});
+
+export type CreateNodeDto = z.infer<typeof createNodeSchema>;
+export type UpdateNodeDto = z.infer<typeof updateNodeSchema>;
