@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { sectionSchema } from "../schemas/section.js";
+import { sectionSchema } from "../schemas/section";
 
 /**
  * Section DTOs (for adding/updating sections within a node)

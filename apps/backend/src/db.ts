@@ -1,7 +1,8 @@
 import { MongoClient } from "mongodb";
+import { getEnv } from "./utils/env";
 
-const uri = process.env.MONGODB_URI ?? "mongodb://localhost:27017";
-const dbName = process.env.MONGODB_DB ?? "mentra";
+const uri = getEnv("MONGODB_URI", "mongodb://localhost:27017");
+const dbName = getEnv("MONGODB_DB", "mentra");
 
 let client: MongoClient | null = null;
 

@@ -6,3 +6,6 @@ export * from "./node";
 export * from "./module";
 export * from "./course";
 export * from "./enrollment";
+
+// User schemas
+export * from "./user";

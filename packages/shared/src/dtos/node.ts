@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { nodeSchema } from "../schemas/node.js";
+import { nodeSchema } from "../schemas/node";
 
 /**
  * Node DTOs

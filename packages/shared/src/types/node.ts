@@ -1,4 +1,4 @@
-import type { Section } from "./section.js";
+import type { Section } from "./section";
 
 /**
  * Node - A page containing multiple sections (like a Jupyter Notebook)

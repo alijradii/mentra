@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { sectionSchema } from "./section.js";
+import { sectionSchema } from "./section";
 
 /**
  * Node schema

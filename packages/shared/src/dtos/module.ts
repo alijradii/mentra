@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { moduleSchema } from "../schemas/module.js";
+import { moduleSchema } from "../schemas/module";
 
 /**
  * Module DTOs

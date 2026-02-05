@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { courseSchema } from "../schemas/course.js";
+import { courseSchema } from "../schemas/course";
 
 /**
  * Course DTOs

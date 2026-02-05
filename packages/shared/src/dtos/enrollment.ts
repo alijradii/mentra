@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { enrollmentSchema } from "../schemas/enrollment.js";
+import { enrollmentSchema } from "../schemas/enrollment";
 
 /**
  * Enrollment DTOs
