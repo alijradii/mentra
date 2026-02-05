@@ -1,0 +1,17 @@
+{
+  "name": "mentra",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "bun run --filter \"./apps/*\" dev",
+    "dev:frontend": "bun run --filter frontend dev",
+    "dev:backend": "bun run --filter backend dev",
+    "build": "bun run --filter \"./apps/*\" build",
+    "build:frontend": "bun run --filter frontend build",
+    "build:backend": "bun run --filter backend build"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
