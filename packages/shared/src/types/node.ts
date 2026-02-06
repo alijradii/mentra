@@ -13,6 +13,8 @@ export interface Node<TId = string> {
   estimatedDuration?: number; // in minutes
   status: "draft" | "published" | "archived";
   metadata?: {
+    learningOutcomes?: string[];
+    estimatedDuration?: number;
     tags?: string[];
     difficulty?: "beginner" | "intermediate" | "advanced";
     prerequisites?: string[]; // Node IDs

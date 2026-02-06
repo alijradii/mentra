@@ -1,0 +1,46 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      
+      - name: Install dependencies
+        working-directory: ./apps/backend
+        run: bun install
+      
+      - name: Run tests
+        working-directory: ./apps/backend
+        run: bun test
+      
+      - name: Check coverage threshold
+        working-directory: ./apps/backend
+        run: |
+          coverage=$(bun test --coverage 2>&1 | grep "All files" | awk '{print $3}' | tr -d '%')
+          if [ $(echo "$coverage < 70" | bc) -eq 1 ]; then
+            echo "Coverage $coverage% is below threshold of 70%"
+            exit 1
+          fi
+          echo "Coverage $coverage% meets threshold"
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        if: always()
+        with:
+          files: ./apps/backend/coverage/coverage-final.json
+          flags: backend
+          name: backend-coverage

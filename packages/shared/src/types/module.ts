@@ -11,6 +11,7 @@ export interface Module<TId = string> {
   status: "draft" | "published" | "archived";
   metadata?: {
     estimatedDuration?: number; // Total duration in minutes
+    learningOutcomes?: string[];
     nodeCount?: number;
     completionRate?: number; // Percentage of learners who complete this module
   };
