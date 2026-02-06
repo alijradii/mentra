@@ -8,7 +8,7 @@ process.env.JWT_SECRET = "test-jwt-secret-for-testing-only";
 process.env.JWT_EXPIRES_IN = "7d";
 process.env.MONGODB_URI = "mongodb://localhost:27017";
 process.env.MONGODB_DB = "mentra-test";
-process.env.PORT = "3010";
-process.env.FRONTEND_URL = "http://localhost:3011";
+process.env.PORT = "3020";
+process.env.FRONTEND_URL = "http://localhost:3021";
 
 console.log("Global test setup complete");

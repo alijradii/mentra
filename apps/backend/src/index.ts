@@ -8,8 +8,8 @@ import { getEnvNumber, getEnv } from "./utils/env";
 import { swaggerSpec } from "./swagger.js";
 
 const app = express();
-const PORT = getEnvNumber("PORT", 3010);
-const FRONTEND_URL = getEnv("FRONTEND_URL", "http://localhost:3011");
+const PORT = getEnvNumber("PORT", 3020);
+const FRONTEND_URL = getEnv("FRONTEND_URL", "http://localhost:3021");
 
 app.use(express.json());
 

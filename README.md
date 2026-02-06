@@ -42,8 +42,8 @@ bun install
 
 | Command                  | Description                                                          |
 | ------------------------ | -------------------------------------------------------------------- |
-| `bun run dev:frontend`   | Start Next.js dev server (default: http://localhost:3011)            |
-| `bun run dev:backend`    | Start Express dev server with watch (default: http://localhost:3010) |
+| `bun run dev:frontend`   | Start Next.js dev server (default: http://localhost:3021)            |
+| `bun run dev:backend`    | Start Express dev server with watch (default: http://localhost:3020) |
 | `bun run build`          | Build frontend and backend                                           |
 | `bun run build:frontend` | Build Next.js app                                                    |
 | `bun run build:backend`  | Build Express app                                                    |
@@ -67,15 +67,15 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for complete production deployment guide.
 ## Environment
 
 - **Backend** (`apps/backend/.env`):
-    - `PORT` – server port (default: 3010)
+    - `PORT` – server port (default: 3020)
     - `MONGODB_URI` – MongoDB connection string (default: `mongodb://localhost:27017`)
     - `MONGODB_DB` – database name (default: `mentra`)
     - `JWT_SECRET` – JWT signing secret (required for auth)
     - `JWT_EXPIRES_IN` – token expiration (default: 7d)
-    - `FRONTEND_URL` – frontend URL for CORS (default: http://localhost:3011)
+    - `FRONTEND_URL` – frontend URL for CORS (default: http://localhost:3021)
 
 - **Frontend** (`apps/frontend/.env.local`):
-    - `NEXT_PUBLIC_API_URL` – backend API URL (default: http://localhost:3010)
+    - `NEXT_PUBLIC_API_URL` – backend API URL (default: http://localhost:3020)
 
 ## Shared package
 

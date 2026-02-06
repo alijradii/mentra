@@ -5,7 +5,7 @@ import { getEnv, getRequiredEnv } from "./env";
 // Initialize Resend client
 const resend = new Resend(getRequiredEnv("RESEND_API_KEY"));
 const EMAIL_FROM = getRequiredEnv("EMAIL_FROM");
-const FRONTEND_URL = getEnv("FRONTEND_URL", "http://localhost:3011");
+const FRONTEND_URL = getEnv("FRONTEND_URL", "http://localhost:3021");
 
 /**
  * Generate a random email verification token

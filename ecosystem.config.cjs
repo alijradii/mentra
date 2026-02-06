@@ -10,6 +10,7 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '500M',
+      env_file: '.env',
       env: {
         NODE_ENV: 'production',
       },
@@ -24,7 +25,7 @@ module.exports = {
       name: 'mentra-frontend',
       cwd: './apps/frontend',
       script: 'node_modules/.bin/next',
-      args: 'start -p 3011',
+      args: 'start -p 3021',
       interpreter: 'node',
       instances: 1,
       exec_mode: 'fork',
