@@ -9,7 +9,16 @@
     "dev:backend": "bun run --filter backend dev",
     "build": "bun run --filter \"./apps/*\" build",
     "build:frontend": "bun run --filter frontend build",
-    "build:backend": "bun run --filter backend build"
+    "build:backend": "bun run --filter backend build",
+    "deploy": "./scripts/deploy.sh",
+    "start": "./scripts/start.sh",
+    "stop": "./scripts/stop.sh",
+    "restart": "./scripts/restart.sh",
+    "logs": "./scripts/logs.sh",
+    "logs:backend": "./scripts/logs.sh backend",
+    "logs:frontend": "./scripts/logs.sh frontend",
+    "pm2:status": "pm2 status",
+    "pm2:monit": "pm2 monit"
   },
   "devDependencies": {
     "typescript": "^5.7.2"
