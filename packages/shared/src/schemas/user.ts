@@ -30,8 +30,14 @@ export const resetPasswordSchema = z.object({
     .max(100, "Password is too long"),
 });
 
+export const updateProfileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").max(100).optional(),
+  avatar: z.union([z.string().url("Avatar must be a valid URL"), z.literal("")]).optional(),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

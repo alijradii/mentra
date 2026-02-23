@@ -77,8 +77,25 @@ export default function DashboardLayout({
               >
                 My courses
               </Link>
+              <Link
+                href="/dashboard/profile"
+                className={`text-sm font-medium ${
+                  pathname?.startsWith("/dashboard/profile")
+                    ? "text-gray-900"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Profile
+              </Link>
             </div>
             <div className="flex items-center gap-4">
+              {user.avatar && (
+                <img
+                  src={user.avatar}
+                  alt=""
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              )}
               <span className="text-gray-600 text-sm">{user.name}</span>
               <Button variant="outline" onClick={handleLogout}>
                 Log out

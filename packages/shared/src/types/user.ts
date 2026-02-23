@@ -2,6 +2,7 @@ export interface User {
   _id: string;
   email: string;
   name: string;
+  avatar?: string;
   isEmailVerified: boolean;
   emailVerificationToken?: string;
   emailVerificationExpires?: Date;
@@ -13,6 +14,7 @@ export interface UserDTO {
   id: string;
   email: string;
   name: string;
+  avatar?: string;
   isEmailVerified: boolean;
   createdAt: string;
 }

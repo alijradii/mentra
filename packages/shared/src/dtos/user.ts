@@ -5,6 +5,7 @@ export function toUserDTO(user: User): UserDTO {
     id: user._id,
     email: user.email,
     name: user.name,
+    avatar: user.avatar,
     isEmailVerified: user.isEmailVerified,
     createdAt: user.createdAt.toISOString(),
   };

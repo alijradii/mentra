@@ -5,6 +5,7 @@ import {
   registerSchema,
   resetPasswordSchema,
   toUserDTO,
+  updateProfileSchema,
   verifyEmailSchema,
 } from "shared";
 import { authenticate } from "../middleware/auth";
@@ -14,6 +15,7 @@ import {
   findUserByPasswordResetToken,
   setPasswordResetToken,
   updatePassword,
+  updateUserProfile,
   userDocumentToUser,
   verifyEmailToken,
   verifyPassword,
@@ -267,6 +269,80 @@ router.get("/me", authenticate, async (req: Request, res: Response): Promise<voi
   } catch (error) {
     console.error("Get user error:", error);
     res.status(500).json({ error: "Failed to get user" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/auth/me:
+ *   patch:
+ *     summary: Update current user profile
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 100
+ *               avatar:
+ *                 type: string
+ *                 format: uri
+ *                 description: Avatar URL, or empty string to remove
+ *     responses:
+ *       200:
+ *         description: Profile updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Not authenticated
+ *       500:
+ *         description: Server error
+ */
+router.patch("/me", authenticate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: "Not authenticated" });
+      return;
+    }
+
+    const result = updateProfileSchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({
+        error: "Validation failed",
+        details: result.error.errors,
+      });
+      return;
+    }
+
+    const updates = result.data;
+    if (Object.keys(updates).length === 0) {
+      res.json({ user: toUserDTO(req.user) });
+      return;
+    }
+
+    const updatedDoc = await updateUserProfile(req.user._id, updates);
+    if (!updatedDoc) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    res.json({ user: toUserDTO(userDocumentToUser(updatedDoc)) });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ error: "Failed to update profile" });
   }
 });
 

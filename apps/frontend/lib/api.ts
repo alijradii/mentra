@@ -6,6 +6,7 @@ import type {
   RegisterInput,
   ResetPasswordInput,
   UpdateCourseDto,
+  UpdateProfileInput,
   UserDTO
 } from "shared";
 
@@ -411,6 +412,16 @@ export const authApi = {
   async resetPassword(input: ResetPasswordInput): Promise<{ message: string }> {
     return fetchApi<{ message: string }>("/api/auth/reset-password", {
       method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+
+  async updateProfile(
+    token: string,
+    input: UpdateProfileInput
+  ): Promise<{ user: UserDTO }> {
+    return fetchWithAuth(token, "/api/auth/me", {
+      method: "PATCH",
       body: JSON.stringify(input),
     });
   },

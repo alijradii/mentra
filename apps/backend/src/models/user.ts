@@ -8,6 +8,7 @@ export interface UserDocument {
   email: string;
   password: string;
   name: string;
+  avatar?: string;
   isEmailVerified: boolean;
   emailVerificationToken?: string;
   emailVerificationExpires?: Date;
@@ -136,11 +137,37 @@ export async function updatePassword(
   );
 }
 
+export async function updateUserProfile(
+  userId: string,
+  updates: { name?: string; avatar?: string }
+): Promise<UserDocument | null> {
+  const set: Record<string, unknown> = { updatedAt: new Date() };
+  if (updates.name !== undefined) set.name = updates.name;
+  if (updates.avatar !== undefined) {
+    if (updates.avatar === "") {
+      const result = await getUserCollection().findOneAndUpdate(
+        { _id: new ObjectId(userId) },
+        { $set: set, $unset: { avatar: "" } },
+        { returnDocument: "after" }
+      );
+      return result ?? null;
+    }
+    set.avatar = updates.avatar;
+  }
+  const result = await getUserCollection().findOneAndUpdate(
+    { _id: new ObjectId(userId) },
+    { $set: set },
+    { returnDocument: "after" }
+  );
+  return result ?? null;
+}
+
 export function userDocumentToUser(doc: UserDocument): User {
   return {
     _id: doc._id.toString(),
     email: doc.email,
     name: doc.name,
+    avatar: doc.avatar,
     isEmailVerified: doc.isEmailVerified,
     emailVerificationToken: doc.emailVerificationToken,
     emailVerificationExpires: doc.emailVerificationExpires,
