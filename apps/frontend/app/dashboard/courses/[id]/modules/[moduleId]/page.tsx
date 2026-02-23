@@ -40,6 +40,10 @@ export default function ModuleDetailPage() {
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Reorder nodes: same pattern as section reorder
+  const [savedOrder, setSavedOrder] = useState(true);
+  const [savingOrder, setSavingOrder] = useState(false);
+
   useEffect(() => {
     if (!token || !moduleId) return;
     let cancelled = false;
@@ -120,6 +124,29 @@ export default function ModuleDetailPage() {
       setError(err instanceof ApiError ? err.message : "Failed to delete node");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const moveNode = (idx: number, dir: -1 | 1) => {
+    const next = [...nodes];
+    const target = idx + dir;
+    if (target < 0 || target >= next.length) return;
+    [next[idx], next[target]] = [next[target], next[idx]];
+    setNodes(next);
+    setSavedOrder(false);
+  };
+
+  const handleSaveNodeOrder = async () => {
+    if (!token || !moduleId) return;
+    setSavingOrder(true);
+    setError("");
+    try {
+      await modulesApi.reorderNodes(token, moduleId, nodes.map((n) => n._id));
+      setSavedOrder(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to save order");
+    } finally {
+      setSavingOrder(false);
     }
   };
 
@@ -221,10 +248,25 @@ export default function ModuleDetailPage() {
       {/* Nodes section */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Pages (nodes)</h2>
-        <Button size="sm" onClick={() => setShowNewNode((v) => !v)}>
-          {showNewNode ? "Cancel" : "Add page"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {nodes.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={savingOrder || savedOrder}
+              onClick={handleSaveNodeOrder}
+            >
+              {savingOrder ? "Saving…" : "Save order"}
+            </Button>
+          )}
+          <Button size="sm" onClick={() => setShowNewNode((v) => !v)}>
+            {showNewNode ? "Cancel" : "Add page"}
+          </Button>
+        </div>
       </div>
+      {nodes.length > 0 && savedOrder === false && (
+        <p className="text-amber-600 text-xs mb-2">Order changed. Click &quot;Save order&quot; to persist.</p>
+      )}
 
       {showNewNode && (
         <form
@@ -259,6 +301,26 @@ export default function ModuleDetailPage() {
               key={node._id}
               className="flex items-center justify-between gap-4 p-4 bg-white rounded-lg border"
             >
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => moveNode(idx, -1)}
+                  disabled={idx === 0}
+                  className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                  title="Move up"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveNode(idx, 1)}
+                  disabled={idx === nodes.length - 1}
+                  className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                  title="Move down"
+                >
+                  ↓
+                </button>
+              </div>
               <Link
                 href={`/dashboard/courses/${courseId}/modules/${moduleId}/nodes/${node._id}`}
                 className="flex items-center gap-3 flex-1 min-w-0 group"

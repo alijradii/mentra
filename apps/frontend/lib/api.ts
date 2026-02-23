@@ -229,6 +229,17 @@ export const coursesApi = {
       method: "DELETE",
     });
   },
+
+  async reorderModules(
+    token: string,
+    courseId: string,
+    moduleIds: string[]
+  ): Promise<{ success: true; message: string }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/modules/reorder`, {
+      method: "PATCH",
+      body: JSON.stringify({ moduleIds }),
+    });
+  },
 };
 
 export const modulesApi = {
@@ -265,6 +276,17 @@ export const modulesApi = {
   async delete(token: string, id: string): Promise<{ success: true; message: string }> {
     return fetchWithAuth(token, `/api/courses/modules/${id}`, {
       method: "DELETE",
+    });
+  },
+
+  async reorderNodes(
+    token: string,
+    moduleId: string,
+    nodeIds: string[]
+  ): Promise<{ success: true; message: string }> {
+    return fetchWithAuth(token, `/api/courses/modules/${moduleId}/nodes/reorder`, {
+      method: "PATCH",
+      body: JSON.stringify({ nodeIds }),
     });
   },
 };

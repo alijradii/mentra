@@ -9,6 +9,7 @@ import {
   getCourseById,
   updateCourse,
   deleteCourse,
+  reorderModules,
 } from "../controllers/course.controller.js";
 
 // Mentor controllers
@@ -39,6 +40,7 @@ import {
   getModulesByCourse,
   updateModule,
   deleteModule,
+  reorderNodes,
 } from "../controllers/module.controller.js";
 
 // Node controllers
@@ -220,6 +222,7 @@ router.get("/:id", authenticate, getCourseById);
  *       500:
  *         description: Server error
  */
+router.patch("/:id/modules/reorder", authenticate, reorderModules);
 router.patch("/:id", authenticate, updateCourse);
 
 /**
@@ -639,6 +642,7 @@ router.get("/:courseId/modules", authenticate, getModulesByCourse);
  *         description: Server error
  */
 router.get("/modules/:id", authenticate, getModuleById);
+router.patch("/modules/:id/nodes/reorder", authenticate, reorderNodes);
 router.patch("/modules/:id", authenticate, updateModule);
 
 /**

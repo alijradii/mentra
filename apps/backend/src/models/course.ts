@@ -230,6 +230,60 @@ export class CourseModel {
   }
 
   /**
+   * Reorder modules within a course (set each module's order to its index in moduleIds).
+   * All moduleIds must belong to the course.
+   */
+  async reorderModules(courseId: ObjectId | string, moduleIds: string[]): Promise<boolean> {
+    const _courseId = typeof courseId === "string" ? new ObjectId(courseId) : courseId;
+    const existing = await this.getModulesByCourseId(_courseId);
+    const existingIds = new Set(existing.map((m) => m._id.toString()));
+    if (
+      existingIds.size !== moduleIds.length ||
+      moduleIds.some((id) => !existingIds.has(id))
+    ) {
+      return false;
+    }
+    const moduleCollection = getModuleCollection(this.db);
+    const now = new Date();
+    await Promise.all(
+      moduleIds.map((id, index) =>
+        moduleCollection.updateOne(
+          { _id: new ObjectId(id), courseId: _courseId },
+          { $set: { order: index, updatedAt: now } }
+        )
+      )
+    );
+    return true;
+  }
+
+  /**
+   * Reorder nodes within a module (set each node's order to its index in nodeIds).
+   * All nodeIds must belong to the module.
+   */
+  async reorderNodes(moduleId: ObjectId | string, nodeIds: string[]): Promise<boolean> {
+    const _moduleId = typeof moduleId === "string" ? new ObjectId(moduleId) : moduleId;
+    const existing = await this.getNodesByModuleId(_moduleId);
+    const existingIds = new Set(existing.map((n) => n._id.toString()));
+    if (
+      existingIds.size !== nodeIds.length ||
+      nodeIds.some((id) => !existingIds.has(id))
+    ) {
+      return false;
+    }
+    const nodeCollection = getNodeCollection(this.db);
+    const now = new Date();
+    await Promise.all(
+      nodeIds.map((id, index) =>
+        nodeCollection.updateOne(
+          { _id: new ObjectId(id), moduleId: _moduleId },
+          { $set: { order: index, updatedAt: now } }
+        )
+      )
+    );
+    return true;
+  }
+
+  /**
    * Delete module (and optionally cascade delete nodes)
    */
   async deleteModule(id: ObjectId | string, cascade = true): Promise<boolean> {

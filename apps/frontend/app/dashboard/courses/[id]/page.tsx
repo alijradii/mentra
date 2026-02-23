@@ -29,6 +29,10 @@ export default function CourseDetailPage() {
   // Per-module deleting state
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Reorder: local order is reflected in modules array; save sends current order to API
+  const [savedOrder, setSavedOrder] = useState(true);
+  const [savingOrder, setSavingOrder] = useState(false);
+
   useEffect(() => {
     if (!token || !id) return;
     let cancelled = false;
@@ -87,6 +91,29 @@ export default function CourseDetailPage() {
     }
   };
 
+  const moveModule = (idx: number, dir: -1 | 1) => {
+    const next = [...modules];
+    const target = idx + dir;
+    if (target < 0 || target >= next.length) return;
+    [next[idx], next[target]] = [next[target], next[idx]];
+    setModules(next);
+    setSavedOrder(false);
+  };
+
+  const handleSaveModuleOrder = async () => {
+    if (!token || !id) return;
+    setSavingOrder(true);
+    setError("");
+    try {
+      await coursesApi.reorderModules(token, id, modules.map((m) => m._id));
+      setSavedOrder(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to save order");
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
   if (!user) return null;
 
   if (loading) {
@@ -130,10 +157,25 @@ export default function CourseDetailPage() {
       {/* Modules section */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Modules</h2>
-        <Button size="sm" onClick={() => setShowNewModule((v) => !v)}>
-          {showNewModule ? "Cancel" : "Add module"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {modules.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={savingOrder || savedOrder}
+              onClick={handleSaveModuleOrder}
+            >
+              {savingOrder ? "Saving…" : "Save order"}
+            </Button>
+          )}
+          <Button size="sm" onClick={() => setShowNewModule((v) => !v)}>
+            {showNewModule ? "Cancel" : "Add module"}
+          </Button>
+        </div>
       </div>
+      {modules.length > 0 && savedOrder === false && (
+        <p className="text-amber-600 text-xs mb-2">Order changed. Click &quot;Save order&quot; to persist.</p>
+      )}
 
       {showNewModule && (
         <form
@@ -168,6 +210,26 @@ export default function CourseDetailPage() {
               key={module._id}
               className="flex items-center justify-between gap-4 p-4 bg-white rounded-lg border"
             >
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => moveModule(idx, -1)}
+                  disabled={idx === 0}
+                  className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                  title="Move up"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveModule(idx, 1)}
+                  disabled={idx === modules.length - 1}
+                  className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                  title="Move down"
+                >
+                  ↓
+                </button>
+              </div>
               <Link
                 href={`/dashboard/courses/${id}/modules/${module._id}`}
                 className="flex items-center gap-3 flex-1 min-w-0 group"

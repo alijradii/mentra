@@ -1,9 +1,9 @@
 import type { Request, Response } from "express";
 import { ObjectId } from "mongodb";
-import { createCourseSchema, updateCourseSchema, type CreateCourseDto } from "shared";
+import { createCourseSchema, reorderModulesSchema, updateCourseSchema, type CreateCourseDto } from "shared";
 import { getDb } from "../db.js";
 import { CourseModel, getCourseCollection } from "../models/course.js";
-import { canViewCourse, isCourseOwner } from "../services/course.service.js";
+import { canViewCourse, isCourseMentor, isCourseOwner } from "../services/course.service.js";
 
 /**
  * Course CRUD Controller
@@ -278,6 +278,64 @@ export async function deleteCourse(req: Request, res: Response): Promise<void> {
     res.status(500).json({
       success: false,
       error: "Failed to delete course",
+    });
+  }
+}
+
+/**
+ * Reorder modules within a course
+ * PATCH /courses/:id/modules/reorder
+ */
+export async function reorderModules(req: Request, res: Response): Promise<void> {
+  try {
+    const id = String(req.params.id);
+    if (!ObjectId.isValid(id)) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid course ID",
+      });
+      return;
+    }
+
+    const userId = req.user!._id;
+    if (!(await isCourseMentor(id, userId))) {
+      res.status(403).json({
+        success: false,
+        error: "Only course mentors can reorder modules",
+      });
+      return;
+    }
+
+    const validation = reorderModulesSchema.safeParse(req.body);
+    if (!validation.success) {
+      res.status(400).json({
+        success: false,
+        error: "Validation failed",
+        details: validation.error.errors,
+      });
+      return;
+    }
+
+    const db = getDb();
+    const courseModel = new CourseModel(db);
+    const ok = await courseModel.reorderModules(id, validation.data.moduleIds);
+    if (!ok) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid module list (must match course modules)",
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: "Modules reordered successfully",
+    });
+  } catch (error) {
+    console.error("Error reordering modules:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to reorder modules",
     });
   }
 }

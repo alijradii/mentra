@@ -88,9 +88,14 @@ export const removeStudentSchema = z.object({
   studentId: z.string().min(1, "Student ID is required"),
 });
 
+export const reorderModulesSchema = z.object({
+  moduleIds: z.array(z.string().min(1)).min(1, "At least one module ID is required"),
+});
+
 export type CreateCourseDto = z.infer<typeof createCourseSchema>;
 export type UpdateCourseDto = z.infer<typeof updateCourseSchema>;
 export type AddMentorDto = z.infer<typeof addMentorSchema>;
 export type RemoveMentorDto = z.infer<typeof removeMentorSchema>;
 export type AddStudentDto = z.infer<typeof addStudentSchema>;
 export type RemoveStudentDto = z.infer<typeof removeStudentSchema>;
+export type ReorderModulesDto = z.infer<typeof reorderModulesSchema>;

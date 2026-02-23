@@ -38,5 +38,10 @@ export const updateModuleSchema = z.object({
   metadata: moduleMetadataSchema.optional(),
 });
 
+export const reorderNodesSchema = z.object({
+  nodeIds: z.array(z.string().min(1)).min(1, "At least one node ID is required"),
+});
+
 export type CreateModuleDto = z.infer<typeof createModuleSchema>;
 export type UpdateModuleDto = z.infer<typeof updateModuleSchema>;
+export type ReorderNodesDto = z.infer<typeof reorderNodesSchema>;
