@@ -1,8 +1,10 @@
-import type { 
-  UserDTO, 
-  AuthResponse, 
-  RegisterInput, 
-  LoginInput 
+import type {
+  AuthResponse,
+  ForgotPasswordInput,
+  LoginInput,
+  RegisterInput,
+  ResetPasswordInput,
+  UserDTO
 } from "shared";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3020";
@@ -23,7 +25,7 @@ async function fetchApi<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_URL}${endpoint}`;
-  
+
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -81,6 +83,20 @@ export const authApi = {
       headers: {
         Authorization: `Bearer ${authToken}`,
       },
+    });
+  },
+
+  async forgotPassword(input: ForgotPasswordInput): Promise<{ message: string }> {
+    return fetchApi<{ message: string }>("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+
+  async resetPassword(input: ResetPasswordInput): Promise<{ message: string }> {
+    return fetchApi<{ message: string }>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify(input),
     });
   },
 };

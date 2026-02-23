@@ -1,7 +1,7 @@
-import { Collection, ObjectId } from "mongodb";
-import { getDb } from "../db";
 import bcrypt from "bcryptjs";
+import { Collection, ObjectId } from "mongodb";
 import type { User } from "shared";
+import { getDb } from "../db";
 
 export interface UserDocument {
   _id: ObjectId;
@@ -11,6 +11,8 @@ export interface UserDocument {
   isEmailVerified: boolean;
   emailVerificationToken?: string;
   emailVerificationExpires?: Date;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,6 +86,54 @@ export async function verifyEmailToken(token: string): Promise<UserDocument | nu
   );
 
   return getUserCollection().findOne({ _id: user._id });
+}
+
+export async function setPasswordResetToken(
+  email: string,
+  token: string
+): Promise<UserDocument | null> {
+  const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  const result = await getUserCollection().findOneAndUpdate(
+    { email: email.toLowerCase() },
+    {
+      $set: {
+        passwordResetToken: token,
+        passwordResetExpires: expires,
+        updatedAt: new Date(),
+      },
+    },
+    { returnDocument: "after" }
+  );
+  return result ?? null;
+}
+
+export async function findUserByPasswordResetToken(
+  token: string
+): Promise<UserDocument | null> {
+  return getUserCollection().findOne({
+    passwordResetToken: token,
+    passwordResetExpires: { $gt: new Date() },
+  });
+}
+
+export async function updatePassword(
+  userId: string,
+  newPassword: string
+): Promise<void> {
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  await getUserCollection().updateOne(
+    { _id: new ObjectId(userId) },
+    {
+      $set: {
+        password: hashedPassword,
+        updatedAt: new Date(),
+      },
+      $unset: {
+        passwordResetToken: "",
+        passwordResetExpires: "",
+      },
+    }
+  );
 }
 
 export function userDocumentToUser(doc: UserDocument): User {

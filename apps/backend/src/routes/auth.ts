@@ -1,15 +1,30 @@
-import { Router, Request, Response } from "express";
-import { registerSchema, loginSchema, verifyEmailSchema, toUserDTO } from "shared";
+import { Request, Response, Router } from "express";
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+  toUserDTO,
+  verifyEmailSchema,
+} from "shared";
+import { authenticate } from "../middleware/auth";
 import {
   createUser,
   findUserByEmail,
-  verifyPassword,
-  verifyEmailToken,
+  findUserByPasswordResetToken,
+  setPasswordResetToken,
+  updatePassword,
   userDocumentToUser,
+  verifyEmailToken,
+  verifyPassword,
 } from "../models/user";
+import {
+  generateVerificationToken,
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+  sendWelcomeEmail,
+} from "../utils/email";
 import { generateToken } from "../utils/jwt";
-import { generateVerificationToken, sendVerificationEmail, sendWelcomeEmail } from "../utils/email";
-import { authenticate } from "../middleware/auth";
 
 const router = Router();
 
@@ -76,11 +91,11 @@ const router = Router();
 router.post("/register", async (req: Request, res: Response): Promise<void> => {
   try {
     const result = registerSchema.safeParse(req.body);
-    
+
     if (!result.success) {
-      res.status(400).json({ 
-        error: "Validation failed", 
-        details: result.error.errors 
+      res.status(400).json({
+        error: "Validation failed",
+        details: result.error.errors
       });
       return;
     }
@@ -174,11 +189,11 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
 router.post("/login", async (req: Request, res: Response): Promise<void> => {
   try {
     const result = loginSchema.safeParse(req.body);
-    
+
     if (!result.success) {
-      res.status(400).json({ 
-        error: "Validation failed", 
-        details: result.error.errors 
+      res.status(400).json({
+        error: "Validation failed",
+        details: result.error.errors
       });
       return;
     }
@@ -298,11 +313,11 @@ router.get("/me", authenticate, async (req: Request, res: Response): Promise<voi
 router.post("/verify-email", async (req: Request, res: Response): Promise<void> => {
   try {
     const result = verifyEmailSchema.safeParse(req.body);
-    
+
     if (!result.success) {
-      res.status(400).json({ 
-        error: "Validation failed", 
-        details: result.error.errors 
+      res.status(400).json({
+        error: "Validation failed",
+        details: result.error.errors
       });
       return;
     }
@@ -310,16 +325,16 @@ router.post("/verify-email", async (req: Request, res: Response): Promise<void> 
     const { token } = result.data;
 
     const userDoc = await verifyEmailToken(token);
-    
+
     if (!userDoc) {
-      res.status(400).json({ 
-        error: "Invalid or expired verification token" 
+      res.status(400).json({
+        error: "Invalid or expired verification token"
       });
       return;
     }
 
     const user = userDocumentToUser(userDoc);
-    
+
     // Send welcome email
     await sendWelcomeEmail(user.email, user.name);
 
@@ -381,12 +396,131 @@ router.post("/resend-verification", authenticate, async (req: Request, res: Resp
     const verificationToken = generateVerificationToken();
     await sendVerificationEmail(req.user.email, verificationToken);
 
-    res.json({ 
-      message: "Verification email sent successfully" 
+    res.json({
+      message: "Verification email sent successfully"
     });
   } catch (error) {
     console.error("Resend verification error:", error);
     res.status(500).json({ error: "Failed to resend verification email" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Request password reset email
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: If the email exists, a reset link was sent (generic message for security)
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Server error
+ */
+router.post("/forgot-password", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const result = forgotPasswordSchema.safeParse(req.body);
+
+    if (!result.success) {
+      res.status(400).json({
+        error: "Validation failed",
+        details: result.error.errors,
+      });
+      return;
+    }
+
+    const { email } = result.data;
+    const userDoc = await findUserByEmail(email);
+
+    // Always return same response to avoid revealing whether email exists
+    if (userDoc) {
+      const resetToken = generateVerificationToken();
+      await setPasswordResetToken(email, resetToken);
+      await sendPasswordResetEmail(email, resetToken);
+    }
+
+    res.json({
+      message: "If an account exists with that email, you will receive a password reset link shortly.",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({ error: "Failed to process request. Please try again later." });
+  }
+});
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Reset password with token from email
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - password
+ *             properties:
+ *               token:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *       400:
+ *         description: Invalid or expired token / validation error
+ *       500:
+ *         description: Server error
+ */
+router.post("/reset-password", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const result = resetPasswordSchema.safeParse(req.body);
+
+    if (!result.success) {
+      res.status(400).json({
+        error: "Validation failed",
+        details: result.error.errors,
+      });
+      return;
+    }
+
+    const { token, password } = result.data;
+    const userDoc = await findUserByPasswordResetToken(token);
+
+    if (!userDoc) {
+      res.status(400).json({ error: "Invalid or expired reset link. Please request a new one." });
+      return;
+    }
+
+    await updatePassword(userDoc._id.toString(), password);
+
+    res.json({
+      message: "Password reset successfully. You can now log in with your new password.",
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({ error: "Failed to reset password" });
   }
 });
 
