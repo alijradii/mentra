@@ -155,7 +155,7 @@ export default function ModuleDetailPage() {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <p className="text-gray-500">Loading...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -163,20 +163,20 @@ export default function ModuleDetailPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-6 flex-wrap">
-        <Link href="/dashboard/courses" className="hover:text-gray-700">My courses</Link>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 flex-wrap">
+        <Link href="/dashboard/courses" className="hover:text-foreground">My courses</Link>
         <span>/</span>
-        <Link href={`/dashboard/courses/${courseId}`} className="hover:text-gray-700">Course</Link>
+        <Link href={`/dashboard/courses/${courseId}`} className="hover:text-foreground">Course</Link>
         <span>/</span>
-        <span className="text-gray-900 font-medium">{module?.title ?? "Module"}</span>
+        <span className="text-foreground font-medium">{module?.title ?? "Module"}</span>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+        <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
       )}
 
       {/* Module header / inline edit */}
-      <div className="bg-white border rounded-lg p-6 mb-8">
+      <div className="bg-card border rounded-lg p-6 mb-8">
         {editing ? (
           <form onSubmit={handleSaveModule} className="space-y-3">
             <div>
@@ -227,16 +227,16 @@ export default function ModuleDetailPage() {
         ) : (
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{module?.title}</h1>
+              <h1 className="text-2xl font-bold text-foreground">{module?.title}</h1>
               {module?.description && (
-                <p className="text-gray-500 text-sm mt-1">{module.description}</p>
+                <p className="text-muted-foreground text-sm mt-1">{module.description}</p>
               )}
               <div className="flex gap-2 mt-2">
-                <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 capitalize">
+                <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground capitalize">
                   {module?.status}
                 </span>
               </div>
-              {saved && <p className="text-green-600 text-xs mt-2">Saved.</p>}
+              {saved && <p className="text-success text-xs mt-2">Saved.</p>}
             </div>
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
               Edit
@@ -247,7 +247,7 @@ export default function ModuleDetailPage() {
 
       {/* Nodes section */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Pages (nodes)</h2>
+        <h2 className="text-lg font-semibold text-foreground">Pages (nodes)</h2>
         <div className="flex items-center gap-2">
           {nodes.length > 0 && (
             <Button
@@ -265,13 +265,13 @@ export default function ModuleDetailPage() {
         </div>
       </div>
       {nodes.length > 0 && savedOrder === false && (
-        <p className="text-amber-600 text-xs mb-2">Order changed. Click &quot;Save order&quot; to persist.</p>
+        <p className="text-warning text-xs mb-2">Order changed. Click &quot;Save order&quot; to persist.</p>
       )}
 
       {showNewNode && (
         <form
           onSubmit={handleCreateNode}
-          className="mb-4 p-4 bg-white border rounded-lg flex gap-2 items-end"
+          className="mb-4 p-4 bg-card border rounded-lg flex gap-2 items-end"
         >
           <div className="flex-1">
             <Label htmlFor="new-node-title">Page title</Label>
@@ -293,20 +293,20 @@ export default function ModuleDetailPage() {
       )}
 
       {nodes.length === 0 && !showNewNode ? (
-        <p className="text-gray-500 text-sm">No pages yet. Add one to get started.</p>
+        <p className="text-muted-foreground text-sm">No pages yet. Add one to get started.</p>
       ) : (
         <ul className="space-y-2">
           {nodes.map((node, idx) => (
             <li
               key={node._id}
-              className="flex items-center justify-between gap-4 p-4 bg-white rounded-lg border"
+              className="flex items-center justify-between gap-4 p-4 bg-card rounded-lg border"
             >
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => moveNode(idx, -1)}
                   disabled={idx === 0}
-                  className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                  className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
                   title="Move up"
                 >
                   ↑
@@ -315,7 +315,7 @@ export default function ModuleDetailPage() {
                   type="button"
                   onClick={() => moveNode(idx, 1)}
                   disabled={idx === nodes.length - 1}
-                  className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                  className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
                   title="Move down"
                 >
                   ↓
@@ -325,12 +325,12 @@ export default function ModuleDetailPage() {
                 href={`/dashboard/courses/${courseId}/modules/${moduleId}/nodes/${node._id}`}
                 className="flex items-center gap-3 flex-1 min-w-0 group"
               >
-                <span className="text-xs text-gray-400 w-5 shrink-0">{idx + 1}</span>
-                <span className="font-medium text-gray-900 group-hover:underline">{node.title}</span>
-                <span className="text-xs text-gray-400 shrink-0">
+                <span className="text-xs text-muted-foreground/80 w-5 shrink-0">{idx + 1}</span>
+                <span className="font-medium text-foreground group-hover:underline">{node.title}</span>
+                <span className="text-xs text-muted-foreground/80 shrink-0">
                   {node.sections.length} section{node.sections.length !== 1 ? "s" : ""}
                 </span>
-                <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500 capitalize shrink-0">
+                <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground capitalize shrink-0">
                   {node.status}
                 </span>
               </Link>

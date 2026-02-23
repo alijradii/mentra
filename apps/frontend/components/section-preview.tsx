@@ -48,17 +48,17 @@ function QuizPreview({ section }: { section: QuizSectionDTO }) {
 
   return (
     <div className="space-y-3">
-      <p className="font-semibold text-gray-900 text-base">{section.question}</p>
+      <p className="font-semibold text-foreground text-base">{section.question}</p>
       <div className="space-y-2">
         {section.options.map((opt) => {
           const isSelected = selected.includes(opt.id);
           const isThisCorrect = section.correctAnswers.includes(opt.id);
-          let cls = "border-gray-200 bg-white hover:bg-gray-50";
+          let cls = "border-border bg-card hover:bg-background";
           if (submitted) {
-            if (isThisCorrect) cls = "border-green-400 bg-green-50";
-            else if (isSelected) cls = "border-red-400 bg-red-50";
+            if (isThisCorrect) cls = "border-success bg-success/15";
+            else if (isSelected) cls = "border-destructive bg-destructive/15";
           } else if (isSelected) {
-            cls = "border-gray-900 bg-gray-50";
+            cls = "border-primary bg-background";
           }
           return (
             <button
@@ -80,8 +80,8 @@ function QuizPreview({ section }: { section: QuizSectionDTO }) {
         <div
           className={`p-3 rounded-lg text-sm ${
             isCorrect
-              ? "bg-green-50 text-green-800 border border-green-200"
-              : "bg-red-50 text-red-800 border border-red-200"
+              ? "bg-success/15 text-success border border-success/40"
+              : "bg-destructive/15 text-destructive border border-destructive/40"
           }`}
         >
           <p className="font-semibold">{isCorrect ? "Correct!" : "Not quite."}</p>
@@ -96,7 +96,7 @@ export function SectionPreview({ section }: { section: SectionDTO }) {
   if (section.type === "text") {
     if (section.format === "plain") {
       return (
-        <p className="whitespace-pre-wrap text-gray-700 leading-relaxed">{section.content || ""}</p>
+        <p className="whitespace-pre-wrap text-foreground leading-relaxed">{section.content || ""}</p>
       );
     }
     if (section.format === "html") {
@@ -138,12 +138,12 @@ export function SectionPreview({ section }: { section: SectionDTO }) {
 
   if (section.type === "image") {
     if (!section.url)
-      return <p className="text-gray-400 text-sm italic">No image URL provided.</p>;
+      return <p className="text-muted-foreground/80 text-sm italic">No image URL provided.</p>;
     return (
       <figure>
         <img src={section.url} alt={section.alt || ""} className="max-w-full rounded-lg" />
         {section.caption && (
-          <figcaption className="text-sm text-gray-500 mt-2 text-center">
+          <figcaption className="text-sm text-muted-foreground mt-2 text-center">
             {section.caption}
           </figcaption>
         )}
@@ -153,12 +153,12 @@ export function SectionPreview({ section }: { section: SectionDTO }) {
 
   if (section.type === "video") {
     if (!section.url)
-      return <p className="text-gray-400 text-sm italic">No video URL provided.</p>;
+      return <p className="text-muted-foreground/80 text-sm italic">No video URL provided.</p>;
     return (
       <figure>
         <video controls src={section.url} className="w-full rounded-lg" />
         {section.caption && (
-          <figcaption className="text-sm text-gray-500 mt-2">{section.caption}</figcaption>
+          <figcaption className="text-sm text-muted-foreground mt-2">{section.caption}</figcaption>
         )}
       </figure>
     );
@@ -166,11 +166,11 @@ export function SectionPreview({ section }: { section: SectionDTO }) {
 
   if (section.type === "embedding") {
     if (!section.url)
-      return <p className="text-gray-400 text-sm italic">No embed URL provided.</p>;
+      return <p className="text-muted-foreground/80 text-sm italic">No embed URL provided.</p>;
     return (
       <div>
         {section.title && (
-          <p className="text-sm font-medium text-gray-700 mb-2">{section.title}</p>
+          <p className="text-sm font-medium text-foreground mb-2">{section.title}</p>
         )}
         <iframe
           src={getEmbedUrl(section)}

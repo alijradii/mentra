@@ -36,21 +36,21 @@ export default function ForgotPasswordPage() {
 
     if (success) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+            <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-background flex items-center justify-center p-4">
                 <div className="w-full max-w-md">
                     <div className="text-center mb-8">
-                        <Link href="/" className="text-3xl font-bold text-gray-900">
+                        <Link href="/" className="text-3xl font-bold text-foreground">
                             Mentra
                         </Link>
                     </div>
-                    <div className="bg-white rounded-2xl shadow-xl border p-8 text-center">
-                        <div className="text-green-600 text-5xl mb-4">✓</div>
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">Check your email</h2>
-                        <p className="text-gray-600 mb-6">
+                    <div className="bg-card rounded-2xl shadow-xl border p-8 text-center">
+                        <div className="text-success text-5xl mb-4">✓</div>
+                        <h2 className="text-xl font-semibold text-foreground mb-2">Check your email</h2>
+                        <p className="text-muted-foreground mb-6">
                             If an account exists with <strong>{email}</strong>, you will receive a password reset link
                             shortly.
                         </p>
-                        <Link href="/login" className="text-blue-600 hover:underline font-medium">
+                        <Link href="/login" className="text-primary hover:underline font-medium">
                             Back to login
                         </Link>
                     </div>
@@ -60,25 +60,25 @@ export default function ForgotPasswordPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-background flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
-                    <Link href="/" className="text-3xl font-bold text-gray-900">
+                    <Link href="/" className="text-3xl font-bold text-foreground">
                         Mentra
                     </Link>
-                    <p className="text-gray-600 mt-2">Reset your password</p>
+                    <p className="text-muted-foreground mt-2">Reset your password</p>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-xl border p-8">
+                <div className="bg-card rounded-2xl shadow-xl border p-8">
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        {error && <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">{error}</div>}
+                        {error && <div className="bg-destructive/15 text-destructive px-4 py-3 rounded-lg text-sm">{error}</div>}
 
-                        <p className="text-gray-600 text-sm">
+                        <p className="text-muted-foreground text-sm">
                             Enter your email address and we&apos;ll send you a link to reset your password.
                         </p>
 
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
                                 Email
                             </label>
                             <input
@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
                                 name="email"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                                 placeholder="you@example.com"
                             />
                         </div>
@@ -98,7 +98,7 @@ export default function ForgotPasswordPage() {
                     </form>
 
                     <div className="mt-6 text-center">
-                        <Link href="/login" className="text-blue-600 hover:underline font-medium">
+                        <Link href="/login" className="text-primary hover:underline font-medium">
                             ← Back to login
                         </Link>
                     </div>

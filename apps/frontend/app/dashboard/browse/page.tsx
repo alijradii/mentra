@@ -29,25 +29,25 @@ function CourseCard({
   const count = course.metadata?.enrollmentCount ?? 0;
 
   return (
-    <div className="bg-white border rounded-xl p-5 flex flex-col gap-3 hover:shadow-sm transition-shadow">
+    <div className="bg-card border rounded-xl p-5 flex flex-col gap-3 hover:shadow-sm transition-shadow">
       <div className="flex-1">
         <div className="flex items-start justify-between gap-2 mb-1">
-          <h3 className="font-semibold text-gray-900 text-base leading-snug">{course.title}</h3>
+          <h3 className="font-semibold text-foreground text-base leading-snug">{course.title}</h3>
           {diff && (
-            <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
+            <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-secondary text-primary font-medium">
               {DIFFICULTY_LABEL[diff] ?? diff}
             </span>
           )}
         </div>
         {course.author?.name && (
-          <p className="text-xs text-gray-500 mb-2">by {course.author.name}</p>
+          <p className="text-xs text-muted-foreground mb-2">by {course.author.name}</p>
         )}
         {course.description && (
-          <p className="text-sm text-gray-600 line-clamp-3">{course.description}</p>
+          <p className="text-sm text-muted-foreground line-clamp-3">{course.description}</p>
         )}
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
+      <div className="flex items-center gap-3 text-xs text-muted-foreground/80 flex-wrap">
         {dur && (
           <span>
             {Math.floor(dur / 60) > 0 ? `${Math.floor(dur / 60)}h ` : ""}
@@ -140,26 +140,26 @@ export default function BrowseCoursesPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Browse courses</h1>
-          <p className="text-gray-500 text-sm mt-1">Find something new to learn</p>
+          <h1 className="text-2xl font-bold text-foreground">Browse courses</h1>
+          <p className="text-muted-foreground text-sm mt-1">Find something new to learn</p>
         </div>
         <input
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search courses…"
-          className="w-full sm:w-72 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+          className="w-full sm:w-72 rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
 
       {error && (
-        <div className="mb-6 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+        <div className="mb-6 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
       )}
 
       {loading ? (
-        <p className="text-gray-500">Loading courses…</p>
+        <p className="text-muted-foreground">Loading courses…</p>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
+        <div className="text-center py-20 text-muted-foreground/80">
           <p className="text-lg font-medium">No courses found</p>
           {search && (
             <p className="text-sm mt-1">Try a different search term.</p>

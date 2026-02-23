@@ -64,28 +64,28 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="text-3xl font-bold text-gray-900">
+          <Link href="/" className="text-3xl font-bold text-foreground">
             Mentra
           </Link>
-          <p className="text-gray-600 mt-2">Create your account</p>
+          <p className="text-muted-foreground mt-2">Create your account</p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-xl border p-8">
+        <div className="bg-card rounded-2xl shadow-xl border p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {serverError && (
-              <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-destructive/15 text-destructive px-4 py-3 rounded-lg text-sm">
                 {serverError}
               </div>
             )}
 
             {/* Name Field */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="name" className="block text-sm font-medium text-foreground mb-1">
                 Full Name
               </label>
               <input
@@ -94,19 +94,19 @@ export default function SignUpPage() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.name ? "border-red-500" : "border-gray-300"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent ${
+                  errors.name ? "border-destructive" : "border-border"
                 }`}
                 placeholder="John Doe"
               />
               {errors.name && (
-                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                <p className="text-destructive text-sm mt-1">{errors.name}</p>
               )}
             </div>
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
                 Email
               </label>
               <input
@@ -115,19 +115,19 @@ export default function SignUpPage() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.email ? "border-red-500" : "border-gray-300"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent ${
+                  errors.email ? "border-destructive" : "border-border"
                 }`}
                 placeholder="you@example.com"
               />
               {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                <p className="text-destructive text-sm mt-1">{errors.email}</p>
               )}
             </div>
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
                 Password
               </label>
               <input
@@ -136,15 +136,15 @@ export default function SignUpPage() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.password ? "border-red-500" : "border-gray-300"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent ${
+                  errors.password ? "border-destructive" : "border-border"
                 }`}
                 placeholder="••••••••"
               />
               {errors.password && (
-                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+                <p className="text-destructive text-sm mt-1">{errors.password}</p>
               )}
-              <p className="text-gray-500 text-xs mt-1">
+              <p className="text-muted-foreground text-xs mt-1">
                 At least 8 characters
               </p>
             </div>
@@ -161,9 +161,9 @@ export default function SignUpPage() {
 
           {/* Divider */}
           <div className="mt-6 text-center">
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               Already have an account?{" "}
-              <Link href="/login" className="text-blue-600 hover:underline font-medium">
+              <Link href="/login" className="text-primary hover:underline font-medium">
                 Log in
               </Link>
             </p>
@@ -172,7 +172,7 @@ export default function SignUpPage() {
 
         {/* Back to home */}
         <div className="text-center mt-6">
-          <Link href="/" className="text-gray-600 hover:text-gray-900">
+          <Link href="/" className="text-muted-foreground hover:text-foreground">
             ← Back to home
           </Link>
         </div>

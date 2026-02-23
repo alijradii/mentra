@@ -19,9 +19,9 @@ import {
 
 function ProgressBar({ value }: { value: number }) {
   return (
-    <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+    <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
       <div
-        className="h-2 rounded-full bg-gray-800 transition-all"
+        className="h-2 rounded-full bg-primary transition-all"
         style={{ width: `${Math.min(100, value)}%` }}
       />
     </div>
@@ -92,7 +92,7 @@ export default function LearnCourseOverviewPage() {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <p className="text-gray-500">Loading…</p>
+        <p className="text-muted-foreground">Loading…</p>
       </div>
     );
   }
@@ -128,28 +128,28 @@ export default function LearnCourseOverviewPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-        <Link href="/dashboard/learn" className="hover:text-gray-700">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+        <Link href="/dashboard/learn" className="hover:text-foreground">
           My learning
         </Link>
         <span>/</span>
-        <span className="text-gray-900 font-medium">{course?.title ?? "Course"}</span>
+        <span className="text-foreground font-medium">{course?.title ?? "Course"}</span>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+        <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
       )}
 
       {/* Course header */}
-      <div className="bg-white border rounded-xl p-6 mb-6">
+      <div className="bg-card border rounded-xl p-6 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold text-gray-900">{course?.title}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{course?.title}</h1>
             {course?.author?.name && (
-              <p className="text-sm text-gray-500 mt-0.5">by {course.author.name}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">by {course.author.name}</p>
             )}
             {course?.description && (
-              <p className="text-gray-600 mt-2 text-sm">{course.description}</p>
+              <p className="text-muted-foreground mt-2 text-sm">{course.description}</p>
             )}
           </div>
           {firstIncompleteNode ? (
@@ -161,7 +161,7 @@ export default function LearnCourseOverviewPage() {
               </Link>
             </Button>
           ) : totalNodes > 0 ? (
-            <span className="shrink-0 text-sm font-medium text-green-600 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200">
+            <span className="shrink-0 text-sm font-medium text-success bg-success/15 px-3 py-1.5 rounded-lg border border-success/40">
               Course complete!
             </span>
           ) : null}
@@ -169,7 +169,7 @@ export default function LearnCourseOverviewPage() {
 
         {enrollment && totalNodes > 0 && (
           <div className="mt-4 space-y-1">
-            <div className="flex items-center justify-between text-xs text-gray-500">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{pct}% complete</span>
               <span>
                 {completedNodes.size} / {totalNodes} lessons
@@ -181,10 +181,10 @@ export default function LearnCourseOverviewPage() {
       </div>
 
       {/* Course content */}
-      <h2 className="text-lg font-semibold text-gray-900 mb-3">Course content</h2>
+      <h2 className="text-lg font-semibold text-foreground mb-3">Course content</h2>
 
       {modules.length === 0 ? (
-        <p className="text-gray-500 text-sm">No content available yet.</p>
+        <p className="text-muted-foreground text-sm">No content available yet.</p>
       ) : (
         <div className="space-y-2">
           {modules.map((mod, modIdx) => {
@@ -193,25 +193,25 @@ export default function LearnCourseOverviewPage() {
             const isExpanded = expandedModules.has(mod._id);
 
             return (
-              <div key={mod._id} className="bg-white border rounded-xl overflow-hidden">
+              <div key={mod._id} className="bg-card border rounded-xl overflow-hidden">
                 <button
                   type="button"
                   onClick={() => toggleModule(mod._id)}
-                  className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-background transition-colors"
                 >
-                  <span className="text-xs text-gray-400 w-5 shrink-0 text-right">
+                  <span className="text-xs text-muted-foreground/80 w-5 shrink-0 text-right">
                     {modIdx + 1}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <span className="font-medium text-gray-900">{mod.title}</span>
+                    <span className="font-medium text-foreground">{mod.title}</span>
                     {nodes.length > 0 && (
-                      <span className="ml-2 text-xs text-gray-400">
+                      <span className="ml-2 text-xs text-muted-foreground/80">
                         {doneCount}/{nodes.length} done
                       </span>
                     )}
                   </div>
                   <svg
-                    className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${isExpanded ? "rotate-180" : ""}`}
+                    className={`w-4 h-4 text-muted-foreground/80 transition-transform shrink-0 ${isExpanded ? "rotate-180" : ""}`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -228,14 +228,14 @@ export default function LearnCourseOverviewPage() {
                         <li key={node._id}>
                           <Link
                             href={`/dashboard/learn/${courseId}/${mod._id}/${node._id}`}
-                            className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors group"
+                            className="flex items-center gap-3 px-5 py-3 hover:bg-background transition-colors group"
                           >
-                            <span className="text-xs text-gray-300 w-5 shrink-0 text-right">
+                            <span className="text-xs text-muted-foreground/70 w-5 shrink-0 text-right">
                               {nodeIdx + 1}
                             </span>
                             {done ? (
                               <svg
-                                className="w-4 h-4 text-green-500 shrink-0"
+                                className="w-4 h-4 text-success shrink-0"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -248,15 +248,15 @@ export default function LearnCourseOverviewPage() {
                                 />
                               </svg>
                             ) : (
-                              <span className="w-4 h-4 shrink-0 rounded-full border-2 border-gray-200" />
+                              <span className="w-4 h-4 shrink-0 rounded-full border-2 border-border" />
                             )}
                             <span
-                              className={`text-sm flex-1 min-w-0 group-hover:underline ${done ? "text-gray-500" : "text-gray-800"}`}
+                              className={`text-sm flex-1 min-w-0 group-hover:underline ${done ? "text-muted-foreground" : "text-foreground"}`}
                             >
                               {node.title}
                             </span>
                             {node.estimatedDuration && (
-                              <span className="text-xs text-gray-400 shrink-0">
+                              <span className="text-xs text-muted-foreground/80 shrink-0">
                                 {node.estimatedDuration}m
                               </span>
                             )}
@@ -268,7 +268,7 @@ export default function LearnCourseOverviewPage() {
                 )}
 
                 {isExpanded && nodes.length === 0 && (
-                  <p className="px-5 py-3 text-sm text-gray-400 border-t">
+                  <p className="px-5 py-3 text-sm text-muted-foreground/80 border-t">
                     No lessons in this module.
                   </p>
                 )}

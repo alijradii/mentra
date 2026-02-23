@@ -40,21 +40,21 @@ function VerifyEmailContent() {
     }, [searchParams, refreshUser]);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-background flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <Link href="/" className="text-3xl font-bold text-gray-900">
+                    <Link href="/" className="text-3xl font-bold text-foreground">
                         Mentra
                     </Link>
                 </div>
 
                 {/* Status Card */}
-                <div className="bg-white rounded-2xl shadow-xl border p-8">
+                <div className="bg-card rounded-2xl shadow-xl border p-8">
                     {status === "verifying" && (
                         <div className="text-center">
-                            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg className="w-8 h-8 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-8 h-8 text-primary animate-spin" fill="none" viewBox="0 0 24 24">
                                     <circle
                                         className="opacity-25"
                                         cx="12"
@@ -70,16 +70,16 @@ function VerifyEmailContent() {
                                     />
                                 </svg>
                             </div>
-                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Verifying your email...</h2>
-                            <p className="text-gray-600">Please wait a moment</p>
+                            <h2 className="text-2xl font-bold text-foreground mb-2">Verifying your email...</h2>
+                            <p className="text-muted-foreground">Please wait a moment</p>
                         </div>
                     )}
 
                     {status === "success" && (
                         <div className="text-center">
-                            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div className="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg
-                                    className="w-8 h-8 text-green-600"
+                                    className="w-8 h-8 text-success"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -92,8 +92,8 @@ function VerifyEmailContent() {
                                     />
                                 </svg>
                             </div>
-                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Email verified!</h2>
-                            <p className="text-gray-600 mb-6">{message}</p>
+                            <h2 className="text-2xl font-bold text-foreground mb-2">Email verified!</h2>
+                            <p className="text-muted-foreground mb-6">{message}</p>
                             <Button onClick={() => router.push("/dashboard")} className="w-full">
                                 Go to Dashboard
                             </Button>
@@ -102,9 +102,9 @@ function VerifyEmailContent() {
 
                     {status === "error" && (
                         <div className="text-center">
-                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div className="w-16 h-16 bg-destructive/20 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg
-                                    className="w-8 h-8 text-red-600"
+                                    className="w-8 h-8 text-destructive"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -117,8 +117,8 @@ function VerifyEmailContent() {
                                     />
                                 </svg>
                             </div>
-                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Verification failed</h2>
-                            <p className="text-gray-600 mb-6">{message}</p>
+                            <h2 className="text-2xl font-bold text-foreground mb-2">Verification failed</h2>
+                            <p className="text-muted-foreground mb-6">{message}</p>
                             <div className="space-y-3">
                                 <Button onClick={() => router.push("/login")} className="w-full">
                                     Go to Login
@@ -139,17 +139,17 @@ export default function VerifyEmailPage() {
     return (
         <Suspense
             fallback={
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+                <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-background flex items-center justify-center p-4">
                     <div className="w-full max-w-md">
                         <div className="text-center mb-8">
-                            <Link href="/" className="text-3xl font-bold text-gray-900">
+                            <Link href="/" className="text-3xl font-bold text-foreground">
                                 Mentra
                             </Link>
                         </div>
-                        <div className="bg-white rounded-2xl shadow-xl border p-8">
+                        <div className="bg-card rounded-2xl shadow-xl border p-8">
                             <div className="text-center">
-                                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <svg className="w-8 h-8 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-8 h-8 text-primary animate-spin" fill="none" viewBox="0 0 24 24">
                                         <circle
                                             className="opacity-25"
                                             cx="12"
@@ -165,8 +165,8 @@ export default function VerifyEmailPage() {
                                         />
                                     </svg>
                                 </div>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
-                                <p className="text-gray-600">Please wait a moment</p>
+                                <h2 className="text-2xl font-bold text-foreground mb-2">Loading...</h2>
+                                <p className="text-muted-foreground">Please wait a moment</p>
                             </div>
                         </div>
                     </div>

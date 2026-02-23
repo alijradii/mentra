@@ -39,20 +39,20 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b">
+    <div className="min-h-screen bg-background">
+      <nav className="bg-card border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-8">
-              <Link href="/dashboard" className="text-2xl font-bold text-gray-900">
+              <Link href="/dashboard" className="text-2xl font-bold text-foreground">
                 Mentra
               </Link>
               <Link
                 href="/dashboard/browse"
                 className={`text-sm font-medium ${
                   pathname?.startsWith("/dashboard/browse")
-                    ? "text-gray-900"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Browse
@@ -61,8 +61,8 @@ export default function DashboardLayout({
                 href="/dashboard/learn"
                 className={`text-sm font-medium ${
                   pathname?.startsWith("/dashboard/learn")
-                    ? "text-gray-900"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 My learning
@@ -71,8 +71,8 @@ export default function DashboardLayout({
                 href="/dashboard/courses"
                 className={`text-sm font-medium ${
                   pathname?.startsWith("/dashboard/courses")
-                    ? "text-gray-900"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 My courses
@@ -81,8 +81,8 @@ export default function DashboardLayout({
                 href="/dashboard/profile"
                 className={`text-sm font-medium ${
                   pathname?.startsWith("/dashboard/profile")
-                    ? "text-gray-900"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Profile
@@ -96,7 +96,7 @@ export default function DashboardLayout({
                   className="h-8 w-8 rounded-full object-cover"
                 />
               )}
-              <span className="text-gray-600 text-sm">{user.name}</span>
+              <span className="text-muted-foreground text-sm">{user.name}</span>
               <Button variant="outline" onClick={handleLogout}>
                 Log out
               </Button>

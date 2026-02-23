@@ -50,41 +50,41 @@ export default function MyCoursesPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My courses</h1>
+        <h1 className="text-2xl font-bold text-foreground">My courses</h1>
         <Button asChild>
           <Link href="/dashboard/courses/new">New course</Link>
         </Button>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
+        <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">
           {error}
         </div>
       )}
 
       {loading ? (
-        <p className="text-gray-500">Loading...</p>
+        <p className="text-muted-foreground">Loading...</p>
       ) : courses.length === 0 ? (
-        <p className="text-gray-500">You haven’t created any courses yet.</p>
+        <p className="text-muted-foreground">You haven’t created any courses yet.</p>
       ) : (
         <ul className="space-y-2">
           {courses.map((course) => (
             <li
               key={course._id}
-              className="flex items-center justify-between gap-4 p-4 bg-white rounded-lg border"
+              className="flex items-center justify-between gap-4 p-4 bg-card rounded-lg border"
             >
               <div className="flex-1 min-w-0">
                 <Link
                   href={`/dashboard/courses/${course._id}`}
-                  className="font-medium text-gray-900 hover:underline"
+                  className="font-medium text-foreground hover:underline"
                 >
                   {course.title}
                 </Link>
                 <div className="flex gap-2 mt-1">
-                  <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 capitalize">
+                  <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground capitalize">
                     {course.status}
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 capitalize">
+                  <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground capitalize">
                     {course.visibility}
                   </span>
                 </div>

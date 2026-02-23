@@ -119,7 +119,7 @@ export default function CourseDetailPage() {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <p className="text-gray-500">Loading...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -127,22 +127,22 @@ export default function CourseDetailPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-        <Link href="/dashboard/courses" className="hover:text-gray-700">My courses</Link>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+        <Link href="/dashboard/courses" className="hover:text-foreground">My courses</Link>
         <span>/</span>
-        <span className="text-gray-900 font-medium">{course?.title ?? "Course"}</span>
+        <span className="text-foreground font-medium">{course?.title ?? "Course"}</span>
       </div>
 
       {/* Course header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{course?.title}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{course?.title}</h1>
           {course?.description && (
-            <p className="text-gray-500 mt-1 text-sm max-w-xl">{course.description}</p>
+            <p className="text-muted-foreground mt-1 text-sm max-w-xl">{course.description}</p>
           )}
           <div className="flex gap-2 mt-2">
-            <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 capitalize">{course?.status}</span>
-            <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 capitalize">{course?.visibility}</span>
+            <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground capitalize">{course?.status}</span>
+            <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground capitalize">{course?.visibility}</span>
           </div>
         </div>
         <Button variant="outline" asChild>
@@ -151,12 +151,12 @@ export default function CourseDetailPage() {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+        <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
       )}
 
       {/* Modules section */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Modules</h2>
+        <h2 className="text-lg font-semibold text-foreground">Modules</h2>
         <div className="flex items-center gap-2">
           {modules.length > 0 && (
             <Button
@@ -174,13 +174,13 @@ export default function CourseDetailPage() {
         </div>
       </div>
       {modules.length > 0 && savedOrder === false && (
-        <p className="text-amber-600 text-xs mb-2">Order changed. Click &quot;Save order&quot; to persist.</p>
+        <p className="text-warning text-xs mb-2">Order changed. Click &quot;Save order&quot; to persist.</p>
       )}
 
       {showNewModule && (
         <form
           onSubmit={handleCreateModule}
-          className="mb-4 p-4 bg-white border rounded-lg flex gap-2 items-end"
+          className="mb-4 p-4 bg-card border rounded-lg flex gap-2 items-end"
         >
           <div className="flex-1">
             <Label htmlFor="new-module-title">Module title</Label>
@@ -202,20 +202,20 @@ export default function CourseDetailPage() {
       )}
 
       {modules.length === 0 && !showNewModule ? (
-        <p className="text-gray-500 text-sm">No modules yet. Add one to get started.</p>
+        <p className="text-muted-foreground text-sm">No modules yet. Add one to get started.</p>
       ) : (
         <ul className="space-y-2">
           {modules.map((module, idx) => (
             <li
               key={module._id}
-              className="flex items-center justify-between gap-4 p-4 bg-white rounded-lg border"
+              className="flex items-center justify-between gap-4 p-4 bg-card rounded-lg border"
             >
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => moveModule(idx, -1)}
                   disabled={idx === 0}
-                  className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                  className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
                   title="Move up"
                 >
                   ↑
@@ -224,7 +224,7 @@ export default function CourseDetailPage() {
                   type="button"
                   onClick={() => moveModule(idx, 1)}
                   disabled={idx === modules.length - 1}
-                  className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                  className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
                   title="Move down"
                 >
                   ↓
@@ -234,9 +234,9 @@ export default function CourseDetailPage() {
                 href={`/dashboard/courses/${id}/modules/${module._id}`}
                 className="flex items-center gap-3 flex-1 min-w-0 group"
               >
-                <span className="text-xs text-gray-400 w-5 shrink-0">{idx + 1}</span>
-                <span className="font-medium text-gray-900 group-hover:underline">{module.title}</span>
-                <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500 capitalize shrink-0">
+                <span className="text-xs text-muted-foreground/80 w-5 shrink-0">{idx + 1}</span>
+                <span className="font-medium text-foreground group-hover:underline">{module.title}</span>
+                <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground capitalize shrink-0">
                   {module.status}
                 </span>
               </Link>

@@ -117,17 +117,17 @@ function QuizPreview({ section }: { section: QuizSectionDTO }) {
 
   return (
     <div className="space-y-3">
-      <p className="font-semibold text-gray-900 text-base">{section.question}</p>
+      <p className="font-semibold text-foreground text-base">{section.question}</p>
       <div className="space-y-2">
         {section.options.map((opt) => {
           const isSelected = selected.includes(opt.id);
           const isThisCorrect = section.correctAnswers.includes(opt.id);
-          let cls = "border-gray-200 bg-white hover:bg-gray-50";
+          let cls = "border-border bg-card hover:bg-background";
           if (submitted) {
-            if (isThisCorrect) cls = "border-green-400 bg-green-50";
-            else if (isSelected) cls = "border-red-400 bg-red-50";
+            if (isThisCorrect) cls = "border-success bg-success/15";
+            else if (isSelected) cls = "border-destructive bg-destructive/15";
           } else if (isSelected) {
-            cls = "border-gray-900 bg-gray-50";
+            cls = "border-primary bg-background";
           }
           return (
             <button
@@ -148,7 +148,7 @@ function QuizPreview({ section }: { section: QuizSectionDTO }) {
       ) : (
         <div
           className={`p-3 rounded-lg text-sm ${
-            isCorrect ? "bg-green-50 text-green-800 border border-green-200" : "bg-red-50 text-red-800 border border-red-200"
+            isCorrect ? "bg-success/15 text-success border border-success/40" : "bg-destructive/15 text-destructive border border-destructive/40"
           }`}
         >
           <p className="font-semibold">{isCorrect ? "Correct!" : "Not quite."}</p>
@@ -164,7 +164,7 @@ function QuizPreview({ section }: { section: QuizSectionDTO }) {
 function SectionPreview({ section }: { section: SectionDTO }) {
   if (section.type === "text") {
     if (section.format === "plain") {
-      return <p className="whitespace-pre-wrap text-gray-700 leading-relaxed">{section.content || ""}</p>;
+      return <p className="whitespace-pre-wrap text-foreground leading-relaxed">{section.content || ""}</p>;
     }
     if (section.format === "html") {
       return <div dangerouslySetInnerHTML={{ __html: section.content }} />;
@@ -200,7 +200,7 @@ function SectionPreview({ section }: { section: SectionDTO }) {
   }
 
   if (section.type === "image") {
-    if (!section.url) return <p className="text-gray-400 text-sm italic">No image URL provided.</p>;
+    if (!section.url) return <p className="text-muted-foreground/80 text-sm italic">No image URL provided.</p>;
     return (
       <figure>
         <img
@@ -209,7 +209,7 @@ function SectionPreview({ section }: { section: SectionDTO }) {
           className="max-w-full rounded-lg"
         />
         {section.caption && (
-          <figcaption className="text-sm text-gray-500 mt-2 text-center">
+          <figcaption className="text-sm text-muted-foreground mt-2 text-center">
             {section.caption}
           </figcaption>
         )}
@@ -218,23 +218,23 @@ function SectionPreview({ section }: { section: SectionDTO }) {
   }
 
   if (section.type === "video") {
-    if (!section.url) return <p className="text-gray-400 text-sm italic">No video URL provided.</p>;
+    if (!section.url) return <p className="text-muted-foreground/80 text-sm italic">No video URL provided.</p>;
     return (
       <figure>
         <video controls src={section.url} className="w-full rounded-lg" />
         {section.caption && (
-          <figcaption className="text-sm text-gray-500 mt-2">{section.caption}</figcaption>
+          <figcaption className="text-sm text-muted-foreground mt-2">{section.caption}</figcaption>
         )}
       </figure>
     );
   }
 
   if (section.type === "embedding") {
-    if (!section.url) return <p className="text-gray-400 text-sm italic">No embed URL provided.</p>;
+    if (!section.url) return <p className="text-muted-foreground/80 text-sm italic">No embed URL provided.</p>;
     return (
       <div>
         {section.title && (
-          <p className="text-sm font-medium text-gray-700 mb-2">{section.title}</p>
+          <p className="text-sm font-medium text-foreground mb-2">{section.title}</p>
         )}
         <iframe
           src={getEmbedUrl(section)}
@@ -449,7 +449,7 @@ function SectionForm({
         <div>
           <Label>
             Options{" "}
-            <span className="text-gray-400 font-normal">(check correct answers)</span>
+            <span className="text-muted-foreground/80 font-normal">(check correct answers)</span>
           </Label>
           <div className="mt-1 space-y-2">
             {section.options.map((opt) => (
@@ -458,7 +458,7 @@ function SectionForm({
                   type="checkbox"
                   checked={section.correctAnswers.includes(opt.id)}
                   onChange={() => toggleCorrect(opt.id)}
-                  className="h-4 w-4 rounded border-gray-300"
+                  className="h-4 w-4 rounded border-border"
                 />
                 <Input
                   value={opt.text}
@@ -470,7 +470,7 @@ function SectionForm({
                   <button
                     type="button"
                     onClick={() => removeOption(opt.id)}
-                    className="text-red-500 hover:text-red-700 text-sm px-1"
+                    className="text-destructive hover:text-destructive text-sm px-1"
                   >
                     ✕
                   </button>
@@ -485,7 +485,7 @@ function SectionForm({
         <div>
           <Label>
             Explanation{" "}
-            <span className="text-gray-400 font-normal">(optional)</span>
+            <span className="text-muted-foreground/80 font-normal">(optional)</span>
           </Label>
           <Textarea
             value={section.explanation ?? ""}
@@ -625,21 +625,21 @@ export default function NodeEditorPage() {
   if (loadingNode) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <p className="text-gray-500">Loading...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
   // ── Breadcrumb (shared) ──
   const breadcrumb = (
-    <div className="flex items-center gap-2 text-sm text-gray-500 mb-6 flex-wrap">
-      <Link href="/dashboard/courses" className="hover:text-gray-700">My courses</Link>
+    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 flex-wrap">
+      <Link href="/dashboard/courses" className="hover:text-foreground">My courses</Link>
       <span>/</span>
-      <Link href={`/dashboard/courses/${courseId}`} className="hover:text-gray-700">Course</Link>
+      <Link href={`/dashboard/courses/${courseId}`} className="hover:text-foreground">Course</Link>
       <span>/</span>
-      <Link href={`/dashboard/courses/${courseId}/modules/${moduleId}`} className="hover:text-gray-700">Module</Link>
+      <Link href={`/dashboard/courses/${courseId}/modules/${moduleId}`} className="hover:text-foreground">Module</Link>
       <span>/</span>
-      <span className="text-gray-900 font-medium">{title || "Page"}</span>
+      <span className="text-foreground font-medium">{title || "Page"}</span>
     </div>
   );
 
@@ -652,13 +652,13 @@ export default function NodeEditorPage() {
         {breadcrumb}
 
         {/* Preview banner */}
-        <div className="flex items-center justify-between mb-8 px-4 py-2.5 bg-gray-900 text-white rounded-lg text-sm">
+        <div className="flex items-center justify-between mb-8 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm">
           <span className="font-medium">Preview mode</span>
           <Button
             size="sm"
             variant="outline"
             onClick={() => setIsPreview(false)}
-            className="text-gray-900"
+            className="text-foreground"
           >
             Back to editing
           </Button>
@@ -666,15 +666,15 @@ export default function NodeEditorPage() {
 
         {/* Page header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+          <h1 className="text-3xl font-bold text-foreground">{title}</h1>
           {description && (
-            <p className="text-gray-500 mt-2 text-base">{description}</p>
+            <p className="text-muted-foreground mt-2 text-base">{description}</p>
           )}
         </div>
 
         {/* Sections rendered */}
         {sections.length === 0 ? (
-          <p className="text-gray-400 italic">This page has no sections yet.</p>
+          <p className="text-muted-foreground/80 italic">This page has no sections yet.</p>
         ) : (
           <div className="space-y-8">
             {sections.map((section) => (
@@ -696,13 +696,13 @@ export default function NodeEditorPage() {
       {breadcrumb}
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+        <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
       )}
 
       {/* ── Page settings ── */}
-      <div className="bg-white border rounded-lg p-6 mb-8">
+      <div className="bg-card border rounded-lg p-6 mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             Page settings
           </h2>
           <Button
@@ -754,16 +754,16 @@ export default function NodeEditorPage() {
             <Button type="submit" size="sm" disabled={savingMeta}>
               {savingMeta ? "Saving…" : "Save settings"}
             </Button>
-            {savedMeta && <span className="text-green-600 text-xs">Saved.</span>}
+            {savedMeta && <span className="text-success text-xs">Saved.</span>}
           </div>
         </form>
       </div>
 
       {/* ── Sections ── */}
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-foreground">
           Sections{" "}
-          <span className="text-gray-400 text-sm font-normal">({sections.length})</span>
+          <span className="text-muted-foreground/80 text-sm font-normal">({sections.length})</span>
         </h2>
         <div className="flex gap-2">
           {sections.length > 0 && (
@@ -777,12 +777,12 @@ export default function NodeEditorPage() {
         </div>
       </div>
 
-      {savedSections && <p className="text-green-600 text-xs mb-3">Sections saved.</p>}
+      {savedSections && <p className="text-success text-xs mb-3">Sections saved.</p>}
 
       {/* Type picker */}
       {showTypePicker && (
-        <div className="mb-4 p-4 bg-white border rounded-lg flex flex-wrap gap-2">
-          <p className="w-full text-sm text-gray-500 mb-1">Choose section type:</p>
+        <div className="mb-4 p-4 bg-card border rounded-lg flex flex-wrap gap-2">
+          <p className="w-full text-sm text-muted-foreground mb-1">Choose section type:</p>
           {SECTION_TYPES.map(({ type, label }) => (
             <Button key={type} variant="outline" size="sm" onClick={() => handleAddSection(type)}>
               {label}
@@ -793,17 +793,17 @@ export default function NodeEditorPage() {
 
       {/* Sections list */}
       {sections.length === 0 ? (
-        <p className="text-gray-500 text-sm">No sections yet. Add one above.</p>
+        <p className="text-muted-foreground text-sm">No sections yet. Add one above.</p>
       ) : (
         <div className="space-y-3">
           {sections.map((section, idx) => (
-            <div key={section.id} className="bg-white border rounded-lg overflow-hidden">
+            <div key={section.id} className="bg-card border rounded-lg overflow-hidden">
               {/* Section header */}
-              <div className="flex items-center gap-2 px-4 py-3 border-b bg-gray-50">
-                <span className="text-xs font-semibold text-gray-400 uppercase w-16 shrink-0">
+              <div className="flex items-center gap-2 px-4 py-3 border-b bg-background">
+                <span className="text-xs font-semibold text-muted-foreground/80 uppercase w-16 shrink-0">
                   {section.type}
                 </span>
-                <span className="text-sm text-gray-600 flex-1 min-w-0 truncate">
+                <span className="text-sm text-muted-foreground flex-1 min-w-0 truncate">
                   {sectionSummary(section)}
                 </span>
                 <div className="flex items-center gap-1 shrink-0">
@@ -811,7 +811,7 @@ export default function NodeEditorPage() {
                     type="button"
                     onClick={() => moveSection(idx, -1)}
                     disabled={idx === 0}
-                    className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                    className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
                     title="Move up"
                   >
                     ↑
@@ -820,7 +820,7 @@ export default function NodeEditorPage() {
                     type="button"
                     onClick={() => moveSection(idx, 1)}
                     disabled={idx === sections.length - 1}
-                    className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+                    className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
                     title="Move down"
                   >
                     ↓
@@ -835,7 +835,7 @@ export default function NodeEditorPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-red-500 hover:text-red-700"
+                    className="text-destructive hover:text-destructive"
                     onClick={() => handleDeleteSection(section.id)}
                   >
                     Delete
@@ -859,7 +859,7 @@ export default function NodeEditorPage() {
           <Button variant="outline" disabled={savingSections} onClick={handleSaveSections}>
             {savingSections ? "Saving…" : "Save sections"}
           </Button>
-          {savedSections && <span className="text-green-600 text-xs">Saved.</span>}
+          {savedSections && <span className="text-success text-xs">Saved.</span>}
         </div>
       )}
     </div>

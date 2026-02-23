@@ -97,7 +97,7 @@ export default function CourseSettingsPage() {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <p className="text-gray-500">Loading...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -105,21 +105,21 @@ export default function CourseSettingsPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-        <Link href="/dashboard/courses" className="hover:text-gray-700">My courses</Link>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+        <Link href="/dashboard/courses" className="hover:text-foreground">My courses</Link>
         <span>/</span>
-        <Link href={`/dashboard/courses/${id}`} className="hover:text-gray-700">{title || "Course"}</Link>
+        <Link href={`/dashboard/courses/${id}`} className="hover:text-foreground">{title || "Course"}</Link>
         <span>/</span>
-        <span className="text-gray-900 font-medium">Settings</span>
+        <span className="text-foreground font-medium">Settings</span>
       </div>
 
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Course settings</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-6">Course settings</h1>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+        <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
       )}
       {saved && (
-        <div className="mb-4 p-3 rounded-lg bg-green-50 text-green-700 text-sm">Saved successfully.</div>
+        <div className="mb-4 p-3 rounded-lg bg-success/15 text-success text-sm">Saved successfully.</div>
       )}
 
       <div className="max-w-md">
@@ -184,7 +184,7 @@ export default function CourseSettingsPage() {
         </form>
 
         <div className="mt-10 pt-8 border-t">
-          <h2 className="text-sm font-medium text-gray-900 mb-3">Danger zone</h2>
+          <h2 className="text-sm font-medium text-foreground mb-3">Danger zone</h2>
           <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
             {deleting ? "Deleting..." : "Delete course"}
           </Button>

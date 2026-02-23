@@ -46,10 +46,10 @@ function ResetPasswordForm() {
 
     if (success) {
         return (
-            <div className="bg-white rounded-2xl shadow-xl border p-8 text-center">
-                <div className="text-green-600 text-5xl mb-4">✓</div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">Password reset</h2>
-                <p className="text-gray-600 mb-6">
+            <div className="bg-card rounded-2xl shadow-xl border p-8 text-center">
+                <div className="text-success text-5xl mb-4">✓</div>
+                <h2 className="text-xl font-semibold text-foreground mb-2">Password reset</h2>
+                <p className="text-muted-foreground mb-6">
                     Your password has been updated. You can now log in with your new password.
                 </p>
                 <Link href="/login">
@@ -61,10 +61,10 @@ function ResetPasswordForm() {
 
     if (!token) {
         return (
-            <div className="bg-white rounded-2xl shadow-xl border p-8 text-center">
-                <div className="text-amber-500 text-5xl mb-4">!</div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">Invalid link</h2>
-                <p className="text-gray-600 mb-6">
+            <div className="bg-card rounded-2xl shadow-xl border p-8 text-center">
+                <div className="text-warning text-5xl mb-4">!</div>
+                <h2 className="text-xl font-semibold text-foreground mb-2">Invalid link</h2>
+                <p className="text-muted-foreground mb-6">
                     This reset link is invalid or missing. Please request a new password reset from the login page.
                 </p>
                 <Link href="/forgot-password">
@@ -75,12 +75,12 @@ function ResetPasswordForm() {
     }
 
     return (
-        <div className="bg-white rounded-2xl shadow-xl border p-8">
+        <div className="bg-card rounded-2xl shadow-xl border p-8">
             <form onSubmit={handleSubmit} className="space-y-5">
-                {error && <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">{error}</div>}
+                {error && <div className="bg-destructive/15 text-destructive px-4 py-3 rounded-lg text-sm">{error}</div>}
 
                 <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
                         New password
                     </label>
                     <input
@@ -89,15 +89,15 @@ function ResetPasswordForm() {
                         name="password"
                         value={formData.password}
                         onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                         placeholder="••••••••"
                         minLength={8}
                     />
-                    <p className="text-gray-500 text-xs mt-1">At least 8 characters</p>
+                    <p className="text-muted-foreground text-xs mt-1">At least 8 characters</p>
                 </div>
 
                 <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-1">
                         Confirm password
                     </label>
                     <input
@@ -106,7 +106,7 @@ function ResetPasswordForm() {
                         name="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={e => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                         placeholder="••••••••"
                     />
                 </div>
@@ -117,7 +117,7 @@ function ResetPasswordForm() {
             </form>
 
             <div className="mt-6 text-center">
-                <Link href="/login" className="text-blue-600 hover:underline font-medium text-sm">
+                <Link href="/login" className="text-primary hover:underline font-medium text-sm">
                     ← Back to login
                 </Link>
             </div>
@@ -127,18 +127,18 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-background flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
-                    <Link href="/" className="text-3xl font-bold text-gray-900">
+                    <Link href="/" className="text-3xl font-bold text-foreground">
                         Mentra
                     </Link>
-                    <p className="text-gray-600 mt-2">Set a new password</p>
+                    <p className="text-muted-foreground mt-2">Set a new password</p>
                 </div>
 
                 <Suspense
                     fallback={
-                        <div className="bg-white rounded-2xl shadow-xl border p-8 text-center text-gray-500">
+                        <div className="bg-card rounded-2xl shadow-xl border p-8 text-center text-muted-foreground">
                             Loading...
                         </div>
                     }

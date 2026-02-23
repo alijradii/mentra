@@ -46,14 +46,14 @@ export default function NewCoursePage() {
       <div className="max-w-md">
         <Link
           href="/dashboard/courses"
-          className="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-block"
+          className="text-sm text-muted-foreground hover:text-foreground mb-4 inline-block"
         >
           ← Back to courses
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">New course</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-6">New course</h1>
 
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
+          <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">
             {error}
           </div>
         )}

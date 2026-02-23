@@ -57,12 +57,12 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Profile</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-6">Profile</h1>
 
       <div className="space-y-8">
         {/* Avatar */}
         <section className="flex flex-col gap-4">
-          <Label className="text-sm font-medium text-gray-700">Avatar</Label>
+          <Label className="text-sm font-medium text-foreground">Avatar</Label>
           <div className="flex items-center gap-6">
             <div className="h-24 w-24 rounded-full bg-muted overflow-hidden border-2 border-border flex items-center justify-center shrink-0">
               {user.avatar ? (
@@ -126,7 +126,7 @@ export default function ProfilePage() {
             <p
               className={
                 message.type === "success"
-                  ? "text-sm text-green-600"
+                  ? "text-sm text-success"
                   : "text-sm text-destructive"
               }
             >
@@ -140,7 +140,7 @@ export default function ProfilePage() {
 
         {/* Security */}
         <section className="pt-6 border-t border-border">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Security</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-2">Security</h2>
           <Link href="/forgot-password">
             <Button variant="outline">Change password</Button>
           </Link>

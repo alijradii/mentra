@@ -63,26 +63,26 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-background flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <Link href="/" className="text-3xl font-bold text-gray-900">
+                    <Link href="/" className="text-3xl font-bold text-foreground">
                         Mentra
                     </Link>
-                    <p className="text-gray-600 mt-2">Welcome back</p>
+                    <p className="text-muted-foreground mt-2">Welcome back</p>
                 </div>
 
                 {/* Form Card */}
-                <div className="bg-white rounded-2xl shadow-xl border p-8">
+                <div className="bg-card rounded-2xl shadow-xl border p-8">
                     <form onSubmit={handleSubmit} className="space-y-5">
                         {serverError && (
-                            <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">{serverError}</div>
+                            <div className="bg-destructive/15 text-destructive px-4 py-3 rounded-lg text-sm">{serverError}</div>
                         )}
 
                         {/* Email Field */}
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
                                 Email
                             </label>
                             <input
@@ -91,23 +91,23 @@ export default function LoginPage() {
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    errors.email ? "border-red-500" : "border-gray-300"
+                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent ${
+                                    errors.email ? "border-destructive" : "border-border"
                                 }`}
                                 placeholder="you@example.com"
                             />
-                            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                            {errors.email && <p className="text-destructive text-sm mt-1">{errors.email}</p>}
                         </div>
 
                         {/* Password Field */}
                         <div>
                             <div className="flex items-center justify-between mb-1">
-                                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                <label htmlFor="password" className="block text-sm font-medium text-foreground">
                                     Password
                                 </label>
                                 <Link
                                     href="/forgot-password"
-                                    className="text-sm text-blue-600 hover:underline"
+                                    className="text-sm text-primary hover:underline"
                                 >
                                     Forgot password?
                                 </Link>
@@ -118,12 +118,12 @@ export default function LoginPage() {
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
-                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    errors.password ? "border-red-500" : "border-gray-300"
+                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent ${
+                                    errors.password ? "border-destructive" : "border-border"
                                 }`}
                                 placeholder="••••••••"
                             />
-                            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+                            {errors.password && <p className="text-destructive text-sm mt-1">{errors.password}</p>}
                         </div>
 
                         {/* Submit Button */}
@@ -134,9 +134,9 @@ export default function LoginPage() {
 
                     {/* Divider */}
                     <div className="mt-6 text-center">
-                        <p className="text-gray-600">
+                        <p className="text-muted-foreground">
                             Don't have an account?{" "}
-                            <Link href="/signup" className="text-blue-600 hover:underline font-medium">
+                            <Link href="/signup" className="text-primary hover:underline font-medium">
                                 Sign up
                             </Link>
                         </p>
@@ -145,7 +145,7 @@ export default function LoginPage() {
 
                 {/* Back to home */}
                 <div className="text-center mt-6">
-                    <Link href="/" className="text-gray-600 hover:text-gray-900">
+                    <Link href="/" className="text-muted-foreground hover:text-foreground">
                         ← Back to home
                     </Link>
                 </div>
