@@ -75,6 +75,98 @@ export interface CourseDTO {
   updatedAt: string;
 }
 
+export interface ModuleDTO {
+  _id: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  order: number;
+  status: string;
+  nodes: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Section types as returned by the API (dates are ISO strings)
+export type SectionType = "text" | "image" | "video" | "embedding" | "code" | "quiz";
+
+export interface BaseSectionDTO {
+  id: string;
+  type: SectionType;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TextSectionDTO extends BaseSectionDTO {
+  type: "text";
+  content: string;
+  format: "markdown" | "html" | "plain";
+}
+
+export interface ImageSectionDTO extends BaseSectionDTO {
+  type: "image";
+  url: string;
+  alt?: string;
+  caption?: string;
+}
+
+export interface VideoSectionDTO extends BaseSectionDTO {
+  type: "video";
+  url: string;
+  caption?: string;
+}
+
+export interface EmbeddingSectionDTO extends BaseSectionDTO {
+  type: "embedding";
+  url: string;
+  embedType: "youtube" | "vimeo" | "codepen" | "codesandbox" | "other";
+  title?: string;
+}
+
+export interface CodeSectionDTO extends BaseSectionDTO {
+  type: "code";
+  code: string;
+  language: string;
+  isExecutable?: boolean;
+}
+
+export interface QuizOption {
+  id: string;
+  text: string;
+  order: number;
+}
+
+export interface QuizSectionDTO extends BaseSectionDTO {
+  type: "quiz";
+  question: string;
+  options: QuizOption[];
+  correctAnswers: string[];
+  explanation?: string;
+  points?: number;
+}
+
+export type SectionDTO =
+  | TextSectionDTO
+  | ImageSectionDTO
+  | VideoSectionDTO
+  | EmbeddingSectionDTO
+  | CodeSectionDTO
+  | QuizSectionDTO;
+
+export interface NodeDTO {
+  _id: string;
+  moduleId: string;
+  title: string;
+  description?: string;
+  order: number;
+  status: string;
+  sections: SectionDTO[];
+  estimatedDuration?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const coursesApi = {
   async getMine(token: string): Promise<{ success: true; data: CourseDTO[] }> {
     return fetchWithAuth(token, "/api/courses/mine");
@@ -104,6 +196,82 @@ export const coursesApi = {
 
   async delete(token: string, id: string): Promise<{ success: true; message: string }> {
     return fetchWithAuth(token, `/api/courses/${id}`, {
+      method: "DELETE",
+    });
+  },
+};
+
+export const modulesApi = {
+  async list(token: string, courseId: string): Promise<{ success: true; data: ModuleDTO[] }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/modules`);
+  },
+
+  async getById(token: string, id: string): Promise<{ success: true; data: ModuleDTO }> {
+    return fetchWithAuth(token, `/api/courses/modules/${id}`);
+  },
+
+  async create(
+    token: string,
+    courseId: string,
+    input: { title: string; description?: string }
+  ): Promise<{ success: true; data: ModuleDTO }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/modules`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+
+  async update(
+    token: string,
+    id: string,
+    input: { title?: string; description?: string; status?: string }
+  ): Promise<{ success: true; message: string }> {
+    return fetchWithAuth(token, `/api/courses/modules/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  },
+
+  async delete(token: string, id: string): Promise<{ success: true; message: string }> {
+    return fetchWithAuth(token, `/api/courses/modules/${id}`, {
+      method: "DELETE",
+    });
+  },
+};
+
+export const nodesApi = {
+  async list(token: string, moduleId: string): Promise<{ success: true; data: NodeDTO[] }> {
+    return fetchWithAuth(token, `/api/courses/modules/${moduleId}/nodes`);
+  },
+
+  async getById(token: string, id: string): Promise<{ success: true; data: NodeDTO }> {
+    return fetchWithAuth(token, `/api/courses/nodes/${id}`);
+  },
+
+  async create(
+    token: string,
+    moduleId: string,
+    input: { title: string; description?: string }
+  ): Promise<{ success: true; data: NodeDTO }> {
+    return fetchWithAuth(token, `/api/courses/modules/${moduleId}/nodes`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+
+  async update(
+    token: string,
+    id: string,
+    input: { title?: string; description?: string; status?: string; sections?: SectionDTO[] }
+  ): Promise<{ success: true; message: string }> {
+    return fetchWithAuth(token, `/api/courses/nodes/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  },
+
+  async delete(token: string, id: string): Promise<{ success: true; message: string }> {
+    return fetchWithAuth(token, `/api/courses/nodes/${id}`, {
       method: "DELETE",
     });
   },

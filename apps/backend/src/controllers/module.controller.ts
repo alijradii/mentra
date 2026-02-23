@@ -3,11 +3,50 @@ import { ObjectId } from "mongodb";
 import { createModuleSchema, updateModuleSchema, type CreateModuleDto } from "shared";
 import { getDb } from "../db.js";
 import { CourseModel } from "../models/course.js";
-import { canViewCourse, getModuleCourseId, isCourseMentor } from "../services/course.service.js";
+import { canViewCourse, getModuleCourseId, isCourseMentor, isCourseOwner } from "../services/course.service.js";
 
 /**
  * Module CRUD Controller
  */
+
+/**
+ * Get a single module by ID
+ * GET /courses/modules/:id
+ */
+export async function getModuleById(req: Request, res: Response): Promise<void> {
+  try {
+    const id = String(req.params.id);
+    if (!ObjectId.isValid(id)) {
+      res.status(400).json({ success: false, error: "Invalid module ID" });
+      return;
+    }
+
+    const courseId = await getModuleCourseId(id);
+    if (!courseId) {
+      res.status(404).json({ success: false, error: "Module not found" });
+      return;
+    }
+
+    const userId = req.user!._id;
+    if (!(await canViewCourse(courseId, userId))) {
+      res.status(403).json({ success: false, error: "You don't have permission to view this module" });
+      return;
+    }
+
+    const db = getDb();
+    const courseModel = new CourseModel(db);
+    const module = await courseModel.getModuleById(id);
+    if (!module) {
+      res.status(404).json({ success: false, error: "Module not found" });
+      return;
+    }
+
+    res.json({ success: true, data: module });
+  } catch (error) {
+    console.error("Error fetching module:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch module" });
+  }
+}
 
 /**
  * Create a module within a course

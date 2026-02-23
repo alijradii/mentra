@@ -6,8 +6,8 @@ import { z } from "zod";
 const baseSectionSchema = z.object({
   id: z.string(),
   order: z.number().int().min(0),
-  createdAt: z.date().default(() => new Date()),
-  updatedAt: z.date().default(() => new Date()),
+  createdAt: z.coerce.date().default(() => new Date()),
+  updatedAt: z.coerce.date().default(() => new Date()),
 });
 
 export const textSectionSchema = baseSectionSchema.extend({

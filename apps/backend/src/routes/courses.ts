@@ -32,6 +32,7 @@ import {
 
 // Module controllers
 import {
+  getModuleById,
   createModule,
   getModulesByCourse,
   updateModule,
@@ -40,6 +41,7 @@ import {
 
 // Node controllers
 import {
+  getNodeById,
   createNode,
   getNodesByModule,
   updateNode,
@@ -632,6 +634,7 @@ router.get("/:courseId/modules", authenticate, getModulesByCourse);
  *       500:
  *         description: Server error
  */
+router.get("/modules/:id", authenticate, getModuleById);
 router.patch("/modules/:id", authenticate, updateModule);
 
 /**
@@ -795,6 +798,7 @@ router.get("/modules/:moduleId/nodes", authenticate, getNodesByModule);
  *       500:
  *         description: Server error
  */
+router.get("/nodes/:id", authenticate, getNodeById);
 router.patch("/nodes/:id", authenticate, updateNode);
 
 /**

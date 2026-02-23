@@ -26,7 +26,7 @@ export const createModuleSchema = z.object({
   courseId: z.string().min(1, "Course ID is required"),
   title: z.string().min(1, "Title is required").max(200),
   description: z.string().max(1000).optional(),
-  order: z.number().int().min(0),
+  order: z.number().int().min(0).default(0),
   metadata: moduleMetadataSchema.optional(),
 });
 

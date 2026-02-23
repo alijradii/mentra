@@ -163,6 +163,24 @@ export class CourseModel {
   }
 
   /**
+   * Get a single module by ID
+   */
+  async getModuleById(id: ObjectId | string): Promise<Module | null> {
+    const collection = getModuleCollection(this.db);
+    const _id = typeof id === "string" ? new ObjectId(id) : id;
+    return await collection.findOne({ _id });
+  }
+
+  /**
+   * Get a single node by ID
+   */
+  async getNodeById(id: ObjectId | string): Promise<Node | null> {
+    const collection = getNodeCollection(this.db);
+    const _id = typeof id === "string" ? new ObjectId(id) : id;
+    return await collection.findOne({ _id });
+  }
+
+  /**
    * Get modules by course ID
    */
   async getModulesByCourseId(courseId: ObjectId | string): Promise<Module[]> {

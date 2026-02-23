@@ -10,6 +10,45 @@ import { canViewCourse, getModuleCourseId, getNodeCourseId, isCourseMentor } fro
  */
 
 /**
+ * Get a single node by ID
+ * GET /courses/nodes/:id
+ */
+export async function getNodeById(req: Request, res: Response): Promise<void> {
+  try {
+    const id = String(req.params.id);
+    if (!ObjectId.isValid(id)) {
+      res.status(400).json({ success: false, error: "Invalid node ID" });
+      return;
+    }
+
+    const courseId = await getNodeCourseId(id);
+    if (!courseId) {
+      res.status(404).json({ success: false, error: "Node not found" });
+      return;
+    }
+
+    const userId = req.user!._id;
+    if (!(await canViewCourse(courseId, userId))) {
+      res.status(403).json({ success: false, error: "You don't have permission to view this node" });
+      return;
+    }
+
+    const db = getDb();
+    const courseModel = new CourseModel(db);
+    const node = await courseModel.getNodeById(id);
+    if (!node) {
+      res.status(404).json({ success: false, error: "Node not found" });
+      return;
+    }
+
+    res.json({ success: true, data: node });
+  } catch (error) {
+    console.error("Error fetching node:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch node" });
+  }
+}
+
+/**
  * Create a node within a module
  * POST /modules/:moduleId/nodes
  */

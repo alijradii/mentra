@@ -30,7 +30,7 @@ export const createNodeSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   description: z.string().max(1000).optional(),
   sections: z.array(sectionSchema).default([]),
-  order: z.number().int().min(0),
+  order: z.number().int().min(0).default(0),
   estimatedDuration: z.number().int().min(0).optional(),
   metadata: nodeMetadataSchema.optional(),
 });
