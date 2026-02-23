@@ -71,6 +71,32 @@ export interface CourseDTO {
   ownerId: string;
   status: string;
   visibility: string;
+  author?: { id: string; name: string; avatar?: string };
+  metadata?: {
+    category?: string;
+    tags?: string[];
+    difficulty?: "beginner" | "intermediate" | "advanced";
+    estimatedDuration?: number;
+    enrollmentCount?: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EnrollmentDTO {
+  _id: string;
+  userId: string;
+  courseId: string;
+  status: "active" | "completed" | "paused" | "dropped";
+  progress: {
+    completedNodes: string[];
+    currentModuleId?: string;
+    currentNodeId?: string;
+    overallPercentage: number;
+  };
+  startedAt: string;
+  completedAt?: string;
+  lastAccessedAt: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -170,6 +196,10 @@ export interface NodeDTO {
 export const coursesApi = {
   async getMine(token: string): Promise<{ success: true; data: CourseDTO[] }> {
     return fetchWithAuth(token, "/api/courses/mine");
+  },
+
+  async getAll(token: string): Promise<{ success: true; data: CourseDTO[] }> {
+    return fetchWithAuth(token, "/api/courses");
   },
 
   async getById(token: string, id: string): Promise<{ success: true; data: CourseDTO }> {
@@ -273,6 +303,39 @@ export const nodesApi = {
   async delete(token: string, id: string): Promise<{ success: true; message: string }> {
     return fetchWithAuth(token, `/api/courses/nodes/${id}`, {
       method: "DELETE",
+    });
+  },
+};
+
+export const enrollmentApi = {
+  async enroll(
+    token: string,
+    courseId: string
+  ): Promise<{ success: true; data: EnrollmentDTO; message: string }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/enroll`, { method: "POST" });
+  },
+
+  async getMyEnrollment(
+    token: string,
+    courseId: string
+  ): Promise<{ success: true; data: EnrollmentDTO }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/enrollment`);
+  },
+
+  async getEnrolled(
+    token: string
+  ): Promise<{ success: true; data: { enrollment: EnrollmentDTO; course: CourseDTO }[] }> {
+    return fetchWithAuth(token, "/api/courses/enrolled");
+  },
+
+  async updateProgress(
+    token: string,
+    courseId: string,
+    nodeId: string
+  ): Promise<{ success: true; data: EnrollmentDTO }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/enrollment/progress`, {
+      method: "PATCH",
+      body: JSON.stringify({ nodeId }),
     });
   },
 };

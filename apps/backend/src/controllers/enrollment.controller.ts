@@ -102,6 +102,113 @@ export async function enrollInCourse(req: Request, res: Response): Promise<void>
 }
 
 /**
+ * Get all courses the current user is enrolled in
+ * GET /courses/enrolled
+ */
+export async function getEnrolledCourses(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = req.user!._id;
+    const db = getDb();
+    const enrollmentCollection = getEnrollmentCollection(db);
+    const courseCollection = getCourseCollection(db);
+
+    const enrollments = await enrollmentCollection
+      .find({ userId: new ObjectId(userId), status: { $in: ["active", "completed"] } })
+      .sort({ lastAccessedAt: -1 })
+      .toArray();
+
+    const courseIds = enrollments.map((e) => e.courseId);
+    const courses =
+      courseIds.length > 0
+        ? await courseCollection.find({ _id: { $in: courseIds } }).toArray()
+        : [];
+
+    const courseMap = new Map(courses.map((c) => [c._id.toString(), c]));
+
+    const result = enrollments.map((enrollment) => ({
+      enrollment,
+      course: courseMap.get(enrollment.courseId.toString()) ?? null,
+    }));
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error("Error fetching enrolled courses:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch enrolled courses" });
+  }
+}
+
+/**
+ * Mark a node as complete / update progress
+ * PATCH /courses/:id/enrollment/progress
+ */
+export async function updateProgress(req: Request, res: Response): Promise<void> {
+  try {
+    const id = String(req.params.id);
+    if (!ObjectId.isValid(id)) {
+      res.status(400).json({ success: false, error: "Invalid course ID" });
+      return;
+    }
+
+    const userId = req.user!._id;
+    const { nodeId } = req.body as { nodeId?: string };
+
+    if (!nodeId || !ObjectId.isValid(nodeId)) {
+      res.status(400).json({ success: false, error: "nodeId is required" });
+      return;
+    }
+
+    const db = getDb();
+    const enrollmentCollection = getEnrollmentCollection(db);
+
+    const enrollment = await enrollmentCollection.findOne({
+      courseId: new ObjectId(id),
+      userId: new ObjectId(userId),
+    });
+
+    if (!enrollment) {
+      res.status(404).json({ success: false, error: "Not enrolled in this course" });
+      return;
+    }
+
+    const alreadyDone = enrollment.progress.completedNodes.some(
+      (n) => n.toString() === nodeId
+    );
+
+    if (!alreadyDone) {
+      const nodeCollection = db.collection("nodes");
+      const courseNodeCount = await nodeCollection.countDocuments({
+        moduleId: { $in: (await db.collection("modules").find({ courseId: new ObjectId(id) }).toArray()).map((m) => m._id) },
+      });
+
+      const newCompleted = [...enrollment.progress.completedNodes, new ObjectId(nodeId)];
+      const overallPercentage = courseNodeCount > 0 ? Math.round((newCompleted.length / courseNodeCount) * 100) : 0;
+
+      await enrollmentCollection.updateOne(
+        { courseId: new ObjectId(id), userId: new ObjectId(userId) },
+        {
+          $addToSet: { "progress.completedNodes": new ObjectId(nodeId) },
+          $set: {
+            "progress.overallPercentage": overallPercentage,
+            lastAccessedAt: new Date(),
+            updatedAt: new Date(),
+          },
+        }
+      );
+    }
+
+    const updated = await enrollmentCollection.findOne({
+      courseId: new ObjectId(id),
+      userId: new ObjectId(userId),
+    });
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error("Error updating progress:", error);
+    res.status(500).json({ success: false, error: "Failed to update progress" });
+  }
+}
+
+/**
  * Get user's enrollment in a course
  * GET /courses/:id/enrollment
  */

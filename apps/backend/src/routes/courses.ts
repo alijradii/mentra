@@ -28,6 +28,8 @@ import {
 import {
   enrollInCourse,
   getMyEnrollment,
+  getEnrolledCourses,
+  updateProgress,
 } from "../controllers/enrollment.controller.js";
 
 // Module controllers
@@ -139,6 +141,7 @@ router.get("/", authenticate, getAllCourses);
  *         description: Server error
  */
 router.get("/mine", authenticate, getMyCourses);
+router.get("/enrolled", authenticate, getEnrolledCourses);
 
 /**
  * @swagger
@@ -475,6 +478,7 @@ router.get("/:id/students", authenticate, getEnrolledStudents);
  *         description: Server error
  */
 router.post("/:id/enroll", authenticate, enrollInCourse);
+router.patch("/:id/enrollment/progress", authenticate, updateProgress);
 
 /**
  * @swagger
