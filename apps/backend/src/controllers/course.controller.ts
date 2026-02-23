@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import { createCourseSchema, updateCourseSchema, type CreateCourseDto } from "shared";
 import { getDb } from "../db.js";
 import { CourseModel, getCourseCollection } from "../models/course.js";
-import { canViewCourse, isCourseMentor, isCourseOwner } from "../services/course.service.js";
+import { canViewCourse, isCourseOwner } from "../services/course.service.js";
 
 /**
  * Course CRUD Controller
@@ -32,6 +32,7 @@ export async function createCourse(req: Request, res: Response): Promise<void> {
     const courseData: CreateCourseDto = validation.data;
     const course = await courseModel.createCourse({
       ...courseData,
+      description: courseData.description ?? "",
       status: "draft",
       ownerId: new ObjectId(userId),
       mentorIds: [],
@@ -83,6 +84,34 @@ export async function getAllCourses(req: Request, res: Response): Promise<void> 
     });
   } catch (error) {
     console.error("Error fetching courses:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch courses",
+    });
+  }
+}
+
+/**
+ * Get only courses owned by the current user
+ * GET /courses/mine
+ */
+export async function getMyCourses(req: Request, res: Response): Promise<void> {
+  try {
+    const db = getDb();
+    const collection = getCourseCollection(db);
+    const userId = req.user!._id;
+
+    const courses = await collection
+      .find({ ownerId: new ObjectId(userId) })
+      .sort({ updatedAt: -1 })
+      .toArray();
+
+    res.json({
+      success: true,
+      data: courses,
+    });
+  } catch (error) {
+    console.error("Error fetching my courses:", error);
     res.status(500).json({
       success: false,
       error: "Failed to fetch courses",
@@ -158,11 +187,11 @@ export async function updateCourse(req: Request, res: Response): Promise<void> {
 
     const userId = req.user!._id;
 
-    // Check if user is a mentor (owner or mentor)
-    if (!(await isCourseMentor(id, userId))) {
+    // Only the owner can update the course
+    if (!(await isCourseOwner(id, userId))) {
       res.status(403).json({
         success: false,
-        error: "Only course mentors can update the course",
+        error: "Only the course owner can update the course",
       });
       return;
     }

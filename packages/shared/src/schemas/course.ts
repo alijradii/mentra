@@ -53,7 +53,7 @@ export const courseSchema = z.object({
  */
 export const createCourseSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
-  description: z.string().min(1, "Description is required").max(5000),
+  description: z.string().max(5000).optional().default(""),
   thumbnail: z.string().url().optional(),
   coverImage: z.string().url().optional(),
   visibility: z.enum(["public", "private"]).default("public"),

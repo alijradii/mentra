@@ -1,60 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function DashboardPage() {
-  const { user, loading, logout } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
-  }, [user, loading, router]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
-
-  const handleLogout = () => {
-    logout();
-    router.push("/");
-  };
+  const { user } = useAuth();
+  if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Mentra</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-gray-600">
-                {user.name}
-              </span>
-              <Button variant="outline" onClick={handleLogout}>
-                Log Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Welcome Section */}
         <div className="bg-white rounded-2xl shadow-sm border p-8 mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -196,7 +150,10 @@ export default function DashboardPage() {
         <div className="bg-white rounded-2xl shadow-sm border p-8">
           <h3 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h3>
           <div className="grid sm:grid-cols-2 gap-4">
-            <button className="flex items-center gap-3 p-4 rounded-lg border hover:bg-gray-50 transition-colors text-left">
+            <Link
+              href="/dashboard/courses"
+              className="flex items-center gap-3 p-4 rounded-lg border hover:bg-gray-50 transition-colors text-left"
+            >
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                 <svg
                   className="w-5 h-5 text-blue-600"
@@ -213,10 +170,10 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Edit Profile</p>
-                <p className="text-sm text-gray-500">Update your information</p>
+                <p className="font-medium text-gray-900">My courses</p>
+                <p className="text-sm text-gray-500">Create and manage your courses</p>
               </div>
-            </button>
+            </Link>
 
             <button className="flex items-center gap-3 p-4 rounded-lg border hover:bg-gray-50 transition-colors text-left">
               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -247,7 +204,6 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
-      </div>
     </div>
   );
 }

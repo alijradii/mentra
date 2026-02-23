@@ -1,9 +1,11 @@
 import type {
   AuthResponse,
+  CreateCourseDto,
   ForgotPasswordInput,
   LoginInput,
   RegisterInput,
   ResetPasswordInput,
+  UpdateCourseDto,
   UserDTO
 } from "shared";
 
@@ -46,6 +48,66 @@ async function fetchApi<T>(
 
   return data;
 }
+
+async function fetchWithAuth<T>(
+  token: string,
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  return fetchApi<T>(endpoint, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...options.headers,
+    },
+  });
+}
+
+/** Course list item / detail from API (ids as strings) */
+export interface CourseDTO {
+  _id: string;
+  title: string;
+  description: string;
+  ownerId: string;
+  status: string;
+  visibility: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const coursesApi = {
+  async getMine(token: string): Promise<{ success: true; data: CourseDTO[] }> {
+    return fetchWithAuth(token, "/api/courses/mine");
+  },
+
+  async getById(token: string, id: string): Promise<{ success: true; data: CourseDTO }> {
+    return fetchWithAuth(token, `/api/courses/${id}`);
+  },
+
+  async create(token: string, input: CreateCourseDto): Promise<{ success: true; data: CourseDTO }> {
+    return fetchWithAuth(token, "/api/courses", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+
+  async update(
+    token: string,
+    id: string,
+    input: UpdateCourseDto
+  ): Promise<{ success: true; message: string }> {
+    return fetchWithAuth(token, `/api/courses/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  },
+
+  async delete(token: string, id: string): Promise<{ success: true; message: string }> {
+    return fetchWithAuth(token, `/api/courses/${id}`, {
+      method: "DELETE",
+    });
+  },
+};
 
 export const authApi = {
   async register(input: RegisterInput): Promise<AuthResponse> {

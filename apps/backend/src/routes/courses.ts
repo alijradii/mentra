@@ -5,6 +5,7 @@ import { authenticate } from "../middleware/auth.js";
 import {
   createCourse,
   getAllCourses,
+  getMyCourses,
   getCourseById,
   updateCourse,
   deleteCourse,
@@ -112,6 +113,30 @@ router.post("/", authenticate, createCourse);
  *         description: Server error
  */
 router.get("/", authenticate, getAllCourses);
+
+/**
+ * @swagger
+ * /api/courses/mine:
+ *   get:
+ *     summary: Get courses owned by the current user
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user's courses
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Course'
+ *       401:
+ *         description: Not authenticated
+ *       500:
+ *         description: Server error
+ */
+router.get("/mine", authenticate, getMyCourses);
 
 /**
  * @swagger
