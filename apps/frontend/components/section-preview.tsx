@@ -4,8 +4,8 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneLight, vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Button } from "@/components/ui/button";
+import { syntaxHighlighterTheme } from "@/lib/syntax-highlighter-config";
 import type {
   SectionDTO,
   EmbeddingSectionDTO,
@@ -120,7 +120,7 @@ export function SectionPreview({ section }: { section: SectionDTO }) {
               return (
                 <SyntaxHighlighter
                   language={match[1]}
-                  style={oneLight}
+                  style={syntaxHighlighterTheme}
                   PreTag="div"
                   customStyle={{ borderRadius: "0.5rem", fontSize: "0.875rem", margin: "0.75rem 0" }}
                 >
@@ -188,7 +188,7 @@ export function SectionPreview({ section }: { section: SectionDTO }) {
     return (
       <SyntaxHighlighter
         language={section.language || "text"}
-        style={vscDarkPlus}
+        style={syntaxHighlighterTheme}
         showLineNumbers
         customStyle={{ borderRadius: "0.5rem", fontSize: "0.875rem" }}
       >

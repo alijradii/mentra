@@ -126,17 +126,18 @@
 .markdown code {
     font-family: ui-monospace, monospace;
     font-size: 0.875em;
-    background: var(--muted);
+    /* background: var(--muted); */
     padding: 0.1em 0.3em;
     border-radius: 0.25rem;
 }
 .markdown pre {
-    background: oklch(0.19 0.03 252);
+    background: oklch(0.16 0.03 252);
     color: var(--foreground);
-    padding: 1rem;
+    /* border: 1px solid var(--border); */
+    padding: 0.2rem;
     border-radius: 0.5rem;
     overflow-x: auto;
-    margin: 1rem 0;
+    /* margin: 1rem 0; */
 }
 .markdown pre code {
     background: none;
