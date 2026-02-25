@@ -24,6 +24,7 @@ export default function CourseSettingsPage() {
   const [description, setDescription] = useState("");
   const [visibility, setVisibility] = useState<Visibility>("public");
   const [status, setStatus] = useState<Status>("draft");
+  const [ownerId, setOwnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -42,6 +43,7 @@ export default function CourseSettingsPage() {
           setDescription(res.data.description ?? "");
           setVisibility((res.data.visibility as Visibility) ?? "public");
           setStatus((res.data.status as Status) ?? "draft");
+          setOwnerId(res.data.ownerId ?? null);
         }
       })
       .catch((err) => {
@@ -185,16 +187,18 @@ export default function CourseSettingsPage() {
           </div>
         </form>
 
-        <div className="mt-10 pt-8 border-t">
-          <h2 className="text-sm font-medium text-foreground mb-3">Danger zone</h2>
-          <Button
-            variant="destructive"
-            onClick={() => setShowDeleteDialog(true)}
-            disabled={deleting}
-          >
-            Delete course
-          </Button>
-        </div>
+        {user && ownerId && user.id === ownerId && (
+          <div className="mt-10 pt-8 border-t">
+            <h2 className="text-sm font-medium text-foreground mb-3">Danger zone</h2>
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeleteDialog(true)}
+              disabled={deleting}
+            >
+              Delete course
+            </Button>
+          </div>
+        )}
       </div>
 
       <ConfirmDeleteDialog

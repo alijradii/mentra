@@ -92,7 +92,7 @@ export async function getAllCourses(req: Request, res: Response): Promise<void> 
 }
 
 /**
- * Get only courses owned by the current user
+ * Get courses owned by or mentored by the current user (My Courses)
  * GET /courses/mine
  */
 export async function getMyCourses(req: Request, res: Response): Promise<void> {
@@ -100,9 +100,15 @@ export async function getMyCourses(req: Request, res: Response): Promise<void> {
     const db = getDb();
     const collection = getCourseCollection(db);
     const userId = req.user!._id;
+    const userObjectId = new ObjectId(userId);
 
     const courses = await collection
-      .find({ ownerId: new ObjectId(userId) })
+      .find({
+        $or: [
+          { ownerId: userObjectId },
+          { mentorIds: userObjectId },
+        ],
+      })
       .sort({ updatedAt: -1 })
       .toArray();
 
@@ -187,11 +193,11 @@ export async function updateCourse(req: Request, res: Response): Promise<void> {
 
     const userId = req.user!._id;
 
-    // Only the owner can update the course
-    if (!(await isCourseOwner(id, userId))) {
+    // Owner or mentor can update the course
+    if (!(await isCourseMentor(id, userId))) {
       res.status(403).json({
         success: false,
-        error: "Only the course owner can update the course",
+        error: "You don't have permission to update this course",
       });
       return;
     }

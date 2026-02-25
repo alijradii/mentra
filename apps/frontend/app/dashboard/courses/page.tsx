@@ -73,7 +73,7 @@ export default function MyCoursesPage() {
       {loading ? (
         <p className="text-muted-foreground">Loading...</p>
       ) : courses.length === 0 ? (
-        <p className="text-muted-foreground">You haven't created any courses yet.</p>
+        <p className="text-muted-foreground">You don&apos;t have any courses yet.</p>
       ) : (
         <ul className="space-y-2">
           {courses.map((course) => (
@@ -82,6 +82,7 @@ export default function MyCoursesPage() {
               course={course}
               deletingId={deletingId}
               onDelete={handleRequestDelete}
+              canDelete={user?.id === course.ownerId}
             />
           ))}
         </ul>
