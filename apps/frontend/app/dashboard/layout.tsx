@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -148,15 +149,17 @@ export default function DashboardLayout({
                 <button
                   type="button"
                   onClick={() => setIsMenuOpen((prev) => !prev)}
-                  className="h-10 w-10 rounded-full border border-border/80 bg-card shadow-sm hover:border-primary/50 transition"
+                  className="h-10 w-10 rounded-full border border-border/80 bg-card shadow-sm hover:border-primary/50 transition overflow-hidden"
                   aria-haspopup="menu"
                   aria-expanded={isMenuOpen}
                   aria-label="Open user menu"
                 >
                   {user.avatar ? (
-                    <img
+                    <Image
                       src={user.avatar}
                       alt="User avatar"
+                      width={40}
+                      height={40}
                       className="h-full w-full rounded-full object-cover"
                     />
                   ) : (

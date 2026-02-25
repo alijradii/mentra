@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { authApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -64,11 +65,13 @@ export default function ProfilePage() {
         <section className="flex flex-col gap-4">
           <Label className="text-sm font-medium text-foreground">Avatar</Label>
           <div className="flex items-center gap-6">
-            <div className="h-24 w-24 rounded-full bg-muted overflow-hidden border-2 border-border flex items-center justify-center shrink-0">
+            <div className="h-24 w-24 rounded-full bg-muted overflow-hidden border-2 border-border flex items-center justify-center shrink-0 relative">
               {user.avatar ? (
-                <img
+                <Image
                   src={user.avatar}
                   alt={user.name}
+                  width={96}
+                  height={96}
                   className="h-full w-full object-cover"
                 />
               ) : (

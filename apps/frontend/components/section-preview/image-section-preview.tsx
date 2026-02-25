@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import type { ImageSectionDTO } from "@/lib/api";
 
 interface ImageSectionPreviewProps {
@@ -11,7 +12,14 @@ export function ImageSectionPreview({ section }: ImageSectionPreviewProps) {
     return <p className="text-muted-foreground/80 text-sm italic">No image URL provided.</p>;
   return (
     <figure>
-      <img src={section.url} alt={section.alt || ""} className="max-w-full rounded-lg" />
+      <Image
+        src={section.url}
+        alt={section.alt || ""}
+        width={800}
+        height={450}
+        className="max-w-full h-auto rounded-lg"
+        sizes="(max-width: 768px) 100vw, 800px"
+      />
       {section.caption && (
         <figcaption className="text-sm text-muted-foreground mt-2 text-center">
           {section.caption}
