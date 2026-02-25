@@ -219,17 +219,27 @@ export async function getEnrolledStudents(req: Request, res: Response): Promise<
       status: { $in: ["active", "completed"] },
     }).toArray();
 
+    const requestingUserId = userId.toString();
+    const isPrivileged = await isCourseMentor(id, userId);
+
     // Get user details for each enrollment
     const students = await Promise.all(
       enrollments.map(async (enrollment) => {
         const user = await findUserById(enrollment.userId.toString());
-        return {
+        const base = {
           _id: user?._id.toString(),
           name: user?.name,
-          email: user?.email,
+          avatar: user?.avatar,
           enrolledAt: enrollment.createdAt,
-          progress: enrollment.progress.overallPercentage,
         };
+        if (isPrivileged || enrollment.userId.toString() === requestingUserId) {
+          return {
+            ...base,
+            email: user?.email,
+            progress: enrollment.progress.overallPercentage,
+          };
+        }
+        return base;
       })
     );
 

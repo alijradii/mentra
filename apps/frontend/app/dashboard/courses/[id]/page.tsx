@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ModuleListItem } from "@/components/courses/module-list-item";
-import { ConfirmDeleteDialog } from "@/components/courses";
+import { ConfirmDeleteDialog, CourseMembersPanel } from "@/components/courses";
 import { coursesApi, modulesApi, type CourseDTO, type ModuleDTO, ApiError } from "@/lib/api";
+
+type Tab = "modules" | "members";
 
 export default function CourseDetailPage() {
   const { user, token } = useAuth();
@@ -31,6 +33,8 @@ export default function CourseDetailPage() {
 
   const [savedOrder, setSavedOrder] = useState(true);
   const [savingOrder, setSavingOrder] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<Tab>("modules");
 
   useEffect(() => {
     if (!token || !id) return;
@@ -160,70 +164,101 @@ export default function CourseDetailPage() {
         <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
       )}
 
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-foreground">Modules</h2>
-        <div className="flex items-center gap-2">
-          {modules.length > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={savingOrder || savedOrder}
-              onClick={handleSaveModuleOrder}
-            >
-              {savingOrder ? "Saving…" : "Save order"}
-            </Button>
-          )}
-          <Button size="sm" onClick={() => setShowNewModule((v) => !v)}>
-            {showNewModule ? "Cancel" : "Add module"}
-          </Button>
-        </div>
+      {/* Tab bar */}
+      <div className="flex gap-1 border-b mb-6">
+        {(["modules", "members"] as Tab[]).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 text-sm font-medium capitalize border-b-2 -mb-px transition-colors ${
+              activeTab === tab
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
-      {modules.length > 0 && savedOrder === false && (
-        <p className="text-warning text-xs mb-2">Order changed. Click &quot;Save order&quot; to persist.</p>
-      )}
 
-      {showNewModule && (
-        <form
-          onSubmit={handleCreateModule}
-          className="mb-4 p-4 bg-card border rounded-lg flex gap-2 items-end"
-        >
-          <div className="flex-1">
-            <Label htmlFor="new-module-title">Module title</Label>
-            <Input
-              id="new-module-title"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="e.g. Introduction"
-              required
-              maxLength={200}
-              className="mt-1"
-              autoFocus
-            />
+      {activeTab === "modules" && (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Modules</h2>
+            <div className="flex items-center gap-2">
+              {modules.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={savingOrder || savedOrder}
+                  onClick={handleSaveModuleOrder}
+                >
+                  {savingOrder ? "Saving…" : "Save order"}
+                </Button>
+              )}
+              <Button size="sm" onClick={() => setShowNewModule((v) => !v)}>
+                {showNewModule ? "Cancel" : "Add module"}
+              </Button>
+            </div>
           </div>
-          <Button type="submit" disabled={creating}>
-            {creating ? "Adding..." : "Add"}
-          </Button>
-        </form>
-      )}
+          {modules.length > 0 && savedOrder === false && (
+            <p className="text-warning text-xs mb-2">Order changed. Click &quot;Save order&quot; to persist.</p>
+          )}
+
+          {showNewModule && (
+            <form
+              onSubmit={handleCreateModule}
+              className="mb-4 p-4 bg-card border rounded-lg flex gap-2 items-end"
+            >
+              <div className="flex-1">
+                <Label htmlFor="new-module-title">Module title</Label>
+                <Input
+                  id="new-module-title"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="e.g. Introduction"
+                  required
+                  maxLength={200}
+                  className="mt-1"
+                  autoFocus
+                />
+              </div>
+              <Button type="submit" disabled={creating}>
+                {creating ? "Adding..." : "Add"}
+              </Button>
+            </form>
+          )}
 
           {modules.length === 0 && !showNewModule ? (
-        <p className="text-muted-foreground text-sm">No modules yet. Add one to get started.</p>
-      ) : (
-        <ul className="space-y-2">
-          {modules.map((module, idx) => (
-            <ModuleListItem
-              key={module._id}
-              module={module}
-              idx={idx}
-              total={modules.length}
-              courseId={id}
-              deletingId={deletingId}
+            <p className="text-muted-foreground text-sm">No modules yet. Add one to get started.</p>
+          ) : (
+            <ul className="space-y-2">
+              {modules.map((module, idx) => (
+                <ModuleListItem
+                  key={module._id}
+                  module={module}
+                  idx={idx}
+                  total={modules.length}
+                  courseId={id}
+                  deletingId={deletingId}
                   onDelete={handleRequestDeleteModule}
-              onMoveUp={() => moveModule(idx, -1)}
-              onMoveDown={() => moveModule(idx, 1)}
-            />
-          ))}
-        </ul>
+                  onMoveUp={() => moveModule(idx, -1)}
+                  onMoveDown={() => moveModule(idx, 1)}
+                />
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+
+      {activeTab === "members" && token && course && (
+        <CourseMembersPanel
+          courseId={id}
+          token={token}
+          currentUserId={user.id}
+          ownerId={course.ownerId}
+          isMentor={course.mentorIds.includes(user.id)}
+        />
       )}
 
       <ConfirmDeleteDialog

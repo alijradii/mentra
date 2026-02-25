@@ -2,9 +2,9 @@ import type { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { getDb } from "../db.js";
 import { getCourseCollection } from "../models/course.js";
-import { findUserById } from "../models/user.js";
+import { findUserById, findUserByEmail } from "../models/user.js";
 import { addMentorSchema } from "shared";
-import { isCourseOwner } from "../services/course.service.js";
+import { isCourseOwner, canViewCourse } from "../services/course.service.js";
 
 /**
  * Mentor Management Controller
@@ -46,24 +46,26 @@ export async function addMentor(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const { mentorId } = validation.data;
+    const { mentorEmail } = validation.data;
 
-    // Verify mentor exists
-    const mentor = await findUserById(mentorId);
+    // Resolve user by email
+    const mentor = await findUserByEmail(mentorEmail);
     if (!mentor) {
       res.status(404).json({
         success: false,
-        error: "Mentor not found",
+        error: "No user found with that email address",
       });
       return;
     }
+
+    const mentorId = mentor._id.toString();
 
     const db = getDb();
     const collection = getCourseCollection(db);
     
     // Check if already a mentor
     const course = await collection.findOne({ _id: new ObjectId(id) });
-    if (course?.mentorIds.some((id) => id.toString() === mentorId)) {
+    if (course?.mentorIds.some((mid) => mid.toString() === mentorId)) {
       res.status(400).json({
         success: false,
         error: "User is already a mentor of this course",
@@ -89,6 +91,61 @@ export async function addMentor(req: Request, res: Response): Promise<void> {
       success: false,
       error: "Failed to add mentor",
     });
+  }
+}
+
+/**
+ * Get mentors for a course
+ * GET /courses/:id/mentors
+ */
+export async function getMentors(req: Request, res: Response): Promise<void> {
+  try {
+    const id = String(req.params.id);
+    if (!ObjectId.isValid(id)) {
+      res.status(400).json({ success: false, error: "Invalid course ID" });
+      return;
+    }
+
+    const userId = req.user!._id;
+    if (!(await canViewCourse(id, userId))) {
+      res.status(403).json({ success: false, error: "You don't have permission to view this course" });
+      return;
+    }
+
+    const db = getDb();
+    const course = await getCourseCollection(db).findOne({ _id: new ObjectId(id) });
+    if (!course) {
+      res.status(404).json({ success: false, error: "Course not found" });
+      return;
+    }
+
+    // Resolve owner + mentors into profile objects
+    const ownerUser = await findUserById(course.ownerId.toString());
+    const mentorUsers = await Promise.all(
+      course.mentorIds.map((mid) => findUserById(mid.toString()))
+    );
+
+    const members = [
+      ownerUser && {
+        _id: ownerUser._id.toString(),
+        name: ownerUser.name,
+        avatar: ownerUser.avatar,
+        role: "owner" as const,
+      },
+      ...mentorUsers
+        .filter(Boolean)
+        .map((u) => ({
+          _id: u!._id.toString(),
+          name: u!.name,
+          avatar: u!.avatar,
+          role: "mentor" as const,
+        })),
+    ].filter(Boolean);
+
+    res.json({ success: true, data: members });
+  } catch (error) {
+    console.error("Error fetching mentors:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch mentors" });
   }
 }
 

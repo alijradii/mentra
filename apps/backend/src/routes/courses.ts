@@ -14,6 +14,7 @@ import {
 
 // Mentor controllers
 import {
+  getMentors,
   addMentor,
   removeMentor,
 } from "../controllers/mentor.controller.js";
@@ -295,6 +296,7 @@ router.delete("/:id", authenticate, deleteCourse);
  *       500:
  *         description: Server error
  */
+router.get("/:id/mentors", authenticate, getMentors);
 router.post("/:id/mentors", authenticate, addMentor);
 
 /**

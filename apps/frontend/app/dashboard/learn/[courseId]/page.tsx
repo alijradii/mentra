@@ -1,6 +1,7 @@
 "use client";
 
 import { CourseOutline } from "@/components/learn/course-outline";
+import { CourseMembersPanel } from "@/components/courses";
 import { ProgressBar } from "@/components/shared/progress-bar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +20,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+type Tab = "content" | "members";
+
 export default function LearnCourseOverviewPage() {
     const { token, user } = useAuth();
     const router = useRouter();
@@ -32,6 +35,7 @@ export default function LearnCourseOverviewPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+    const [activeTab, setActiveTab] = useState<Tab>("content");
 
     useEffect(() => {
         if (!token || !courseId) return;
@@ -163,18 +167,45 @@ export default function LearnCourseOverviewPage() {
                 )}
             </div>
 
-            <h2 className="text-lg font-semibold text-foreground mb-3">Course content</h2>
+            {/* Tab bar */}
+            <div className="flex gap-1 border-b mb-6">
+                {(["content", "members"] as Tab[]).map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`px-4 py-2 text-sm font-medium capitalize border-b-2 -mb-px transition-colors ${
+                            activeTab === tab
+                                ? "border-primary text-foreground"
+                                : "border-transparent text-muted-foreground hover:text-foreground"
+                        }`}
+                    >
+                        {tab === "content" ? "Course content" : "Members"}
+                    </button>
+                ))}
+            </div>
 
-            {modules.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No content available yet.</p>
-            ) : (
-                <CourseOutline
+            {activeTab === "content" && (
+                modules.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">No content available yet.</p>
+                ) : (
+                    <CourseOutline
+                        courseId={courseId}
+                        modules={modules}
+                        nodesByModule={nodesByModule}
+                        completedNodes={completedNodes}
+                        expandedModules={expandedModules}
+                        onToggleModule={toggleModule}
+                    />
+                )
+            )}
+
+            {activeTab === "members" && token && course && (
+                <CourseMembersPanel
                     courseId={courseId}
-                    modules={modules}
-                    nodesByModule={nodesByModule}
-                    completedNodes={completedNodes}
-                    expandedModules={expandedModules}
-                    onToggleModule={toggleModule}
+                    token={token}
+                    currentUserId={user.id}
+                    ownerId={course.ownerId}
+                    isMentor={course.mentorIds.includes(user.id)}
                 />
             )}
         </div>

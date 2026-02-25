@@ -70,6 +70,7 @@ export interface CourseDTO {
   title: string;
   description: string;
   ownerId: string;
+  mentorIds: string[];
   status: string;
   visibility: string;
   author?: { id: string; name: string; avatar?: string };
@@ -82,6 +83,22 @@ export interface CourseDTO {
   };
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CourseMemberDTO {
+  _id: string;
+  name: string;
+  avatar?: string;
+  role: "owner" | "mentor";
+}
+
+export interface CourseStudentDTO {
+  _id: string;
+  name: string;
+  avatar?: string;
+  email?: string;
+  enrolledAt: string;
+  progress?: number;
 }
 
 export interface EnrollmentDTO {
@@ -464,6 +481,45 @@ export const enrollmentApi = {
       method: "PATCH",
       body: JSON.stringify({ nodeId }),
     });
+  },
+};
+
+export const mentorsApi = {
+  async list(
+    token: string,
+    courseId: string
+  ): Promise<{ success: true; data: CourseMemberDTO[] }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/mentors`);
+  },
+
+  async add(
+    token: string,
+    courseId: string,
+    mentorEmail: string
+  ): Promise<{ success: true; message: string }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/mentors`, {
+      method: "POST",
+      body: JSON.stringify({ mentorEmail }),
+    });
+  },
+
+  async remove(
+    token: string,
+    courseId: string,
+    mentorId: string
+  ): Promise<{ success: true; message: string }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/mentors/${mentorId}`, {
+      method: "DELETE",
+    });
+  },
+};
+
+export const studentsApi = {
+  async list(
+    token: string,
+    courseId: string
+  ): Promise<{ success: true; data: CourseStudentDTO[] }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/students`);
   },
 };
 

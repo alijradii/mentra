@@ -73,7 +73,7 @@ export const updateCourseSchema = z.object({
 });
 
 export const addMentorSchema = z.object({
-  mentorId: z.string().min(1, "Mentor ID is required"),
+  mentorEmail: z.string().email("Valid email is required"),
 });
 
 export const removeMentorSchema = z.object({
