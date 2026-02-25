@@ -1,9 +1,9 @@
 import { ourFileRouter } from "@/app/api/uploadthing/core";
-import { AuthProvider } from "@/contexts/AuthContext";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { extractRouterConfig } from "uploadthing/server";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,10 +27,10 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en">
+        <html lang="en" suppressHydrationWarning>
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
                 <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
-                <AuthProvider>{children}</AuthProvider>
+                <Providers>{children}</Providers>
             </body>
         </html>
     );

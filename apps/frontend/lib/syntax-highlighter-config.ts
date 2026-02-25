@@ -4,21 +4,20 @@ import {
   nightOwl,
   oneLight,
   twilight,
-  vscDarkPlus
+  vscDarkPlus,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { useColorTheme } from "@/contexts/ThemeContext";
 
-const prismThemes = {
+export const prismThemes = {
   oneLight,
   vscDarkPlus,
   nightOwl,
   twilight,
   coldarkCold,
-  duotoneDark
+  duotoneDark,
 } as const;
 
-export type PrismThemeName = keyof typeof prismThemes;
-
-// Change this value to set the syntax highlighting theme across the app.
-export const syntaxHighlighterThemeName: PrismThemeName = "nightOwl";
-
-export const syntaxHighlighterTheme = prismThemes[syntaxHighlighterThemeName];
+export function useSyntaxTheme() {
+  const { syntaxTheme } = useColorTheme();
+  return prismThemes[syntaxTheme];
+}

@@ -3,7 +3,43 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { useTheme } from "next-themes";
+import { Moon, Sun } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+
+function DarkModeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) {
+    return (
+      <button
+        type="button"
+        className="h-9 w-9 rounded-md border border-border/80 bg-card flex items-center justify-center text-muted-foreground"
+        aria-label="Toggle dark mode"
+      >
+        <span className="h-4 w-4" />
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+      className="h-9 w-9 rounded-md border border-border/80 bg-card shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/50 transition"
+      aria-label="Toggle dark mode"
+    >
+      {resolvedTheme === "dark" ? (
+        <Sun className="h-4 w-4" />
+      ) : (
+        <Moon className="h-4 w-4" />
+      )}
+    </button>
+  );
+}
 
 export default function DashboardLayout({
   children,
@@ -106,50 +142,61 @@ export default function DashboardLayout({
                 Profile
               </Link>
             </div>
-            <div className="relative" ref={menuRef}>
-              <button
-                type="button"
-                onClick={() => setIsMenuOpen((prev) => !prev)}
-                className="h-10 w-10 rounded-full border border-border/80 bg-card shadow-sm hover:border-primary/50 transition"
-                aria-haspopup="menu"
-                aria-expanded={isMenuOpen}
-                aria-label="Open user menu"
-              >
-                {user.avatar ? (
-                  <img
-                    src={user.avatar}
-                    alt="User avatar"
-                    className="h-full w-full rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="grid h-full w-full place-items-center text-sm font-semibold text-foreground">
-                    {initials}
-                  </span>
-                )}
-              </button>
-              {isMenuOpen && (
-                <div
-                  className="absolute right-0 mt-2 w-44 rounded-lg border border-border bg-card p-1 shadow-lg"
-                  role="menu"
+            <div className="flex items-center gap-2">
+              <DarkModeToggle />
+              <div className="relative" ref={menuRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsMenuOpen((prev) => !prev)}
+                  className="h-10 w-10 rounded-full border border-border/80 bg-card shadow-sm hover:border-primary/50 transition"
+                  aria-haspopup="menu"
+                  aria-expanded={isMenuOpen}
+                  aria-label="Open user menu"
                 >
-                  <Link
-                    href="/dashboard/profile"
-                    className="block rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
-                    role="menuitem"
-                    onClick={() => setIsMenuOpen(false)}
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt="User avatar"
+                      className="h-full w-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="grid h-full w-full place-items-center text-sm font-semibold text-foreground">
+                      {initials}
+                    </span>
+                  )}
+                </button>
+                {isMenuOpen && (
+                  <div
+                    className="absolute right-0 mt-2 w-44 rounded-lg border border-border bg-card p-1 shadow-lg"
+                    role="menu"
                   >
-                    Profile
-                  </Link>
-                  <button
-                    type="button"
-                    className="block w-full rounded-md px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/15"
-                    role="menuitem"
-                    onClick={handleLogout}
-                  >
-                    Log out
-                  </button>
-                </div>
-              )}
+                    <Link
+                      href="/dashboard/profile"
+                      className="block rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
+                      role="menuitem"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Profile
+                    </Link>
+                    <Link
+                      href="/dashboard/settings"
+                      className="block rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
+                      role="menuitem"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Settings
+                    </Link>
+                    <button
+                      type="button"
+                      className="block w-full rounded-md px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/15"
+                      role="menuitem"
+                      onClick={handleLogout}
+                    >
+                      Log out
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

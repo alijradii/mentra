@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { Button } from "@/components/ui/button";
-import { syntaxHighlighterTheme } from "@/lib/syntax-highlighter-config";
+import { useSyntaxTheme } from "@/lib/syntax-highlighter-config";
 import type {
   SectionDTO,
   EmbeddingSectionDTO,
@@ -93,6 +93,8 @@ function QuizPreview({ section }: { section: QuizSectionDTO }) {
 }
 
 export function SectionPreview({ section }: { section: SectionDTO }) {
+  const syntaxTheme = useSyntaxTheme();
+
   if (section.type === "text") {
     if (section.format === "plain") {
       return (
@@ -120,7 +122,7 @@ export function SectionPreview({ section }: { section: SectionDTO }) {
               return (
                 <SyntaxHighlighter
                   language={match[1]}
-                  style={syntaxHighlighterTheme}
+                  style={syntaxTheme}
                   PreTag="div"
                   customStyle={{ borderRadius: "0.5rem", fontSize: "0.875rem", margin: "0.75rem 0" }}
                 >
@@ -188,7 +190,7 @@ export function SectionPreview({ section }: { section: SectionDTO }) {
     return (
       <SyntaxHighlighter
         language={section.language || "text"}
-        style={syntaxHighlighterTheme}
+        style={syntaxTheme}
         showLineNumbers
         customStyle={{ borderRadius: "0.5rem", fontSize: "0.875rem" }}
       >
