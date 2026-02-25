@@ -33,6 +33,8 @@
     --accent-foreground: rgb(23, 23, 23);
     --destructive: rgb(231, 0, 11);
     --destructive-foreground: rgb(255, 255, 255);
+    --success: rgb(22, 163, 74);
+    --success-foreground: rgb(255, 255, 255);
     --border: rgb(229, 229, 229);
     --input: rgb(229, 229, 229);
     --ring: rgb(161, 161, 161);
@@ -90,6 +92,8 @@
     --accent-foreground: rgb(250, 250, 250);
     --destructive: rgb(255, 100, 103);
     --destructive-foreground: rgb(250, 250, 250);
+    --success: rgb(74, 222, 128);
+    --success-foreground: rgb(0, 0, 0);
     --border: rgb(40, 40, 40);
     --input: rgb(52, 52, 52);
     --ring: rgb(115, 115, 115);
@@ -145,6 +149,8 @@
     --color-accent-foreground: var(--accent-foreground);
     --color-destructive: var(--destructive);
     --color-destructive-foreground: var(--destructive-foreground);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
