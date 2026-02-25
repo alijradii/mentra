@@ -117,6 +117,16 @@ export interface ModuleDTO {
 // Section types as returned by the API (dates are ISO strings)
 export type SectionType = "text" | "image" | "video" | "embedding" | "code" | "quiz";
 
+export type QuizType =
+  | "mcq"
+  | "sequence"
+  | "short-answer"
+  | "matching"
+  | "fill-blank"
+  | "math-input"
+  | "classification"
+  | "true-false";
+
 export interface BaseSectionDTO {
   id: string;
   type: SectionType;
@@ -158,20 +168,114 @@ export interface CodeSectionDTO extends BaseSectionDTO {
   isExecutable?: boolean;
 }
 
+// --- Quiz section DTO variants ---
+
+interface QuizSectionBaseDTO extends BaseSectionDTO {
+  type: "quiz";
+  quizType: QuizType;
+  question: string;
+  explanation?: string;
+  points?: number;
+}
+
 export interface QuizOption {
   id: string;
   text: string;
   order: number;
 }
 
-export interface QuizSectionDTO extends BaseSectionDTO {
-  type: "quiz";
-  question: string;
+export interface MCQQuizSectionDTO extends QuizSectionBaseDTO {
+  quizType: "mcq";
   options: QuizOption[];
   correctAnswers: string[];
-  explanation?: string;
-  points?: number;
 }
+
+export interface SequenceItemDTO {
+  id: string;
+  text: string;
+}
+
+export interface PrefilledPositionDTO {
+  position: number;
+  itemId: string;
+}
+
+export interface SequenceQuizSectionDTO extends QuizSectionBaseDTO {
+  quizType: "sequence";
+  items: SequenceItemDTO[];
+  correctOrder: string[];
+  prefilledPositions?: PrefilledPositionDTO[];
+}
+
+export interface ShortAnswerQuizSectionDTO extends QuizSectionBaseDTO {
+  quizType: "short-answer";
+  acceptedAnswers: string[];
+  caseSensitive?: boolean;
+  trimWhitespace?: boolean;
+}
+
+export interface MatchingPairDTO {
+  id: string;
+  left: string;
+  right: string;
+}
+
+export interface MatchingQuizSectionDTO extends QuizSectionBaseDTO {
+  quizType: "matching";
+  pairs: MatchingPairDTO[];
+}
+
+export interface BlankDefinitionDTO {
+  id: string;
+  acceptedAnswers: string[];
+}
+
+export interface FillBlankQuizSectionDTO extends QuizSectionBaseDTO {
+  quizType: "fill-blank";
+  template: string;
+  blanks: BlankDefinitionDTO[];
+  wordBank?: string[];
+  language?: string;
+}
+
+export interface MathInputQuizSectionDTO extends QuizSectionBaseDTO {
+  quizType: "math-input";
+  acceptedAnswers: string[];
+  inputFormat: "latex" | "asciimath";
+  comparisonMode?: "exact" | "symbolic";
+}
+
+export interface QuizCategoryDTO {
+  id: string;
+  label: string;
+}
+
+export interface ClassificationItemDTO {
+  id: string;
+  text: string;
+  categoryId: string;
+}
+
+export interface ClassificationQuizSectionDTO extends QuizSectionBaseDTO {
+  quizType: "classification";
+  categories: QuizCategoryDTO[];
+  items: ClassificationItemDTO[];
+}
+
+export interface TrueFalseQuizSectionDTO extends QuizSectionBaseDTO {
+  quizType: "true-false";
+  correctAnswer: boolean;
+}
+
+export type QuizSectionDTO =
+  | MCQQuizSectionDTO
+  | SequenceQuizSectionDTO
+  | ShortAnswerQuizSectionDTO
+  | MatchingQuizSectionDTO
+  | FillBlankQuizSectionDTO
+  | MathInputQuizSectionDTO
+  | ClassificationQuizSectionDTO
+  | TrueFalseQuizSectionDTO;
 
 export type SectionDTO =
   | TextSectionDTO
