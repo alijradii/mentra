@@ -8,10 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { modulesApi, nodesApi, type ModuleDTO, type NodeDTO } from "@/lib/api";
-import { ApiError } from "@/lib/api";
+import { NodeListItem } from "@/components/courses/node-list-item";
+import { modulesApi, nodesApi, type ModuleDTO, type NodeDTO, ApiError } from "@/lib/api";
 
 type ModuleStatus = "draft" | "published" | "archived";
+
+const SELECT_CLASS =
+  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
 export default function ModuleDetailPage() {
   const { user, token } = useAuth();
@@ -25,7 +28,6 @@ export default function ModuleDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Inline edit module
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
@@ -33,14 +35,12 @@ export default function ModuleDetailPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // New node form
   const [showNewNode, setShowNewNode] = useState(false);
   const [newNodeTitle, setNewNodeTitle] = useState("");
   const [creating, setCreating] = useState(false);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Reorder nodes: same pattern as section reorder
   const [savedOrder, setSavedOrder] = useState(true);
   const [savingOrder, setSavingOrder] = useState(false);
 
@@ -162,7 +162,6 @@ export default function ModuleDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 flex-wrap">
         <Link href="/dashboard/courses" className="hover:text-foreground">My courses</Link>
         <span>/</span>
@@ -175,7 +174,6 @@ export default function ModuleDetailPage() {
         <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
       )}
 
-      {/* Module header / inline edit */}
       <div className="bg-card border rounded-lg p-6 mb-8">
         {editing ? (
           <form onSubmit={handleSaveModule} className="space-y-3">
@@ -208,7 +206,7 @@ export default function ModuleDetailPage() {
                 id="mod-status"
                 value={editStatus}
                 onChange={(e) => setEditStatus(e.target.value as ModuleStatus)}
-                className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className={`mt-1 ${SELECT_CLASS}`}
               >
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
@@ -245,7 +243,6 @@ export default function ModuleDetailPage() {
         )}
       </div>
 
-      {/* Nodes section */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-foreground">Pages (nodes)</h2>
         <div className="flex items-center gap-2">
@@ -297,52 +294,18 @@ export default function ModuleDetailPage() {
       ) : (
         <ul className="space-y-2">
           {nodes.map((node, idx) => (
-            <li
+            <NodeListItem
               key={node._id}
-              className="flex items-center justify-between gap-4 p-4 bg-card rounded-lg border"
-            >
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => moveNode(idx, -1)}
-                  disabled={idx === 0}
-                  className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
-                  title="Move up"
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveNode(idx, 1)}
-                  disabled={idx === nodes.length - 1}
-                  className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
-                  title="Move down"
-                >
-                  ↓
-                </button>
-              </div>
-              <Link
-                href={`/dashboard/courses/${courseId}/modules/${moduleId}/nodes/${node._id}`}
-                className="flex items-center gap-3 flex-1 min-w-0 group"
-              >
-                <span className="text-xs text-muted-foreground/80 w-5 shrink-0">{idx + 1}</span>
-                <span className="font-medium text-foreground group-hover:underline">{node.title}</span>
-                <span className="text-xs text-muted-foreground/80 shrink-0">
-                  {node.sections.length} section{node.sections.length !== 1 ? "s" : ""}
-                </span>
-                <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground capitalize shrink-0">
-                  {node.status}
-                </span>
-              </Link>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={deletingId === node._id}
-                onClick={() => handleDeleteNode(node._id)}
-              >
-                {deletingId === node._id ? "..." : "Delete"}
-              </Button>
-            </li>
+              node={node}
+              idx={idx}
+              total={nodes.length}
+              courseId={courseId}
+              moduleId={moduleId}
+              deletingId={deletingId}
+              onDelete={handleDeleteNode}
+              onMoveUp={() => moveNode(idx, -1)}
+              onMoveDown={() => moveNode(idx, 1)}
+            />
           ))}
         </ul>
       )}

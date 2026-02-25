@@ -7,8 +7,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { coursesApi, modulesApi, type CourseDTO, type ModuleDTO } from "@/lib/api";
-import { ApiError } from "@/lib/api";
+import { ModuleListItem } from "@/components/courses/module-list-item";
+import { coursesApi, modulesApi, type CourseDTO, type ModuleDTO, ApiError } from "@/lib/api";
 
 export default function CourseDetailPage() {
   const { user, token } = useAuth();
@@ -21,15 +21,12 @@ export default function CourseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // New module form
   const [showNewModule, setShowNewModule] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [creating, setCreating] = useState(false);
 
-  // Per-module deleting state
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Reorder: local order is reflected in modules array; save sends current order to API
   const [savedOrder, setSavedOrder] = useState(true);
   const [savingOrder, setSavingOrder] = useState(false);
 
@@ -126,14 +123,12 @@ export default function CourseDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
         <Link href="/dashboard/courses" className="hover:text-foreground">My courses</Link>
         <span>/</span>
         <span className="text-foreground font-medium">{course?.title ?? "Course"}</span>
       </div>
 
-      {/* Course header */}
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{course?.title}</h1>
@@ -154,7 +149,6 @@ export default function CourseDetailPage() {
         <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
       )}
 
-      {/* Modules section */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-foreground">Modules</h2>
         <div className="flex items-center gap-2">
@@ -206,49 +200,17 @@ export default function CourseDetailPage() {
       ) : (
         <ul className="space-y-2">
           {modules.map((module, idx) => (
-            <li
+            <ModuleListItem
               key={module._id}
-              className="flex items-center justify-between gap-4 p-4 bg-card rounded-lg border"
-            >
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => moveModule(idx, -1)}
-                  disabled={idx === 0}
-                  className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
-                  title="Move up"
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveModule(idx, 1)}
-                  disabled={idx === modules.length - 1}
-                  className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
-                  title="Move down"
-                >
-                  ↓
-                </button>
-              </div>
-              <Link
-                href={`/dashboard/courses/${id}/modules/${module._id}`}
-                className="flex items-center gap-3 flex-1 min-w-0 group"
-              >
-                <span className="text-xs text-muted-foreground/80 w-5 shrink-0">{idx + 1}</span>
-                <span className="font-medium text-foreground group-hover:underline">{module.title}</span>
-                <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground capitalize shrink-0">
-                  {module.status}
-                </span>
-              </Link>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={deletingId === module._id}
-                onClick={() => handleDeleteModule(module._id)}
-              >
-                {deletingId === module._id ? "..." : "Delete"}
-              </Button>
-            </li>
+              module={module}
+              idx={idx}
+              total={modules.length}
+              courseId={id}
+              deletingId={deletingId}
+              onDelete={handleDeleteModule}
+              onMoveUp={() => moveModule(idx, -1)}
+              onMoveDown={() => moveModule(idx, 1)}
+            />
           ))}
         </ul>
       )}
