@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { CourseListItem } from "@/components/courses/course-list-item";
+import { CourseListItem, ConfirmDeleteDialog } from "@/components/courses";
 import { coursesApi, type CourseDTO, ApiError } from "@/lib/api";
 
 export default function MyCoursesPage() {
@@ -13,6 +13,7 @@ export default function MyCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [courseToDelete, setCourseToDelete] = useState<CourseDTO | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -31,13 +32,20 @@ export default function MyCoursesPage() {
     return () => { cancelled = true; };
   }, [token]);
 
-  const handleDelete = async (id: string) => {
-    if (!token || !confirm("Delete this course?")) return;
+  const handleRequestDelete = (id: string) => {
+    const course = courses.find((c) => c._id === id) ?? null;
+    if (course) setCourseToDelete(course);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!token || !courseToDelete) return;
+    const id = courseToDelete._id;
     setDeletingId(id);
     setError("");
     try {
       await coursesApi.delete(token, id);
       setCourses((prev) => prev.filter((c) => c._id !== id));
+      setCourseToDelete(null);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to delete");
     } finally {
@@ -73,11 +81,32 @@ export default function MyCoursesPage() {
               key={course._id}
               course={course}
               deletingId={deletingId}
-              onDelete={handleDelete}
+              onDelete={handleRequestDelete}
             />
           ))}
         </ul>
       )}
+
+      <ConfirmDeleteDialog
+        open={!!courseToDelete}
+        title="Delete course"
+        description="This will permanently delete the course and all its modules, pages, and sections. This cannot be undone."
+        confirmLabel="Delete course"
+        loading={!!(courseToDelete && deletingId === courseToDelete._id)}
+        onCancel={() => setCourseToDelete(null)}
+        onConfirm={handleConfirmDelete}
+      >
+        {courseToDelete && (
+          <div className="text-sm text-muted-foreground">
+            <p>
+              Course: <span className="font-medium text-foreground">&quot;{courseToDelete.title}&quot;</span>
+            </p>
+            {courseToDelete.description && (
+              <p className="text-xs mt-1 line-clamp-2">{courseToDelete.description}</p>
+            )}
+          </div>
+        )}
+      </ConfirmDeleteDialog>
     </div>
   );
 }

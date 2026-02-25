@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { coursesApi } from "@/lib/api";
-import { ApiError } from "@/lib/api";
+import { ConfirmDeleteDialog } from "@/components/courses";
+import { coursesApi, ApiError } from "@/lib/api";
 
 type Visibility = "public" | "private";
 type Status = "draft" | "published" | "archived";
@@ -27,6 +27,7 @@ export default function CourseSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
 
@@ -78,12 +79,13 @@ export default function CourseSettingsPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!token || !id || !confirm("Delete this course? This cannot be undone.")) return;
+  const handleConfirmDelete = async () => {
+    if (!token || !id) return;
     setError("");
     setDeleting(true);
     try {
       await coursesApi.delete(token, id);
+      setShowDeleteDialog(false);
       router.push("/dashboard/courses");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to delete");
@@ -185,11 +187,34 @@ export default function CourseSettingsPage() {
 
         <div className="mt-10 pt-8 border-t">
           <h2 className="text-sm font-medium text-foreground mb-3">Danger zone</h2>
-          <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-            {deleting ? "Deleting..." : "Delete course"}
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteDialog(true)}
+            disabled={deleting}
+          >
+            Delete course
           </Button>
         </div>
       </div>
+
+      <ConfirmDeleteDialog
+        open={showDeleteDialog}
+        title="Delete course"
+        description="This will permanently delete the course and all its modules, pages, and sections. This cannot be undone."
+        confirmLabel="Delete course"
+        loading={deleting}
+        onCancel={() => setShowDeleteDialog(false)}
+        onConfirm={handleConfirmDelete}
+      >
+        <div className="text-sm text-muted-foreground">
+          <p>
+            Course: <span className="font-medium text-foreground">&quot;{title || "Untitled"}&quot;</span>
+          </p>
+          {description && (
+            <p className="text-xs mt-1 line-clamp-2">{description}</p>
+          )}
+        </div>
+      </ConfirmDeleteDialog>
     </div>
   );
 }

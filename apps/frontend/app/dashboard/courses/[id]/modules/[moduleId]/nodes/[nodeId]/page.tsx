@@ -16,6 +16,7 @@ import {
   createEmptySection,
   sectionSummary,
   SELECT_CLASS,
+  ConfirmDeleteDialog,
 } from "@/components/courses";
 import {
   ApiError,
@@ -43,6 +44,7 @@ export default function NodeEditorPage() {
 
   const [sections, setSections] = useState<SectionDTO[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [sectionToDelete, setSectionToDelete] = useState<SectionDTO | null>(null);
   const [savingSections, setSavingSections] = useState(false);
   const [savedSections, setSavedSections] = useState(false);
   const [showTypePicker, setShowTypePicker] = useState(false);
@@ -122,10 +124,20 @@ export default function NodeEditorPage() {
     setSavedSections(false);
   };
 
-  const handleDeleteSection = (id: string) => {
+  const performDeleteSection = (id: string) => {
     setSections((prev) => prev.filter((s) => s.id !== id));
     if (editingId === id) setEditingId(null);
     setSavedSections(false);
+  };
+
+  const handleRequestDeleteSection = (section: SectionDTO) => {
+    setSectionToDelete(section);
+  };
+
+  const handleConfirmDeleteSection = () => {
+    if (!sectionToDelete) return;
+    performDeleteSection(sectionToDelete.id);
+    setSectionToDelete(null);
   };
 
   const handleSectionChange = (updated: SectionDTO) => {
@@ -328,7 +340,7 @@ export default function NodeEditorPage() {
                     variant="ghost"
                     size="sm"
                     className="text-destructive hover:text-destructive"
-                    onClick={() => handleDeleteSection(section.id)}
+                    onClick={() => handleRequestDeleteSection(section)}
                   >
                     Delete
                   </Button>
@@ -353,6 +365,26 @@ export default function NodeEditorPage() {
           {savedSections && <span className="text-success text-xs">Saved.</span>}
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={!!sectionToDelete}
+        title="Delete section"
+        description="This will remove the selected section from this page."
+        confirmLabel="Delete section"
+        onCancel={() => setSectionToDelete(null)}
+        onConfirm={handleConfirmDeleteSection}
+      >
+        {sectionToDelete && (
+          <div className="text-sm text-muted-foreground space-y-1">
+            <p>
+              Type: <span className="font-medium text-foreground">{sectionToDelete.type}</span>
+            </p>
+            <p className="text-xs">
+              Summary: {sectionSummary(sectionToDelete)}
+            </p>
+          </div>
+        )}
+      </ConfirmDeleteDialog>
     </div>
   );
 }

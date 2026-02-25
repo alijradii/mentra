@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { NodeListItem } from "@/components/courses/node-list-item";
+import { ConfirmDeleteDialog, sectionSummary } from "@/components/courses";
 import { modulesApi, nodesApi, type ModuleDTO, type NodeDTO, ApiError } from "@/lib/api";
 
 type ModuleStatus = "draft" | "published" | "archived";
@@ -40,6 +41,7 @@ export default function ModuleDetailPage() {
   const [creating, setCreating] = useState(false);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [nodeToDelete, setNodeToDelete] = useState<NodeDTO | null>(null);
 
   const [savedOrder, setSavedOrder] = useState(true);
   const [savingOrder, setSavingOrder] = useState(false);
@@ -113,8 +115,16 @@ export default function ModuleDetailPage() {
     }
   };
 
-  const handleDeleteNode = async (nodeId: string) => {
-    if (!token || !confirm("Delete this node and all its sections?")) return;
+  const handleRequestDeleteNode = (nodeId: string) => {
+    const node = nodes.find((n) => n._id === nodeId) ?? null;
+    if (node) {
+      setNodeToDelete(node);
+    }
+  };
+
+  const handleConfirmDeleteNode = async () => {
+    if (!token || !nodeToDelete) return;
+    const nodeId = nodeToDelete._id;
     setDeletingId(nodeId);
     setError("");
     try {
@@ -124,6 +134,7 @@ export default function ModuleDetailPage() {
       setError(err instanceof ApiError ? err.message : "Failed to delete node");
     } finally {
       setDeletingId(null);
+      setNodeToDelete(null);
     }
   };
 
@@ -302,13 +313,45 @@ export default function ModuleDetailPage() {
               courseId={courseId}
               moduleId={moduleId}
               deletingId={deletingId}
-              onDelete={handleDeleteNode}
+              onDelete={handleRequestDeleteNode}
               onMoveUp={() => moveNode(idx, -1)}
               onMoveDown={() => moveNode(idx, 1)}
             />
           ))}
         </ul>
       )}
+
+      <ConfirmDeleteDialog
+        open={!!nodeToDelete}
+        title="Delete page"
+        description="This will permanently delete the selected page and its sections."
+        confirmLabel="Delete page"
+        loading={!!(nodeToDelete && deletingId === nodeToDelete._id)}
+        onCancel={() => setNodeToDelete(null)}
+        onConfirm={handleConfirmDeleteNode}
+      >
+        {nodeToDelete && (
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>
+              Page: <span className="font-medium text-foreground">"{nodeToDelete.title}"</span>
+            </p>
+            <p className="text-xs">
+              It currently has {nodeToDelete.sections.length} section
+              {nodeToDelete.sections.length === 1 ? "" : "s"}.
+            </p>
+            {nodeToDelete.sections.length > 0 && (
+              <ul className="text-xs list-disc pl-5 space-y-0.5 mt-1">
+                {nodeToDelete.sections.slice(0, 5).map((s) => (
+                  <li key={s.id}>{sectionSummary(s)}</li>
+                ))}
+                {nodeToDelete.sections.length > 5 && (
+                  <li>…and {nodeToDelete.sections.length - 5} more</li>
+                )}
+              </ul>
+            )}
+          </div>
+        )}
+      </ConfirmDeleteDialog>
     </div>
   );
 }

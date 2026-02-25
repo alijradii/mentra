@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ModuleListItem } from "@/components/courses/module-list-item";
+import { ConfirmDeleteDialog } from "@/components/courses";
 import { coursesApi, modulesApi, type CourseDTO, type ModuleDTO, ApiError } from "@/lib/api";
 
 export default function CourseDetailPage() {
@@ -26,6 +27,7 @@ export default function CourseDetailPage() {
   const [creating, setCreating] = useState(false);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [moduleToDelete, setModuleToDelete] = useState<ModuleDTO | null>(null);
 
   const [savedOrder, setSavedOrder] = useState(true);
   const [savingOrder, setSavingOrder] = useState(false);
@@ -74,8 +76,16 @@ export default function CourseDetailPage() {
     }
   };
 
-  const handleDeleteModule = async (moduleId: string) => {
-    if (!token || !confirm("Delete this module and all its nodes?")) return;
+  const handleRequestDeleteModule = (moduleId: string) => {
+    const mod = modules.find((m) => m._id === moduleId) ?? null;
+    if (mod) {
+      setModuleToDelete(mod);
+    }
+  };
+
+  const handleConfirmDeleteModule = async () => {
+    if (!token || !moduleToDelete) return;
+    const moduleId = moduleToDelete._id;
     setDeletingId(moduleId);
     setError("");
     try {
@@ -85,6 +95,7 @@ export default function CourseDetailPage() {
       setError(err instanceof ApiError ? err.message : "Failed to delete module");
     } finally {
       setDeletingId(null);
+      setModuleToDelete(null);
     }
   };
 
@@ -195,7 +206,7 @@ export default function CourseDetailPage() {
         </form>
       )}
 
-      {modules.length === 0 && !showNewModule ? (
+          {modules.length === 0 && !showNewModule ? (
         <p className="text-muted-foreground text-sm">No modules yet. Add one to get started.</p>
       ) : (
         <ul className="space-y-2">
@@ -207,13 +218,36 @@ export default function CourseDetailPage() {
               total={modules.length}
               courseId={id}
               deletingId={deletingId}
-              onDelete={handleDeleteModule}
+                  onDelete={handleRequestDeleteModule}
               onMoveUp={() => moveModule(idx, -1)}
               onMoveDown={() => moveModule(idx, 1)}
             />
           ))}
         </ul>
       )}
+
+      <ConfirmDeleteDialog
+        open={!!moduleToDelete}
+        title="Delete module"
+        description="This will permanently delete the selected module and its pages."
+        confirmLabel="Delete module"
+        loading={!!(moduleToDelete && deletingId === moduleToDelete._id)}
+        onCancel={() => setModuleToDelete(null)}
+        onConfirm={handleConfirmDeleteModule}
+      >
+        {moduleToDelete && (
+          <div className="text-sm text-muted-foreground space-y-1">
+            <p>
+              Module: <span className="font-medium text-foreground">"{moduleToDelete.title}"</span>
+            </p>
+            <p className="text-xs">
+              It currently has {moduleToDelete.nodes.length} page
+              {moduleToDelete.nodes.length === 1 ? "" : "s"}. All of them (and their sections) will be
+              deleted.
+            </p>
+          </div>
+        )}
+      </ConfirmDeleteDialog>
     </div>
   );
 }
