@@ -23,6 +23,8 @@ import {
   nodesApi,
   type SectionDTO,
   type SectionType,
+  type NodeType,
+  type NodeSettingsDTO,
 } from "@/lib/api";
 
 type NodeStatus = "draft" | "published" | "archived";
@@ -37,7 +39,9 @@ export default function NodeEditorPage() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [nodeType, setNodeType] = useState<NodeType>("lesson");
   const [status, setStatus] = useState<NodeStatus>("draft");
+  const [settings, setSettings] = useState<NodeSettingsDTO>({});
   const [loadingNode, setLoadingNode] = useState(true);
   const [savingMeta, setSavingMeta] = useState(false);
   const [savedMeta, setSavedMeta] = useState(false);
@@ -61,7 +65,9 @@ export default function NodeEditorPage() {
         if (!cancelled) {
           setTitle(res.data.title);
           setDescription(res.data.description ?? "");
+          setNodeType(res.data.type ?? "lesson");
           setStatus((res.data.status as NodeStatus) ?? "draft");
+          setSettings(res.data.settings ?? {});
           setSections(res.data.sections ?? []);
         }
       })
@@ -89,7 +95,9 @@ export default function NodeEditorPage() {
       await nodesApi.update(token, nodeId, {
         title: title.trim(),
         description: description.trim() || undefined,
+        type: nodeType,
         status,
+        settings: nodeType !== "lesson" ? settings : undefined,
       });
       setSavedMeta(true);
     } catch (err) {
@@ -227,9 +235,18 @@ export default function NodeEditorPage() {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             Page settings
           </h2>
-          <Button size="sm" variant="outline" onClick={() => setIsPreview(true)}>
-            Preview
-          </Button>
+          <div className="flex items-center gap-2">
+            {nodeType === "quiz" && (
+              <Button size="sm" variant="outline" asChild>
+                <Link href={`/dashboard/courses/${courseId}/modules/${moduleId}/nodes/${nodeId}/submissions`}>
+                  View submissions
+                </Link>
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={() => setIsPreview(true)}>
+              Preview
+            </Button>
+          </div>
         </div>
         <form onSubmit={handleSaveMeta} className="space-y-3">
           <div>
@@ -255,6 +272,89 @@ export default function NodeEditorPage() {
               className="mt-1"
             />
           </div>
+          <div>
+            <Label htmlFor="node-type">Node type</Label>
+            <select
+              id="node-type"
+              value={nodeType}
+              onChange={(e) => { setNodeType(e.target.value as NodeType); setSavedMeta(false); }}
+              className={`mt-1 ${SELECT_CLASS}`}
+            >
+              <option value="lesson">Lesson</option>
+              <option value="practice">Practice</option>
+              <option value="quiz">Quiz</option>
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              {nodeType === "lesson" && "Passive learning content. Students read and mark as complete."}
+              {nodeType === "practice" && "Interactive questions with immediate feedback. Students can retry unlimited times."}
+              {nodeType === "quiz" && "Graded assessment. Answers are submitted for mentor review."}
+            </p>
+          </div>
+          {nodeType === "quiz" && (
+            <div className="space-y-3 border rounded-lg p-4 bg-background">
+              <h3 className="text-sm font-semibold text-muted-foreground">Quiz settings</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="max-attempts">Max attempts</Label>
+                  <Input
+                    id="max-attempts"
+                    type="number"
+                    min={1}
+                    value={settings.maxAttempts ?? 1}
+                    onChange={(e) => { setSettings({ ...settings, maxAttempts: parseInt(e.target.value) || 1 }); setSavedMeta(false); }}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="time-limit">Time limit (minutes)</Label>
+                  <Input
+                    id="time-limit"
+                    type="number"
+                    min={0}
+                    placeholder="No limit"
+                    value={settings.timeLimit ?? ""}
+                    onChange={(e) => { setSettings({ ...settings, timeLimit: e.target.value ? parseInt(e.target.value) : undefined }); setSavedMeta(false); }}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="passing-score">Passing score (%)</Label>
+                  <Input
+                    id="passing-score"
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder="None"
+                    value={settings.passingScore ?? ""}
+                    onChange={(e) => { setSettings({ ...settings, passingScore: e.target.value ? parseInt(e.target.value) : undefined }); setSavedMeta(false); }}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="show-answers">Show correct answers</Label>
+                  <select
+                    id="show-answers"
+                    value={settings.showCorrectAnswers ?? "after-grading"}
+                    onChange={(e) => { setSettings({ ...settings, showCorrectAnswers: e.target.value as NodeSettingsDTO["showCorrectAnswers"] }); setSavedMeta(false); }}
+                    className={`mt-1 ${SELECT_CLASS}`}
+                  >
+                    <option value="after-grading">After grading</option>
+                    <option value="never">Never</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="due-date">Due date</Label>
+                <Input
+                  id="due-date"
+                  type="datetime-local"
+                  value={settings.dueDate ? new Date(settings.dueDate).toISOString().slice(0, 16) : ""}
+                  onChange={(e) => { setSettings({ ...settings, dueDate: e.target.value || undefined }); setSavedMeta(false); }}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+          )}
           <div>
             <Label htmlFor="node-status">Status</Label>
             <select

@@ -53,6 +53,20 @@ import {
   deleteNode,
 } from "../controllers/node.controller.js";
 
+// Submission controllers
+import {
+  startSubmission,
+  saveAnswers,
+  submitSubmission,
+  getMySubmissions,
+  getSubmission,
+  listNodeSubmissions,
+  getMentorSubmission,
+  gradeSubmission,
+  releaseSubmission,
+  releaseAllSubmissions,
+} from "../controllers/submission.controller.js";
+
 const router = Router();
 
 // ==================== Course Routes ====================
@@ -839,5 +853,21 @@ router.patch("/nodes/:id", authenticate, updateNode);
  *         description: Server error
  */
 router.delete("/nodes/:id", authenticate, deleteNode);
+
+// ==================== Submission Routes (Student) ====================
+
+router.post("/nodes/:nodeId/submissions", authenticate, startSubmission);
+router.get("/nodes/:nodeId/submissions/mine", authenticate, getMySubmissions);
+router.get("/nodes/:nodeId/submissions/:submissionId", authenticate, getSubmission);
+router.patch("/nodes/:nodeId/submissions/:submissionId", authenticate, saveAnswers);
+router.post("/nodes/:nodeId/submissions/:submissionId/submit", authenticate, submitSubmission);
+
+// ==================== Submission Routes (Mentor) ====================
+
+router.get("/:courseId/nodes/:nodeId/submissions", authenticate, listNodeSubmissions);
+router.get("/:courseId/submissions/:submissionId", authenticate, getMentorSubmission);
+router.patch("/:courseId/submissions/:submissionId/grade", authenticate, gradeSubmission);
+router.post("/:courseId/submissions/:submissionId/release", authenticate, releaseSubmission);
+router.post("/:courseId/nodes/:nodeId/submissions/release-all", authenticate, releaseAllSubmissions);
 
 export default router;

@@ -75,6 +75,7 @@ export function LessonSidebar({
                                     {nodes.map(n => {
                                         const active = n._id === currentNodeId;
                                         const done = completedNodes.has(n._id);
+                                        const nodeType = (n as any).type ?? "lesson";
                                         return (
                                             <li key={n._id}>
                                                 <button
@@ -110,9 +111,18 @@ export function LessonSidebar({
                                                             />
                                                         </svg>
                                                     ) : (
-                                                        <span className="w-3.5 h-3.5 shrink-0 rounded-full border-2 border-border" />
+                                                        <NodeTypeIcon type={nodeType} />
                                                     )}
                                                     <span className="truncate">{n.title}</span>
+                                                    {nodeType !== "lesson" && (
+                                                        <span className={`ml-auto text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                                                            nodeType === "practice"
+                                                                ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+                                                                : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                                                        }`}>
+                                                            {nodeType === "practice" ? "Practice" : "Quiz"}
+                                                        </span>
+                                                    )}
                                                 </button>
                                             </li>
                                         );
@@ -125,4 +135,25 @@ export function LessonSidebar({
             </aside>
         </>
     );
+}
+
+function NodeTypeIcon({ type }: { type: string }) {
+    if (type === "practice") {
+        // Repeat/refresh icon
+        return (
+            <svg className="w-3.5 h-3.5 shrink-0 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5M5.7 15.3A8 8 0 0118.3 8.7M18.3 8.7L20 9M5.7 15.3L4 15" />
+            </svg>
+        );
+    }
+    if (type === "quiz") {
+        // Clipboard check icon
+        return (
+            <svg className="w-3.5 h-3.5 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+        );
+    }
+    // Default: lesson (open circle)
+    return <span className="w-3.5 h-3.5 shrink-0 rounded-full border-2 border-border" />;
 }

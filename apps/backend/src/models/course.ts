@@ -1,11 +1,18 @@
 import { Collection, ObjectId, type Db } from "mongodb";
-import type { Course as CourseBase, Enrollment as EnrollmentBase, Module as ModuleBase, Node as NodeBase } from "shared";
+import type {
+  Course as CourseBase,
+  Enrollment as EnrollmentBase,
+  Module as ModuleBase,
+  Node as NodeBase,
+  NodeSubmission as NodeSubmissionBase,
+} from "shared";
 
 // MongoDB-specific type aliases with ObjectId
 export type Course = CourseBase<ObjectId>;
 export type Module = ModuleBase<ObjectId>;
 export type Node = NodeBase<ObjectId>;
 export type Enrollment = EnrollmentBase<ObjectId>;
+export type NodeSubmission = NodeSubmissionBase<ObjectId>;
 
 /**
  * Collection names
@@ -15,6 +22,7 @@ export const COLLECTIONS = {
   MODULES: "modules",
   NODES: "nodes",
   ENROLLMENTS: "enrollments",
+  SUBMISSIONS: "submissions",
 } as const;
 
 /**
@@ -34,6 +42,10 @@ export function getNodeCollection(db: Db): Collection<Node> {
 
 export function getEnrollmentCollection(db: Db): Collection<Enrollment> {
   return db.collection<Enrollment>(COLLECTIONS.ENROLLMENTS);
+}
+
+export function getSubmissionCollection(db: Db): Collection<NodeSubmission> {
+  return db.collection<NodeSubmission>(COLLECTIONS.SUBMISSIONS);
 }
 
 /**
@@ -84,6 +96,16 @@ export async function createCourseIndexes(db: Db): Promise<void> {
     { key: { userId: 1, status: 1 } },
     { key: { courseId: 1, status: 1 } },
     { key: { lastAccessedAt: -1 } },
+    { key: { createdAt: -1 } },
+  ]);
+
+  // Submission indexes
+  const submissions = getSubmissionCollection(db);
+  await submissions.createIndexes([
+    { key: { nodeId: 1, userId: 1 } },
+    { key: { courseId: 1, userId: 1 } },
+    { key: { nodeId: 1, status: 1 } },
+    { key: { courseId: 1, nodeId: 1, status: 1 } },
     { key: { createdAt: -1 } },
   ]);
 
@@ -434,5 +456,85 @@ export class CourseModel {
       }
     );
     return result.modifiedCount > 0;
+  }
+
+  // ── Submissions ──
+
+  async createSubmission(
+    data: Omit<NodeSubmission, "_id" | "createdAt" | "updatedAt">
+  ): Promise<NodeSubmission> {
+    const collection = getSubmissionCollection(this.db);
+    const now = new Date();
+    const submission: NodeSubmission = {
+      _id: new ObjectId(),
+      ...data,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await collection.insertOne(submission);
+    return submission;
+  }
+
+  async getSubmissionById(id: ObjectId | string): Promise<NodeSubmission | null> {
+    const collection = getSubmissionCollection(this.db);
+    const _id = typeof id === "string" ? new ObjectId(id) : id;
+    return collection.findOne({ _id });
+  }
+
+  async getSubmissionsByNodeAndUser(
+    nodeId: ObjectId | string,
+    userId: ObjectId | string
+  ): Promise<NodeSubmission[]> {
+    const collection = getSubmissionCollection(this.db);
+    const _nodeId = typeof nodeId === "string" ? new ObjectId(nodeId) : nodeId;
+    const _userId = typeof userId === "string" ? new ObjectId(userId) : userId;
+    return collection
+      .find({ nodeId: _nodeId, userId: _userId })
+      .sort({ attemptNumber: -1 })
+      .toArray();
+  }
+
+  async getSubmissionsByNode(
+    nodeId: ObjectId | string,
+    statusFilter?: string
+  ): Promise<NodeSubmission[]> {
+    const collection = getSubmissionCollection(this.db);
+    const _nodeId = typeof nodeId === "string" ? new ObjectId(nodeId) : nodeId;
+    const filter: Record<string, unknown> = { nodeId: _nodeId };
+    if (statusFilter) filter.status = statusFilter;
+    return collection.find(filter).sort({ createdAt: -1 }).toArray();
+  }
+
+  async updateSubmission(
+    id: ObjectId | string,
+    updates: Partial<Omit<NodeSubmission, "_id" | "createdAt">>
+  ): Promise<boolean> {
+    const collection = getSubmissionCollection(this.db);
+    const _id = typeof id === "string" ? new ObjectId(id) : id;
+    const result = await collection.updateOne(
+      { _id },
+      { $set: { ...updates, updatedAt: new Date() } }
+    );
+    return result.modifiedCount > 0;
+  }
+
+  async countSubmissions(
+    nodeId: ObjectId | string,
+    userId: ObjectId | string
+  ): Promise<number> {
+    const collection = getSubmissionCollection(this.db);
+    const _nodeId = typeof nodeId === "string" ? new ObjectId(nodeId) : nodeId;
+    const _userId = typeof userId === "string" ? new ObjectId(userId) : userId;
+    return collection.countDocuments({ nodeId: _nodeId, userId: _userId });
+  }
+
+  async bulkReleaseSubmissions(nodeId: ObjectId | string): Promise<number> {
+    const collection = getSubmissionCollection(this.db);
+    const _nodeId = typeof nodeId === "string" ? new ObjectId(nodeId) : nodeId;
+    const result = await collection.updateMany(
+      { nodeId: _nodeId, status: "graded" },
+      { $set: { status: "released", updatedAt: new Date() } }
+    );
+    return result.modifiedCount;
   }
 }

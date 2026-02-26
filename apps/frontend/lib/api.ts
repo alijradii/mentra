@@ -302,17 +302,71 @@ export type SectionDTO =
   | CodeSectionDTO
   | QuizSectionDTO;
 
+export type NodeType = "lesson" | "practice" | "quiz";
+
+export interface NodeSettingsDTO {
+  maxAttempts?: number;
+  timeLimit?: number;
+  dueDate?: string;
+  showCorrectAnswers?: "immediately" | "after-grading" | "never";
+  shuffleQuestions?: boolean;
+  shuffleOptions?: boolean;
+  passingScore?: number;
+}
+
 export interface NodeDTO {
   _id: string;
   moduleId: string;
   title: string;
   description?: string;
+  type?: NodeType;
   order: number;
   status: string;
   sections: SectionDTO[];
+  settings?: NodeSettingsDTO;
   estimatedDuration?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface QuestionAnswerDTO {
+  sectionId: string;
+  answer: unknown;
+  isCorrect?: boolean;
+  autoScore?: number;
+  maxScore?: number;
+}
+
+export interface GradeOverrideDTO {
+  sectionId: string;
+  score: number;
+  feedback?: string;
+}
+
+export interface SubmissionGradingDTO {
+  gradedBy: string;
+  overrides: GradeOverrideDTO[];
+  overallFeedback?: string;
+  finalScore: number;
+  gradedAt: string;
+}
+
+export interface NodeSubmissionDTO {
+  _id: string;
+  nodeId: string;
+  userId: string;
+  courseId: string;
+  attemptNumber: number;
+  answers: QuestionAnswerDTO[];
+  autoScore?: number;
+  maxScore: number;
+  grading?: SubmissionGradingDTO;
+  status: "in-progress" | "submitted" | "graded" | "released";
+  startedAt: string;
+  submittedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  user?: { _id: string; name: string; avatar?: string; email?: string };
 }
 
 export const coursesApi = {
@@ -436,7 +490,14 @@ export const nodesApi = {
   async update(
     token: string,
     id: string,
-    input: { title?: string; description?: string; status?: string; sections?: SectionDTO[] }
+    input: {
+      title?: string;
+      description?: string;
+      type?: NodeType;
+      status?: string;
+      sections?: SectionDTO[];
+      settings?: NodeSettingsDTO;
+    }
   ): Promise<{ success: true; message: string }> {
     return fetchWithAuth(token, `/api/courses/nodes/${id}`, {
       method: "PATCH",
@@ -447,6 +508,109 @@ export const nodesApi = {
   async delete(token: string, id: string): Promise<{ success: true; message: string }> {
     return fetchWithAuth(token, `/api/courses/nodes/${id}`, {
       method: "DELETE",
+    });
+  },
+};
+
+export const submissionsApi = {
+  async start(
+    token: string,
+    nodeId: string,
+    courseId: string
+  ): Promise<{ success: true; data: NodeSubmissionDTO }> {
+    return fetchWithAuth(token, `/api/courses/nodes/${nodeId}/submissions`, {
+      method: "POST",
+      body: JSON.stringify({ courseId }),
+    });
+  },
+
+  async saveAnswers(
+    token: string,
+    nodeId: string,
+    submissionId: string,
+    answers: QuestionAnswerDTO[]
+  ): Promise<{ success: true; message: string }> {
+    return fetchWithAuth(token, `/api/courses/nodes/${nodeId}/submissions/${submissionId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ answers }),
+    });
+  },
+
+  async submit(
+    token: string,
+    nodeId: string,
+    submissionId: string,
+    answers?: QuestionAnswerDTO[]
+  ): Promise<{ success: true; data: NodeSubmissionDTO }> {
+    return fetchWithAuth(token, `/api/courses/nodes/${nodeId}/submissions/${submissionId}/submit`, {
+      method: "POST",
+      body: JSON.stringify(answers ? { answers } : {}),
+    });
+  },
+
+  async getMine(
+    token: string,
+    nodeId: string
+  ): Promise<{ success: true; data: NodeSubmissionDTO[] }> {
+    return fetchWithAuth(token, `/api/courses/nodes/${nodeId}/submissions/mine`);
+  },
+
+  async getById(
+    token: string,
+    nodeId: string,
+    submissionId: string
+  ): Promise<{ success: true; data: NodeSubmissionDTO }> {
+    return fetchWithAuth(token, `/api/courses/nodes/${nodeId}/submissions/${submissionId}`);
+  },
+
+  // Mentor endpoints
+  async listForNode(
+    token: string,
+    courseId: string,
+    nodeId: string,
+    status?: string
+  ): Promise<{ success: true; data: NodeSubmissionDTO[] }> {
+    const qs = status ? `?status=${status}` : "";
+    return fetchWithAuth(token, `/api/courses/${courseId}/nodes/${nodeId}/submissions${qs}`);
+  },
+
+  async getMentorView(
+    token: string,
+    courseId: string,
+    submissionId: string
+  ): Promise<{ success: true; data: NodeSubmissionDTO }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/submissions/${submissionId}`);
+  },
+
+  async grade(
+    token: string,
+    courseId: string,
+    submissionId: string,
+    input: { overrides: GradeOverrideDTO[]; overallFeedback?: string }
+  ): Promise<{ success: true; data: NodeSubmissionDTO }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/submissions/${submissionId}/grade`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  },
+
+  async release(
+    token: string,
+    courseId: string,
+    submissionId: string
+  ): Promise<{ success: true; data: NodeSubmissionDTO }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/submissions/${submissionId}/release`, {
+      method: "POST",
+    });
+  },
+
+  async releaseAll(
+    token: string,
+    courseId: string,
+    nodeId: string
+  ): Promise<{ success: true; message: string }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/nodes/${nodeId}/submissions/release-all`, {
+      method: "POST",
     });
   },
 };

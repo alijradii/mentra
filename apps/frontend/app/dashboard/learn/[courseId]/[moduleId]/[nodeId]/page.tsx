@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SectionPreview } from "@/components/section-preview";
 import { LessonSidebar } from "@/components/learn/lesson-sidebar";
 import { LessonNavigation } from "@/components/learn/lesson-navigation";
+import { PracticePlayer } from "@/components/learn/practice-player";
+import { QuizPlayer } from "@/components/learn/quiz-player";
 import type { FlatNode } from "@/components/learn/types";
 import {
   coursesApi,
@@ -38,6 +40,7 @@ export default function LessonPlayerPage() {
   const [marking, setMarking] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const nodeType = node?.type ?? "lesson";
   const completedNodes = new Set(enrollment?.progress.completedNodes ?? []);
   const isDone = completedNodes.has(nodeId);
 
@@ -167,9 +170,18 @@ export default function LessonPlayerPage() {
             {node?.description && (
               <p className="text-muted-foreground mt-2 text-sm">{node.description}</p>
             )}
+            {nodeType !== "lesson" && (
+              <span className={`inline-block mt-2 text-xs font-medium px-2 py-0.5 rounded-full ${nodeType === "practice" ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" : "bg-amber-500/15 text-amber-600 dark:text-amber-400"}`}>
+                {nodeType === "practice" ? "Practice" : "Quiz"}
+              </span>
+            )}
           </div>
 
-          {(node?.sections?.length ?? 0) === 0 ? (
+          {nodeType === "practice" && node && token ? (
+            <PracticePlayer node={node} courseId={courseId} token={token} />
+          ) : nodeType === "quiz" && node && token ? (
+            <QuizPlayer node={node} courseId={courseId} token={token} />
+          ) : (node?.sections?.length ?? 0) === 0 ? (
             <p className="text-muted-foreground/80 italic text-sm">This lesson has no content yet.</p>
           ) : (
             <div className="space-y-8">
