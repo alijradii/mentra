@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCourseWS } from "@/contexts/CourseWSContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ type Status = "draft" | "published" | "archived";
 
 export default function CourseSettingsPage() {
   const { user, token } = useAuth();
+  const { editsLocked } = useCourseWS();
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
@@ -120,10 +122,16 @@ export default function CourseSettingsPage() {
 
       <div className="flex items-center gap-3 mb-6">
         <h1 className="text-2xl font-bold text-foreground">Course settings</h1>
-        {autoSave.status === "saving" && <span className="text-xs text-muted-foreground">Saving...</span>}
-        {autoSave.status === "saved" && <span className="text-xs text-success">All changes saved</span>}
-        {autoSave.status === "error" && <span className="text-xs text-destructive">Error saving</span>}
+        {!editsLocked && autoSave.status === "saving" && <span className="text-xs text-muted-foreground">Saving...</span>}
+        {!editsLocked && autoSave.status === "saved" && <span className="text-xs text-success">All changes saved</span>}
+        {!editsLocked && autoSave.status === "error" && <span className="text-xs text-destructive">Error saving</span>}
       </div>
+
+      {editsLocked && (
+        <div className="mb-4 px-4 py-2.5 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-200 text-sm border border-amber-500/30">
+          Edits are locked while the AI agent is working. You can still view settings.
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
@@ -141,6 +149,7 @@ export default function CourseSettingsPage() {
               required
               maxLength={200}
               className="mt-1"
+              disabled={editsLocked}
             />
           </div>
           <div>
@@ -153,6 +162,7 @@ export default function CourseSettingsPage() {
               maxLength={5000}
               rows={4}
               className="mt-1"
+              disabled={editsLocked}
             />
           </div>
           <div>
@@ -162,6 +172,7 @@ export default function CourseSettingsPage() {
               value={visibility}
               onChange={(e) => { setVisibility(e.target.value as Visibility); triggerSave(); }}
               className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              disabled={editsLocked}
             >
               <option value="public">Public</option>
               <option value="private">Private</option>
@@ -174,6 +185,7 @@ export default function CourseSettingsPage() {
               value={status}
               onChange={(e) => { setStatus(e.target.value as Status); triggerSave(); }}
               className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              disabled={editsLocked}
             >
               <option value="draft">Draft</option>
               <option value="published">Published</option>
@@ -191,7 +203,7 @@ export default function CourseSettingsPage() {
             <Button
               variant="destructive"
               onClick={() => setShowDeleteDialog(true)}
-              disabled={deleting}
+              disabled={deleting || editsLocked}
             >
               Delete course
             </Button>

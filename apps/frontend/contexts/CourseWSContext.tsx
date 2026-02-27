@@ -32,6 +32,11 @@ interface CourseWSContextValue {
   connected: boolean;
   /** Send a chat message to all mentors in the course room (ephemeral, not persisted) */
   sendChat: (text: string) => void;
+  /**
+   * When true, mentors should not make edits (e.g. while the AI agent is working).
+   * Used to avoid race conditions. Toggled later by the AI agent; for now frontend-only.
+   */
+  editsLocked: boolean;
 }
 
 const CourseWSContext = createContext<CourseWSContextValue | null>(null);
@@ -48,6 +53,7 @@ const RECONNECT_DELAY_MS = 3000;
 export function CourseWSProvider({ courseId, token, userId, children }: CourseWSProviderProps) {
   const [presenceList, setPresenceList] = useState<CourseWSActor[]>([]);
   const [connected, setConnected] = useState(false);
+  const [editsLocked, setEditsLocked] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
   const handlersRef = useRef<Map<CourseWSEventName, Set<EventHandler>>>(new Map());
@@ -152,7 +158,7 @@ export function CourseWSProvider({ courseId, token, userId, children }: CourseWS
   }, []);
 
   return (
-    <CourseWSContext.Provider value={{ presenceList, on, connected, sendChat }}>
+    <CourseWSContext.Provider value={{ presenceList, on, connected, sendChat, editsLocked }}>
       {children}
     </CourseWSContext.Provider>
   );

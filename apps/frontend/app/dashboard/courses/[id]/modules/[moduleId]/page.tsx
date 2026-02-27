@@ -34,7 +34,7 @@ function ModuleDetailContent() {
   const courseId = params?.id as string;
   const moduleId = params?.moduleId as string;
 
-  const { on } = useCourseWS();
+  const { on, editsLocked } = useCourseWS();
 
   const [module, setModule] = useState<ModuleDTO | null>(null);
   const [nodes, setNodes] = useState<NodeDTO[]>([]);
@@ -299,6 +299,12 @@ function ModuleDetailContent() {
         <span className="text-foreground font-medium">{module?.title ?? "Module"}</span>
       </div>
 
+      {editsLocked && (
+        <div className="mb-4 px-4 py-2.5 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-200 text-sm border border-amber-500/30">
+          Edits are locked while the AI agent is working. You can still view the module.
+        </div>
+      )}
+
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
       )}
@@ -309,9 +315,9 @@ function ModuleDetailContent() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Edit module</h2>
-                {metaAutoSave.status === "saving" && <span className="text-xs text-muted-foreground">Saving...</span>}
-                {metaAutoSave.status === "saved" && <span className="text-xs text-success">Saved</span>}
-                {metaAutoSave.status === "error" && <span className="text-xs text-destructive">Error saving</span>}
+                {!editsLocked && metaAutoSave.status === "saving" && <span className="text-xs text-muted-foreground">Saving...</span>}
+                {!editsLocked && metaAutoSave.status === "saved" && <span className="text-xs text-success">Saved</span>}
+                {!editsLocked && metaAutoSave.status === "error" && <span className="text-xs text-destructive">Error saving</span>}
               </div>
               <Button type="button" variant="outline" size="sm" onClick={() => setEditing(false)}>
                 Done
@@ -327,6 +333,7 @@ function ModuleDetailContent() {
                 maxLength={200}
                 className="mt-1"
                 autoFocus
+                disabled={editsLocked}
               />
             </div>
             <div>
@@ -338,6 +345,7 @@ function ModuleDetailContent() {
                 maxLength={1000}
                 rows={2}
                 className="mt-1"
+                disabled={editsLocked}
               />
             </div>
             <div>
@@ -347,6 +355,7 @@ function ModuleDetailContent() {
                 value={editStatus}
                 onChange={(e) => { setEditStatus(e.target.value as ModuleStatus); triggerMetaSave(); }}
                 className={`mt-1 ${SELECT_CLASS}`}
+                disabled={editsLocked}
               >
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
@@ -367,7 +376,7 @@ function ModuleDetailContent() {
                 </span>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+            <Button variant="outline" size="sm" onClick={() => setEditing(true)} disabled={editsLocked}>
               Edit
             </Button>
           </div>
@@ -381,12 +390,12 @@ function ModuleDetailContent() {
           {orderSaveStatus === "saved" && <span className="text-xs text-success">Order saved</span>}
           {orderSaveStatus === "error" && <span className="text-xs text-destructive">Failed to save order</span>}
         </div>
-        <Button size="sm" onClick={() => setShowNewNode((v) => !v)}>
+        <Button size="sm" onClick={() => setShowNewNode((v) => !v)} disabled={editsLocked}>
           {showNewNode ? "Cancel" : "Add page"}
         </Button>
       </div>
 
-      {showNewNode && (
+      {showNewNode && !editsLocked && (
         <form
           onSubmit={handleCreateNode}
           className="mb-4 p-4 bg-card border rounded-lg flex gap-2 items-end"
@@ -426,6 +435,7 @@ function ModuleDetailContent() {
               onDelete={handleRequestDeleteNode}
               onMoveUp={() => moveNode(idx, -1)}
               onMoveDown={() => moveNode(idx, 1)}
+              editsLocked={editsLocked}
             />
           ))}
         </ul>

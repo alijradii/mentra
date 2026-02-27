@@ -45,6 +45,7 @@ interface SnapshotNodeProps {
   restoringId: string | null;
   onRestore: (id: string) => void;
   depth: number;
+  editsLocked?: boolean;
 }
 
 function SnapshotNodeRow({
@@ -53,6 +54,7 @@ function SnapshotNodeRow({
   restoringId,
   onRestore,
   depth,
+  editsLocked = false,
 }: SnapshotNodeProps) {
   const isCurrent = node.snapshot._id === currentSnapshotId;
   return (
@@ -96,7 +98,7 @@ function SnapshotNodeRow({
             size="sm"
             variant="outline"
             className="shrink-0"
-            disabled={restoringId === node.snapshot._id}
+            disabled={restoringId === node.snapshot._id || editsLocked}
             onClick={() => onRestore(node.snapshot._id)}
           >
             {restoringId === node.snapshot._id ? "Restoring…" : "Restore"}
@@ -117,6 +119,7 @@ function SnapshotNodeRow({
               restoringId={restoringId}
               onRestore={onRestore}
               depth={depth + 1}
+              editsLocked={editsLocked}
             />
           ))}
         </div>
@@ -132,6 +135,8 @@ interface SnapshotHistoryProps {
   isOwner: boolean;
   /** Called after a successful restore so parent can refresh data */
   onRestored?: () => void;
+  /** When true, create/restore snapshot actions are disabled (e.g. AI agent is editing) */
+  editsLocked?: boolean;
 }
 
 export function SnapshotHistory({
@@ -140,6 +145,7 @@ export function SnapshotHistory({
   currentSnapshotId,
   isOwner,
   onRestored,
+  editsLocked = false,
 }: SnapshotHistoryProps) {
   const [snapshots, setSnapshots] = useState<CourseSnapshotMetaDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -217,14 +223,14 @@ export function SnapshotHistory({
             Point-in-time captures of your course. Restore any snapshot to roll back.
           </p>
         </div>
-        {isOwner && (
+        {isOwner && !editsLocked && (
           <Button size="sm" onClick={() => setShowCreateForm((v) => !v)}>
             {showCreateForm ? "Cancel" : "Save snapshot"}
           </Button>
         )}
       </div>
 
-      {showCreateForm && isOwner && (
+      {showCreateForm && isOwner && !editsLocked && (
         <form
           onSubmit={handleCreate}
           className="p-4 border rounded-lg bg-card space-y-3"
@@ -304,6 +310,7 @@ export function SnapshotHistory({
               restoringId={restoringId}
               onRestore={handleRestore}
               depth={0}
+              editsLocked={editsLocked}
             />
           ))}
         </div>

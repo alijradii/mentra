@@ -18,6 +18,8 @@ interface Props {
   ownerId: string;
   /** True when the current user is also in mentorIds (not just the owner) */
   isMentor: boolean;
+  /** When true, add/remove mentor actions are disabled (e.g. AI agent is editing) */
+  editsLocked?: boolean;
 }
 
 function UserAvatar({ name, avatar }: { name: string; avatar?: string }) {
@@ -52,6 +54,7 @@ export function CourseMembersPanel({
   currentUserId,
   ownerId,
   isMentor,
+  editsLocked = false,
 }: Props) {
   const isOwner = currentUserId === ownerId;
   const isPrivileged = isOwner || isMentor;
@@ -148,7 +151,7 @@ export function CourseMembersPanel({
                     size="sm"
                     variant="ghost"
                     className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
-                    disabled={removingId === m._id}
+                    disabled={removingId === m._id || editsLocked}
                     onClick={() => handleRemoveMentor(m._id)}
                   >
                     {removingId === m._id ? "Removing…" : "Remove"}
@@ -163,7 +166,7 @@ export function CourseMembersPanel({
         )}
 
         {/* Add mentor form — owner only */}
-        {isOwner && (
+        {isOwner && !editsLocked && (
           <form onSubmit={handleAddMentor} className="mt-4 flex gap-2 items-start">
             <div className="flex-1">
               <Input

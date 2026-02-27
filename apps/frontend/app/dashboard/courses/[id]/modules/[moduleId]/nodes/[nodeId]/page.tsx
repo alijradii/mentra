@@ -50,7 +50,7 @@ function NodeEditorContent() {
   const moduleId = params?.moduleId as string;
   const nodeId = params?.nodeId as string;
 
-  const { on } = useCourseWS();
+  const { on, editsLocked } = useCourseWS();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -260,6 +260,12 @@ function NodeEditorContent() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {breadcrumb}
 
+      {editsLocked && (
+        <div className="mb-4 px-4 py-2.5 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-200 text-sm border border-amber-500/30">
+          Edits are locked while the AI agent is working. You can still view the page.
+        </div>
+      )}
+
       {error && <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>}
 
       <div className="bg-card border rounded-lg p-6 mb-8">
@@ -293,6 +299,7 @@ function NodeEditorContent() {
               required
               maxLength={200}
               className="mt-1"
+              disabled={editsLocked}
             />
           </div>
           <div>
@@ -305,6 +312,7 @@ function NodeEditorContent() {
               rows={2}
               placeholder="Optional short description"
               className="mt-1"
+              disabled={editsLocked}
             />
           </div>
           <div>
@@ -314,6 +322,7 @@ function NodeEditorContent() {
               value={nodeType}
               onChange={(e) => { setNodeType(e.target.value as NodeType); triggerMetaSave(); }}
               className={`mt-1 ${SELECT_CLASS}`}
+              disabled={editsLocked}
             >
               <option value="lesson">Lesson</option>
               <option value="practice">Practice</option>
@@ -338,6 +347,7 @@ function NodeEditorContent() {
                     value={settings.maxAttempts ?? 1}
                     onChange={(e) => { setSettings({ ...settings, maxAttempts: parseInt(e.target.value) || 1 }); triggerMetaSave(); }}
                     className="mt-1"
+                    disabled={editsLocked}
                   />
                 </div>
                 <div>
@@ -350,6 +360,7 @@ function NodeEditorContent() {
                     value={settings.timeLimit ?? ""}
                     onChange={(e) => { setSettings({ ...settings, timeLimit: e.target.value ? parseInt(e.target.value) : undefined }); triggerMetaSave(); }}
                     className="mt-1"
+                    disabled={editsLocked}
                   />
                 </div>
                 <div>
@@ -363,6 +374,7 @@ function NodeEditorContent() {
                     value={settings.passingScore ?? ""}
                     onChange={(e) => { setSettings({ ...settings, passingScore: e.target.value ? parseInt(e.target.value) : undefined }); triggerMetaSave(); }}
                     className="mt-1"
+                    disabled={editsLocked}
                   />
                 </div>
                 <div>
@@ -372,6 +384,7 @@ function NodeEditorContent() {
                     value={settings.showCorrectAnswers ?? "after-grading"}
                     onChange={(e) => { setSettings({ ...settings, showCorrectAnswers: e.target.value as NodeSettingsDTO["showCorrectAnswers"] }); triggerMetaSave(); }}
                     className={`mt-1 ${SELECT_CLASS}`}
+                    disabled={editsLocked}
                   >
                     <option value="after-grading">After grading</option>
                     <option value="never">Never</option>
@@ -386,6 +399,7 @@ function NodeEditorContent() {
                   value={settings.dueDate ? new Date(settings.dueDate).toISOString().slice(0, 16) : ""}
                   onChange={(e) => { setSettings({ ...settings, dueDate: e.target.value || undefined }); triggerMetaSave(); }}
                   className="mt-1"
+                  disabled={editsLocked}
                 />
               </div>
             </div>
@@ -397,6 +411,7 @@ function NodeEditorContent() {
               value={status}
               onChange={(e) => { setStatus(e.target.value as NodeStatus); triggerMetaSave(); }}
               className={`mt-1 ${SELECT_CLASS}`}
+              disabled={editsLocked}
             >
               <option value="draft">Draft</option>
               <option value="published">Published</option>
@@ -410,12 +425,12 @@ function NodeEditorContent() {
         <h2 className="text-lg font-semibold text-foreground">
           Sections <span className="text-muted-foreground/80 text-sm font-normal">({sections.length})</span>
         </h2>
-        <Button size="sm" onClick={() => setShowTypePicker((v) => !v)}>
+        <Button size="sm" onClick={() => setShowTypePicker((v) => !v)} disabled={editsLocked}>
           {showTypePicker ? "Cancel" : "+ Add section"}
         </Button>
       </div>
 
-      {showTypePicker && <SectionTypePicker onSelect={handleAddSection} />}
+      {showTypePicker && !editsLocked && <SectionTypePicker onSelect={handleAddSection} />}
 
       {sections.length === 0 ? (
         <p className="text-muted-foreground text-sm">No sections yet. Add one above.</p>
@@ -434,7 +449,7 @@ function NodeEditorContent() {
                   <button
                     type="button"
                     onClick={() => moveSection(idx, -1)}
-                    disabled={idx === 0}
+                    disabled={idx === 0 || editsLocked}
                     className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
                     title="Move up"
                   >
@@ -443,7 +458,7 @@ function NodeEditorContent() {
                   <button
                     type="button"
                     onClick={() => moveSection(idx, 1)}
-                    disabled={idx === sections.length - 1}
+                    disabled={idx === sections.length - 1 || editsLocked}
                     className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
                     title="Move down"
                   >
@@ -453,6 +468,7 @@ function NodeEditorContent() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setEditingId(editingId === section.id ? null : section.id)}
+                    disabled={editsLocked}
                   >
                     {editingId === section.id ? "Close" : "Edit"}
                   </Button>
@@ -461,6 +477,7 @@ function NodeEditorContent() {
                     size="sm"
                     className="text-destructive hover:text-destructive"
                     onClick={() => handleRequestDeleteSection(section)}
+                    disabled={editsLocked}
                   >
                     Delete
                   </Button>

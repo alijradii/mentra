@@ -12,6 +12,8 @@ interface NodeListItemProps {
   onDelete: (id: string) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  /** When true, move and delete are disabled (e.g. AI agent is editing) */
+  editsLocked?: boolean;
 }
 
 export function NodeListItem({
@@ -24,6 +26,7 @@ export function NodeListItem({
   onDelete,
   onMoveUp,
   onMoveDown,
+  editsLocked = false,
 }: NodeListItemProps) {
   return (
     <li className="flex items-center justify-between gap-4 p-4 bg-card rounded-lg border">
@@ -31,7 +34,7 @@ export function NodeListItem({
         <button
           type="button"
           onClick={onMoveUp}
-          disabled={idx === 0}
+          disabled={idx === 0 || editsLocked}
           className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
           title="Move up"
         >
@@ -40,7 +43,7 @@ export function NodeListItem({
         <button
           type="button"
           onClick={onMoveDown}
-          disabled={idx === total - 1}
+          disabled={idx === total - 1 || editsLocked}
           className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
           title="Move down"
         >
@@ -63,7 +66,7 @@ export function NodeListItem({
       <Button
         variant="destructive"
         size="sm"
-        disabled={deletingId === node._id}
+        disabled={deletingId === node._id || editsLocked}
         onClick={() => onDelete(node._id)}
       >
         {deletingId === node._id ? "..." : "Delete"}

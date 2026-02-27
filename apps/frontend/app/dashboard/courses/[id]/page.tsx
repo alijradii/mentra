@@ -28,7 +28,7 @@ function CourseDetailContent() {
   const params = useParams();
   const id = params?.id as string;
 
-  const { presenceList, on } = useCourseWS();
+  const { presenceList, on, editsLocked } = useCourseWS();
 
   const [course, setCourse] = useState<CourseDTO | null>(null);
   const [modules, setModules] = useState<ModuleDTO[]>([]);
@@ -297,6 +297,12 @@ function CourseDetailContent() {
         </div>
       </div>
 
+      {editsLocked && (
+        <div className="mb-4 px-4 py-2.5 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-200 text-sm border border-amber-500/30">
+          Edits are locked while the AI agent is working. You can still view the course.
+        </div>
+      )}
+
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
       )}
@@ -333,13 +339,13 @@ function CourseDetailContent() {
               )}
             </div>
             {isMentor && (
-              <Button size="sm" onClick={() => setShowNewModule((v) => !v)}>
+              <Button size="sm" onClick={() => setShowNewModule((v) => !v)} disabled={editsLocked}>
                 {showNewModule ? "Cancel" : "Add module"}
               </Button>
             )}
           </div>
 
-          {showNewModule && isMentor && (
+          {showNewModule && isMentor && !editsLocked && (
             <form
               onSubmit={handleCreateModule}
               className="mb-4 p-4 bg-card border rounded-lg flex gap-2 items-end"
@@ -378,6 +384,7 @@ function CourseDetailContent() {
                   onDelete={handleRequestDeleteModule}
                   onMoveUp={() => moveModule(idx, -1)}
                   onMoveDown={() => moveModule(idx, 1)}
+                  editsLocked={editsLocked}
                 />
               ))}
             </ul>
@@ -392,6 +399,7 @@ function CourseDetailContent() {
           currentUserId={user.id}
           ownerId={course.ownerId}
           isMentor={isMentor}
+          editsLocked={editsLocked}
         />
       )}
 
@@ -405,6 +413,7 @@ function CourseDetailContent() {
             reloadCourse();
             reloadModules();
           }}
+          editsLocked={editsLocked}
         />
       )}
 

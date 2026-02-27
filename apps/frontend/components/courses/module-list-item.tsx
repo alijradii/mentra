@@ -11,6 +11,8 @@ interface ModuleListItemProps {
   onDelete: (id: string) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  /** When true, move and delete are disabled (e.g. AI agent is editing) */
+  editsLocked?: boolean;
 }
 
 export function ModuleListItem({
@@ -22,6 +24,7 @@ export function ModuleListItem({
   onDelete,
   onMoveUp,
   onMoveDown,
+  editsLocked = false,
 }: ModuleListItemProps) {
   return (
     <li className="flex items-center justify-between gap-4 p-4 bg-card rounded-lg border">
@@ -29,7 +32,7 @@ export function ModuleListItem({
         <button
           type="button"
           onClick={onMoveUp}
-          disabled={idx === 0}
+          disabled={idx === 0 || editsLocked}
           className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
           title="Move up"
         >
@@ -38,7 +41,7 @@ export function ModuleListItem({
         <button
           type="button"
           onClick={onMoveDown}
-          disabled={idx === total - 1}
+          disabled={idx === total - 1 || editsLocked}
           className="p-1 text-muted-foreground/80 hover:text-foreground disabled:opacity-30"
           title="Move down"
         >
@@ -58,7 +61,7 @@ export function ModuleListItem({
       <Button
         variant="destructive"
         size="sm"
-        disabled={deletingId === module._id}
+        disabled={deletingId === module._id || editsLocked}
         onClick={() => onDelete(module._id)}
       >
         {deletingId === module._id ? "..." : "Delete"}
