@@ -14,7 +14,8 @@ export type CourseWSEventName =
   | "nodes:reordered"
   | "snapshot:restored"
   | "presence:joined"
-  | "presence:left";
+  | "presence:left"
+  | "chat:message";
 
 export interface CourseWSActor {
   id: string;
@@ -41,7 +42,16 @@ export interface WSClientLeaveMessage {
   courseId: string;
 }
 
-export type WSClientMessage = WSClientJoinMessage | WSClientLeaveMessage;
+/** Sent by client to broadcast a chat message to mentors in the same course room (ephemeral, not persisted) */
+export interface WSClientChatMessage {
+  type: "chat_message";
+  text: string;
+}
+
+export type WSClientMessage =
+  | WSClientJoinMessage
+  | WSClientLeaveMessage
+  | WSClientChatMessage;
 
 /** Server → client: current presence list after join */
 export interface WSPresenceListMessage {

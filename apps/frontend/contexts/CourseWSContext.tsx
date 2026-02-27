@@ -30,6 +30,8 @@ interface CourseWSContextValue {
   on: (eventName: CourseWSEventName, handler: EventHandler) => () => void;
   /** Whether the socket is currently connected */
   connected: boolean;
+  /** Send a chat message to all mentors in the course room (ephemeral, not persisted) */
+  sendChat: (text: string) => void;
 }
 
 const CourseWSContext = createContext<CourseWSContextValue | null>(null);
@@ -142,8 +144,15 @@ export function CourseWSProvider({ courseId, token, userId, children }: CourseWS
     []
   );
 
+  const sendChat = useCallback((text: string) => {
+    const ws = wsRef.current;
+    if (ws?.readyState === WebSocket.OPEN && text.trim()) {
+      ws.send(JSON.stringify({ type: "chat_message", text: text.trim() }));
+    }
+  }, []);
+
   return (
-    <CourseWSContext.Provider value={{ presenceList, on, connected }}>
+    <CourseWSContext.Provider value={{ presenceList, on, connected, sendChat }}>
       {children}
     </CourseWSContext.Provider>
   );

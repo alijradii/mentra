@@ -187,6 +187,14 @@ export function attachCourseWebSocket(httpServer: Server) {
           if (client.courseId) {
             leaveRoom(client.courseId, client);
           }
+        } else if (msg.type === "chat_message" && client.courseId) {
+          broadcastToCourse(
+            client.courseId,
+            "chat:message",
+            { text: msg.text },
+            undefined,
+            client.actor
+          );
         }
       } catch {
         // ignore malformed messages

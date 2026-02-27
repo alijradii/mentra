@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import { CourseWSProvider, useCourseWS } from "@/contexts/CourseWSContext";
+import { useCourseWS } from "@/contexts/CourseWSContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -441,9 +441,5 @@ export default function CourseDetailPage() {
 
   if (!token || !id || !user) return null;
 
-  return (
-    <CourseWSProvider courseId={id} token={token} userId={user.id}>
-      <CourseDetailContent />
-    </CourseWSProvider>
-  );
+  return <CourseDetailContent />;
 }
