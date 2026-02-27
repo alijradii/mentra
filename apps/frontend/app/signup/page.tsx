@@ -12,6 +12,7 @@ export default function SignUpPage() {
   const { register } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
+    username: "",
     email: "",
     password: "",
   });
@@ -101,6 +102,33 @@ export default function SignUpPage() {
               />
               {errors.name && (
                 <p className="text-destructive text-sm mt-1">{errors.name}</p>
+              )}
+            </div>
+
+            {/* Username Field */}
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-foreground mb-1">
+                Username
+              </label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent ${
+                  errors.username ? "border-destructive" : "border-border"
+                }`}
+                placeholder="johndoe"
+                autoCapitalize="none"
+                autoCorrect="off"
+              />
+              {errors.username ? (
+                <p className="text-destructive text-sm mt-1">{errors.username}</p>
+              ) : (
+                <p className="text-muted-foreground text-xs mt-1">
+                  Lowercase letters, numbers, underscores, and hyphens only
+                </p>
               )}
             </div>
 

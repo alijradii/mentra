@@ -6,6 +6,7 @@ import { getDb } from "../db";
 export interface UserDocument {
   _id: ObjectId;
   email: string;
+  username: string;
   password: string;
   name: string;
   avatar?: string;
@@ -24,6 +25,7 @@ export function getUserCollection(): Collection<UserDocument> {
 
 export async function createUser(
   email: string,
+  username: string,
   password: string,
   name: string,
   emailVerificationToken?: string
@@ -36,6 +38,7 @@ export async function createUser(
 
   const user: Omit<UserDocument, "_id"> = {
     email: email.toLowerCase(),
+    username: username.toLowerCase(),
     password: hashedPassword,
     name,
     isEmailVerified: !emailVerificationToken, // If no token, consider verified (for dev)
@@ -51,6 +54,10 @@ export async function createUser(
 
 export async function findUserByEmail(email: string): Promise<UserDocument | null> {
   return getUserCollection().findOne({ email: email.toLowerCase() });
+}
+
+export async function findUserByUsername(username: string): Promise<UserDocument | null> {
+  return getUserCollection().findOne({ username: username.toLowerCase() });
 }
 
 export async function findUserById(id: string): Promise<UserDocument | null> {
@@ -166,6 +173,7 @@ export function userDocumentToUser(doc: UserDocument): User {
   return {
     _id: doc._id.toString(),
     email: doc.email,
+    username: doc.username,
     name: doc.name,
     avatar: doc.avatar,
     isEmailVerified: doc.isEmailVerified,

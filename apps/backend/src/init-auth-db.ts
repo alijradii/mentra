@@ -16,6 +16,12 @@ async function initAuthDatabase() {
       { unique: true, name: "email_unique" }
     );
 
+    // Create unique index on username field
+    await usersCollection.createIndex(
+      { username: 1 },
+      { unique: true, name: "username_unique" }
+    );
+
     // Create index on emailVerificationToken for faster lookups
     await usersCollection.createIndex(
       { emailVerificationToken: 1 },
@@ -31,6 +37,7 @@ async function initAuthDatabase() {
     console.log("✅ Auth database initialized successfully!");
     console.log("Indexes created:");
     console.log("  - email (unique)");
+    console.log("  - username (unique)");
     console.log("  - emailVerificationToken (sparse)");
     console.log("  - emailVerificationExpires (TTL)");
 

@@ -1,6 +1,7 @@
 export interface User {
   _id: string;
   email: string;
+  username: string;
   name: string;
   avatar?: string;
   isEmailVerified: boolean;
@@ -13,6 +14,7 @@ export interface User {
 export interface UserDTO {
   id: string;
   email: string;
+  username: string;
   name: string;
   avatar?: string;
   isEmailVerified: boolean;

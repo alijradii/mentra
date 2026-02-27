@@ -13,6 +13,7 @@ import {
   createUser,
   findUserByEmail,
   findUserByPasswordResetToken,
+  findUserByUsername,
   setPasswordResetToken,
   updatePassword,
   updateUserProfile,
@@ -45,6 +46,7 @@ const router = Router();
  *             type: object
  *             required:
  *               - email
+ *               - username
  *               - password
  *               - name
  *             properties:
@@ -52,10 +54,13 @@ const router = Router();
  *                 type: string
  *                 format: email
  *                 example: user@example.com
+ *               username:
+ *                 type: string
+ *                 example: johndoe
  *               password:
  *                 type: string
  *                 format: password
- *                 minLength: 6
+ *                 minLength: 8
  *                 example: password123
  *               name:
  *                 type: string
@@ -102,12 +107,19 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const { email, password, name } = result.data;
+    const { email, username, password, name } = result.data;
 
-    // Check if user already exists
-    const existingUser = await findUserByEmail(email);
-    if (existingUser) {
+    // Check if email is already taken
+    const existingEmail = await findUserByEmail(email);
+    if (existingEmail) {
       res.status(409).json({ error: "User with this email already exists" });
+      return;
+    }
+
+    // Check if username is already taken
+    const existingUsername = await findUserByUsername(username);
+    if (existingUsername) {
+      res.status(409).json({ error: "Username is already taken" });
       return;
     }
 
@@ -115,7 +127,7 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
     const verificationToken = generateVerificationToken();
 
     // Create user
-    const userDoc = await createUser(email, password, name, verificationToken);
+    const userDoc = await createUser(email, username, password, name, verificationToken);
     const user = userDocumentToUser(userDoc);
 
     // Send verification email
