@@ -1,23 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { CourseWSProvider, useCourseWS } from "@/contexts/CourseWSContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ModuleListItem } from "@/components/courses/module-list-item";
-import { ConfirmDeleteDialog, CourseMembersPanel } from "@/components/courses";
+import { ConfirmDeleteDialog, CourseMembersPanel, SnapshotHistory } from "@/components/courses";
 import { coursesApi, modulesApi, type CourseDTO, type ModuleDTO, ApiError } from "@/lib/api";
+import type { CourseWSEvent } from "shared";
 
-type Tab = "modules" | "members";
+type Tab = "modules" | "members" | "snapshots";
 
-export default function CourseDetailPage() {
+interface WSNotification {
+  id: number;
+  message: string;
+}
+
+let notifCounter = 0;
+
+// ─── Inner component that uses the WS context ───────────────────────────────
+
+function CourseDetailContent() {
   const { user, token } = useAuth();
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
+
+  const { presenceList, on } = useCourseWS();
 
   const [course, setCourse] = useState<CourseDTO | null>(null);
   const [modules, setModules] = useState<ModuleDTO[]>([]);
@@ -35,6 +48,72 @@ export default function CourseDetailPage() {
   const [savingOrder, setSavingOrder] = useState(false);
 
   const [activeTab, setActiveTab] = useState<Tab>("modules");
+
+  const [notifications, setNotifications] = useState<WSNotification[]>([]);
+
+  const showNotif = useCallback((message: string) => {
+    const notifId = ++notifCounter;
+    setNotifications((prev) => [...prev, { id: notifId, message }]);
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((n) => n.id !== notifId));
+    }, 4000);
+  }, []);
+
+  const reloadModules = useCallback(async () => {
+    if (!token || !id) return;
+    try {
+      const res = await modulesApi.list(token, id);
+      setModules(res.data);
+    } catch {
+      // ignore background refresh errors
+    }
+  }, [token, id]);
+
+  const reloadCourse = useCallback(async () => {
+    if (!token || !id) return;
+    try {
+      const res = await coursesApi.getById(token, id);
+      setCourse(res.data);
+    } catch {
+      // ignore background refresh errors
+    }
+  }, [token, id]);
+
+  // Subscribe to WS events
+  useEffect(() => {
+    const unsubscribers = [
+      on("module:created", (e: CourseWSEvent) => {
+        showNotif(`Module added by ${e.actor.name}`);
+        reloadModules();
+      }),
+      on("module:updated", (e: CourseWSEvent) => {
+        showNotif(`Module updated by ${e.actor.name}`);
+        reloadModules();
+      }),
+      on("module:deleted", (e: CourseWSEvent) => {
+        showNotif(`Module deleted by ${e.actor.name}`);
+        reloadModules();
+      }),
+      on("modules:reordered", (e: CourseWSEvent) => {
+        showNotif(`Modules reordered by ${e.actor.name}`);
+        reloadModules();
+      }),
+      on("course:updated", (e: CourseWSEvent) => {
+        showNotif(`Course updated by ${e.actor.name}`);
+        reloadCourse();
+      }),
+      on("snapshot:restored", (e: CourseWSEvent) => {
+        const payload = e.payload as { label: string; action: string };
+        const action = payload.action === "restored" ? "restored" : "created";
+        showNotif(`Snapshot "${payload.label}" ${action} by ${e.actor.name}`);
+        if (payload.action === "restored") {
+          reloadCourse();
+          reloadModules();
+        }
+      }),
+    ];
+    return () => unsubscribers.forEach((u) => u());
+  }, [on, showNotif, reloadCourse, reloadModules]);
 
   useEffect(() => {
     if (!token || !id) return;
@@ -82,9 +161,7 @@ export default function CourseDetailPage() {
 
   const handleRequestDeleteModule = (moduleId: string) => {
     const mod = modules.find((m) => m._id === moduleId) ?? null;
-    if (mod) {
-      setModuleToDelete(mod);
-    }
+    if (mod) setModuleToDelete(mod);
   };
 
   const handleConfirmDeleteModule = async () => {
@@ -128,6 +205,9 @@ export default function CourseDetailPage() {
 
   if (!user) return null;
 
+  const isOwner = course?.ownerId === user.id;
+  const isMentor = isOwner || (course?.mentorIds.includes(user.id) ?? false);
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -136,8 +216,26 @@ export default function CourseDetailPage() {
     );
   }
 
+  const tabs: Tab[] = isMentor
+    ? ["modules", "members", "snapshots"]
+    : ["modules", "members"];
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* WS Notifications */}
+      {notifications.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+          {notifications.map((n) => (
+            <div
+              key={n.id}
+              className="bg-foreground text-background text-sm px-4 py-2.5 rounded-lg shadow-lg max-w-xs animate-in fade-in slide-in-from-top-2"
+            >
+              {n.message}
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
         <Link href="/dashboard/courses" className="hover:text-foreground">My courses</Link>
         <span>/</span>
@@ -155,9 +253,33 @@ export default function CourseDetailPage() {
             <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground capitalize">{course?.visibility}</span>
           </div>
         </div>
-        <Button variant="outline" asChild>
-          <Link href={`/dashboard/courses/${id}/settings`}>Settings</Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Presence indicators */}
+          {presenceList.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              {presenceList.slice(0, 5).map((u) => (
+                <div
+                  key={u.id}
+                  title={u.name}
+                  className="w-7 h-7 rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center text-xs font-semibold text-primary select-none"
+                >
+                  {u.name.charAt(0).toUpperCase()}
+                </div>
+              ))}
+              {presenceList.length > 5 && (
+                <span className="text-xs text-muted-foreground">+{presenceList.length - 5}</span>
+              )}
+              <span className="text-xs text-muted-foreground ml-1">
+                {presenceList.length === 1
+                  ? "1 other editing"
+                  : `${presenceList.length} others editing`}
+              </span>
+            </div>
+          )}
+          <Button variant="outline" asChild>
+            <Link href={`/dashboard/courses/${id}/settings`}>Settings</Link>
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -166,7 +288,7 @@ export default function CourseDetailPage() {
 
       {/* Tab bar */}
       <div className="flex gap-1 border-b mb-6">
-        {(["modules", "members"] as Tab[]).map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -185,27 +307,29 @@ export default function CourseDetailPage() {
         <>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-foreground">Modules</h2>
-            <div className="flex items-center gap-2">
-              {modules.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={savingOrder || savedOrder}
-                  onClick={handleSaveModuleOrder}
-                >
-                  {savingOrder ? "Saving…" : "Save order"}
+            {isMentor && (
+              <div className="flex items-center gap-2">
+                {modules.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={savingOrder || savedOrder}
+                    onClick={handleSaveModuleOrder}
+                  >
+                    {savingOrder ? "Saving…" : "Save order"}
+                  </Button>
+                )}
+                <Button size="sm" onClick={() => setShowNewModule((v) => !v)}>
+                  {showNewModule ? "Cancel" : "Add module"}
                 </Button>
-              )}
-              <Button size="sm" onClick={() => setShowNewModule((v) => !v)}>
-                {showNewModule ? "Cancel" : "Add module"}
-              </Button>
-            </div>
+              </div>
+            )}
           </div>
           {modules.length > 0 && savedOrder === false && (
             <p className="text-warning text-xs mb-2">Order changed. Click &quot;Save order&quot; to persist.</p>
           )}
 
-          {showNewModule && (
+          {showNewModule && isMentor && (
             <form
               onSubmit={handleCreateModule}
               className="mb-4 p-4 bg-card border rounded-lg flex gap-2 items-end"
@@ -230,7 +354,7 @@ export default function CourseDetailPage() {
           )}
 
           {modules.length === 0 && !showNewModule ? (
-            <p className="text-muted-foreground text-sm">No modules yet. Add one to get started.</p>
+            <p className="text-muted-foreground text-sm">No modules yet. {isMentor ? "Add one to get started." : ""}</p>
           ) : (
             <ul className="space-y-2">
               {modules.map((module, idx) => (
@@ -257,7 +381,20 @@ export default function CourseDetailPage() {
           token={token}
           currentUserId={user.id}
           ownerId={course.ownerId}
-          isMentor={course.mentorIds.includes(user.id)}
+          isMentor={isMentor}
+        />
+      )}
+
+      {activeTab === "snapshots" && token && course && isMentor && (
+        <SnapshotHistory
+          courseId={id}
+          token={token}
+          currentSnapshotId={course.currentSnapshotId}
+          isOwner={isOwner}
+          onRestored={() => {
+            reloadCourse();
+            reloadModules();
+          }}
         />
       )}
 
@@ -284,5 +421,21 @@ export default function CourseDetailPage() {
         )}
       </ConfirmDeleteDialog>
     </div>
+  );
+}
+
+// ─── Outer wrapper that provides the WS context ─────────────────────────────
+
+export default function CourseDetailPage() {
+  const { token } = useAuth();
+  const params = useParams();
+  const id = params?.id as string;
+
+  if (!token || !id) return null;
+
+  return (
+    <CourseWSProvider courseId={id} token={token}>
+      <CourseDetailContent />
+    </CourseWSProvider>
   );
 }

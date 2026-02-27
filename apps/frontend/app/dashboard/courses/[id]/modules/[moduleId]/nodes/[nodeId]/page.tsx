@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { CourseWSProvider, useCourseWS } from "@/contexts/CourseWSContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,16 +27,20 @@ import {
   type NodeType,
   type NodeSettingsDTO,
 } from "@/lib/api";
+import type { CourseWSEvent } from "shared";
 
 type NodeStatus = "draft" | "published" | "archived";
 
-export default function NodeEditorPage() {
+function NodeEditorContent() {
   const { user, token } = useAuth();
   const router = useRouter();
   const params = useParams();
   const courseId = params?.id as string;
   const moduleId = params?.moduleId as string;
   const nodeId = params?.nodeId as string;
+
+  const { on } = useCourseWS();
+  const [remoteUpdateBanner, setRemoteUpdateBanner] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -56,34 +61,50 @@ export default function NodeEditorPage() {
   const [isPreview, setIsPreview] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const loadNode = useCallback(async (quiet = false) => {
     if (!token || !nodeId) return;
-    let cancelled = false;
-    nodesApi
-      .getById(token, nodeId)
-      .then((res) => {
-        if (!cancelled) {
-          setTitle(res.data.title);
-          setDescription(res.data.description ?? "");
-          setNodeType(res.data.type ?? "lesson");
-          setStatus((res.data.status as NodeStatus) ?? "draft");
-          setSettings(res.data.settings ?? {});
-          setSections(res.data.sections ?? []);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err instanceof ApiError ? err.message : "Failed to load page");
-          if (err instanceof ApiError && err.status === 403) {
-            router.replace(`/dashboard/courses/${courseId}/modules/${moduleId}`);
-          }
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingNode(false);
-      });
-    return () => { cancelled = true; };
+    if (!quiet) setLoadingNode(true);
+    try {
+      const res = await nodesApi.getById(token, nodeId);
+      setTitle(res.data.title);
+      setDescription(res.data.description ?? "");
+      setNodeType(res.data.type ?? "lesson");
+      setStatus((res.data.status as NodeStatus) ?? "draft");
+      setSettings(res.data.settings ?? {});
+      setSections(res.data.sections ?? []);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to load page");
+      if (err instanceof ApiError && err.status === 403) {
+        router.replace(`/dashboard/courses/${courseId}/modules/${moduleId}`);
+      }
+    } finally {
+      if (!quiet) setLoadingNode(false);
+    }
   }, [token, nodeId, courseId, moduleId, router]);
+
+  useEffect(() => {
+    loadNode();
+  }, [loadNode]);
+
+  // Subscribe to real-time updates from other editors
+  useEffect(() => {
+    const unsubscribers = [
+      on("node:updated", (e: CourseWSEvent) => {
+        const payload = e.payload as { nodeId?: string };
+        if (payload.nodeId === nodeId) {
+          setRemoteUpdateBanner(`This page was updated by ${e.actor.name}.`);
+        }
+      }),
+      on("snapshot:restored", (e: CourseWSEvent) => {
+        const payload = e.payload as { label: string };
+        setRemoteUpdateBanner(
+          `Course restored to snapshot "${payload.label}" by ${e.actor.name}. Reloading…`
+        );
+        setTimeout(() => loadNode(true), 1500);
+      }),
+    ];
+    return () => unsubscribers.forEach((u) => u());
+  }, [on, nodeId, loadNode]);
 
   const handleSaveMeta = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,6 +248,23 @@ export default function NodeEditorPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {breadcrumb}
+
+      {remoteUpdateBanner && (
+        <div className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/30 text-sm flex items-center justify-between gap-3">
+          <span className="text-foreground">{remoteUpdateBanner}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button size="sm" variant="outline" onClick={() => { loadNode(true); setRemoteUpdateBanner(null); }}>
+              Reload
+            </Button>
+            <button
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => setRemoteUpdateBanner(null)}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {error && <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>}
 
@@ -486,5 +524,19 @@ export default function NodeEditorPage() {
         )}
       </ConfirmDeleteDialog>
     </div>
+  );
+}
+
+export default function NodeEditorPage() {
+  const { token } = useAuth();
+  const params = useParams();
+  const courseId = params?.id as string;
+
+  if (!token || !courseId) return null;
+
+  return (
+    <CourseWSProvider courseId={courseId} token={token}>
+      <NodeEditorContent />
+    </CourseWSProvider>
   );
 }

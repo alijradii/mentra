@@ -1,11 +1,13 @@
+import http from "http";
 import express from "express";
 import swaggerUi from "swagger-ui-express";
-import { connectToDatabase } from "./db";
-import exampleRoutes from "./routes/example";
-import authRoutes from "./routes/auth";
-import courseRoutes from "./routes/courses";
-import { getEnvNumber, getEnv } from "./utils/env";
+import { connectToDatabase } from "./db.js";
+import exampleRoutes from "./routes/example.js";
+import authRoutes from "./routes/auth.js";
+import courseRoutes from "./routes/courses.js";
+import { getEnvNumber, getEnv } from "./utils/env.js";
 import { swaggerSpec } from "./swagger.js";
+import { attachCourseWebSocket } from "./websocket/course-ws.js";
 
 const app = express();
 const PORT = getEnvNumber("PORT", 3020);
@@ -45,9 +47,14 @@ app.use("/api/courses", courseRoutes);
 async function main() {
   try {
     await connectToDatabase();
-    app.listen(PORT, () => {
+
+    const httpServer = http.createServer(app);
+    attachCourseWebSocket(httpServer);
+
+    httpServer.listen(PORT, () => {
       console.log(`Backend listening on http://localhost:${PORT}`);
       console.log(`Swagger documentation available at http://localhost:${PORT}/api-docs`);
+      console.log(`WebSocket available at ws://localhost:${PORT}/ws`);
     });
   } catch (err) {
     console.error("Failed to start server:", err);

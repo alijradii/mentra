@@ -4,6 +4,7 @@ import { createNodeSchema, updateNodeSchema, type CreateNodeDto } from "shared";
 import { getDb } from "../db.js";
 import { CourseModel } from "../models/course.js";
 import { canViewCourse, getModuleCourseId, getNodeCourseId, isCourseMentor } from "../services/course.service.js";
+import { broadcastToCourse } from "../websocket/course-ws.js";
 
 /**
  * Node CRUD Controller
@@ -107,6 +108,11 @@ export async function createNode(req: Request, res: Response): Promise<void> {
       status: "draft",
       moduleId: new ObjectId(moduleId),
       sections: nodeData.sections as any,
+    });
+
+    broadcastToCourse(courseId, "node:created", node, undefined, {
+      id: userId,
+      name: req.user!.name,
     });
 
     res.status(201).json({
@@ -234,6 +240,14 @@ export async function updateNode(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    broadcastToCourse(
+      courseId,
+      "node:updated",
+      { nodeId: id, ...validation.data },
+      undefined,
+      { id: userId, name: req.user!.name }
+    );
+
     res.json({
       success: true,
       message: "Node updated successfully",
@@ -294,6 +308,11 @@ export async function deleteNode(req: Request, res: Response): Promise<void> {
       });
       return;
     }
+
+    broadcastToCourse(courseId, "node:deleted", { nodeId: id }, undefined, {
+      id: userId,
+      name: req.user!.name,
+    });
 
     res.json({
       success: true,

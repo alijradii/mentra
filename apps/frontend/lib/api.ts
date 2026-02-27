@@ -83,6 +83,7 @@ export interface CourseDTO {
   };
   createdAt: string;
   updatedAt: string;
+  currentSnapshotId?: string;
 }
 
 export interface CourseMemberDTO {
@@ -684,6 +685,62 @@ export const studentsApi = {
     courseId: string
   ): Promise<{ success: true; data: CourseStudentDTO[] }> {
     return fetchWithAuth(token, `/api/courses/${courseId}/students`);
+  },
+};
+
+export interface CourseSnapshotMetaDTO {
+  _id: string;
+  courseId: string;
+  parentId: string | null;
+  label: string;
+  description?: string;
+  createdBy: { id: string; name: string };
+  createdAt: string;
+}
+
+export interface CourseSnapshotDTO extends CourseSnapshotMetaDTO {
+  data: {
+    course: CourseDTO;
+    modules: ModuleDTO[];
+    nodes: NodeDTO[];
+  };
+}
+
+export const snapshotsApi = {
+  async create(
+    token: string,
+    courseId: string,
+    input: { label: string; description?: string }
+  ): Promise<{ success: true; data: CourseSnapshotMetaDTO; message: string }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/snapshots`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+
+  async list(
+    token: string,
+    courseId: string
+  ): Promise<{ success: true; data: CourseSnapshotMetaDTO[] }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/snapshots`);
+  },
+
+  async getById(
+    token: string,
+    courseId: string,
+    snapshotId: string
+  ): Promise<{ success: true; data: CourseSnapshotDTO }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/snapshots/${snapshotId}`);
+  },
+
+  async restore(
+    token: string,
+    courseId: string,
+    snapshotId: string
+  ): Promise<{ success: true; message: string }> {
+    return fetchWithAuth(token, `/api/courses/${courseId}/snapshots/${snapshotId}/restore`, {
+      method: "POST",
+    });
   },
 };
 

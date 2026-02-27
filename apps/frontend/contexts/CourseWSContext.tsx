@@ -1,0 +1,156 @@
+"use client";
+
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  type ReactNode,
+} from "react";
+import type {
+  CourseWSEvent,
+  CourseWSEventName,
+  CourseWSActor,
+  WSServerMessage,
+  WSPresenceListMessage,
+} from "shared";
+
+const WS_URL =
+  (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3020")
+    .replace(/^http/, "ws") + "/ws";
+
+type EventHandler = (event: CourseWSEvent) => void;
+
+interface CourseWSContextValue {
+  /** Who else is currently editing this course */
+  presenceList: CourseWSActor[];
+  /** Subscribe to a specific event type. Returns an unsubscribe function. */
+  on: (eventName: CourseWSEventName, handler: EventHandler) => () => void;
+  /** Whether the socket is currently connected */
+  connected: boolean;
+}
+
+const CourseWSContext = createContext<CourseWSContextValue | null>(null);
+
+interface CourseWSProviderProps {
+  courseId: string;
+  token: string;
+  children: ReactNode;
+}
+
+const RECONNECT_DELAY_MS = 3000;
+
+export function CourseWSProvider({ courseId, token, children }: CourseWSProviderProps) {
+  const [presenceList, setPresenceList] = useState<CourseWSActor[]>([]);
+  const [connected, setConnected] = useState(false);
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const handlersRef = useRef<Map<CourseWSEventName, Set<EventHandler>>>(new Map());
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const unmountedRef = useRef(false);
+
+  const dispatchEvent = useCallback((event: CourseWSEvent) => {
+    const handlers = handlersRef.current.get(event.type);
+    if (handlers) {
+      handlers.forEach((h) => h(event));
+    }
+  }, []);
+
+  const connect = useCallback(() => {
+    if (unmountedRef.current) return;
+
+    const url = `${WS_URL}?token=${encodeURIComponent(token)}`;
+    const ws = new WebSocket(url);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      if (unmountedRef.current) {
+        ws.close();
+        return;
+      }
+      setConnected(true);
+      ws.send(JSON.stringify({ type: "join_course", courseId }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data) as WSServerMessage;
+
+        if (msg.type === "presence:list") {
+          const presenceMsg = msg as WSPresenceListMessage;
+          setPresenceList(presenceMsg.users);
+        } else {
+          const wsEvent = msg as CourseWSEvent;
+          if (wsEvent.type === "presence:joined") {
+            const payload = wsEvent.payload as { user: CourseWSActor };
+            setPresenceList((prev) => {
+              if (prev.some((u) => u.id === payload.user.id)) return prev;
+              return [...prev, payload.user];
+            });
+          } else if (wsEvent.type === "presence:left") {
+            const payload = wsEvent.payload as { user: CourseWSActor };
+            setPresenceList((prev) => prev.filter((u) => u.id !== payload.user.id));
+          }
+          dispatchEvent(wsEvent);
+        }
+      } catch {
+        // ignore malformed messages
+      }
+    };
+
+    ws.onclose = () => {
+      setConnected(false);
+      setPresenceList([]);
+      if (!unmountedRef.current) {
+        reconnectTimerRef.current = setTimeout(connect, RECONNECT_DELAY_MS);
+      }
+    };
+
+    ws.onerror = () => {
+      ws.close();
+    };
+  }, [courseId, token, dispatchEvent]);
+
+  useEffect(() => {
+    unmountedRef.current = false;
+    connect();
+    return () => {
+      unmountedRef.current = true;
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      if (wsRef.current) {
+        wsRef.current.onclose = null;
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
+  }, [connect]);
+
+  const on = useCallback(
+    (eventName: CourseWSEventName, handler: EventHandler): (() => void) => {
+      if (!handlersRef.current.has(eventName)) {
+        handlersRef.current.set(eventName, new Set());
+      }
+      handlersRef.current.get(eventName)!.add(handler);
+      return () => {
+        handlersRef.current.get(eventName)?.delete(handler);
+      };
+    },
+    []
+  );
+
+  return (
+    <CourseWSContext.Provider value={{ presenceList, on, connected }}>
+      {children}
+    </CourseWSContext.Provider>
+  );
+}
+
+export function useCourseWS(): CourseWSContextValue {
+  const ctx = useContext(CourseWSContext);
+  if (!ctx) {
+    throw new Error("useCourseWS must be used inside CourseWSProvider");
+  }
+  return ctx;
+}

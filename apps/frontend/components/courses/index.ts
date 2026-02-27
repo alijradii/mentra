@@ -5,3 +5,4 @@ export { SectionForm, genId, createEmptySection, sectionSummary, SECTION_TYPES, 
 export { SectionTypePicker } from "./section-type-picker";
 export { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 export { CourseMembersPanel } from "./course-members-panel";
+export { SnapshotHistory } from "./snapshot-history";

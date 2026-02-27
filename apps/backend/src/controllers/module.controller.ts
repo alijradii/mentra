@@ -4,6 +4,7 @@ import { createModuleSchema, reorderNodesSchema, updateModuleSchema, type Create
 import { getDb } from "../db.js";
 import { CourseModel } from "../models/course.js";
 import { canViewCourse, getModuleCourseId, isCourseMentor, isCourseOwner } from "../services/course.service.js";
+import { broadcastToCourse } from "../websocket/course-ws.js";
 
 /**
  * Module CRUD Controller
@@ -97,6 +98,11 @@ export async function createModule(req: Request, res: Response): Promise<void> {
       status: "draft",
       courseId: new ObjectId(courseId),
       nodes: [],
+    });
+
+    broadcastToCourse(courseId, "module:created", module, undefined, {
+      id: userId,
+      name: req.user!.name,
     });
 
     res.status(201).json({
@@ -214,6 +220,14 @@ export async function updateModule(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    broadcastToCourse(
+      courseId,
+      "module:updated",
+      { moduleId: id, ...validation.data },
+      undefined,
+      { id: userId, name: req.user!.name }
+    );
+
     res.json({
       success: true,
       message: "Module updated successfully",
@@ -274,6 +288,11 @@ export async function deleteModule(req: Request, res: Response): Promise<void> {
       });
       return;
     }
+
+    broadcastToCourse(courseId, "module:deleted", { moduleId: id }, undefined, {
+      id: userId,
+      name: req.user!.name,
+    });
 
     res.json({
       success: true,
@@ -341,6 +360,14 @@ export async function reorderNodes(req: Request, res: Response): Promise<void> {
       });
       return;
     }
+
+    broadcastToCourse(
+      courseId,
+      "nodes:reordered",
+      { moduleId: id, nodeIds: validation.data.nodeIds },
+      undefined,
+      { id: userId, name: req.user!.name }
+    );
 
     res.json({
       success: true,

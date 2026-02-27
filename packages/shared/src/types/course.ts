@@ -42,4 +42,6 @@ export interface Course<TId = string> {
   createdAt: Date;
   updatedAt: Date;
   publishedAt?: Date;
+  /** ID of the snapshot currently checked out (set on restore, updated on create) */
+  currentSnapshotId?: TId;
 }

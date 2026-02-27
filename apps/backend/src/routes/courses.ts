@@ -12,6 +12,14 @@ import {
   reorderModules,
 } from "../controllers/course.controller.js";
 
+// Snapshot controllers
+import {
+  createSnapshot,
+  listSnapshots,
+  getSnapshot,
+  restoreSnapshot,
+} from "../controllers/snapshot.controller.js";
+
 // Mentor controllers
 import {
   getMentors,
@@ -869,5 +877,12 @@ router.get("/:courseId/submissions/:submissionId", authenticate, getMentorSubmis
 router.patch("/:courseId/submissions/:submissionId/grade", authenticate, gradeSubmission);
 router.post("/:courseId/submissions/:submissionId/release", authenticate, releaseSubmission);
 router.post("/:courseId/nodes/:nodeId/submissions/release-all", authenticate, releaseAllSubmissions);
+
+// ==================== Snapshot Routes ====================
+
+router.post("/:id/snapshots", authenticate, createSnapshot);
+router.get("/:id/snapshots", authenticate, listSnapshots);
+router.get("/:id/snapshots/:snapshotId", authenticate, getSnapshot);
+router.post("/:id/snapshots/:snapshotId/restore", authenticate, restoreSnapshot);
 
 export default router;

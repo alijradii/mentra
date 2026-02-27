@@ -4,6 +4,7 @@ import { createCourseSchema, reorderModulesSchema, updateCourseSchema, type Crea
 import { getDb } from "../db.js";
 import { CourseModel, getCourseCollection } from "../models/course.js";
 import { canViewCourse, isCourseMentor, isCourseOwner } from "../services/course.service.js";
+import { broadcastToCourse } from "../websocket/course-ws.js";
 
 /**
  * Course CRUD Controller
@@ -224,6 +225,11 @@ export async function updateCourse(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    broadcastToCourse(id, "course:updated", validation.data, undefined, {
+      id: userId,
+      name: req.user!.name,
+    });
+
     res.json({
       success: true,
       message: "Course updated successfully",
@@ -332,6 +338,14 @@ export async function reorderModules(req: Request, res: Response): Promise<void>
       });
       return;
     }
+
+    broadcastToCourse(
+      id,
+      "modules:reordered",
+      { moduleIds: validation.data.moduleIds },
+      undefined,
+      { id: userId, name: req.user!.name }
+    );
 
     res.json({
       success: true,
