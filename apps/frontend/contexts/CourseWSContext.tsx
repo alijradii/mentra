@@ -92,6 +92,10 @@ export function CourseWSProvider({ courseId, token, userId, children }: CourseWS
           setPresenceList(presenceMsg.users.filter((u) => u.id !== userId));
         } else {
           const wsEvent = msg as CourseWSEvent;
+          if (wsEvent.type === "ai:edits_locked") {
+            const payload = wsEvent.payload as { locked: boolean };
+            setEditsLocked(Boolean(payload?.locked));
+          }
           if (wsEvent.type === "presence:joined") {
             const payload = wsEvent.payload as { user: CourseWSActor };
             if (payload.user.id === userId) return;

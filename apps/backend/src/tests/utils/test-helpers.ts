@@ -10,6 +10,7 @@ export function createMockUser(overrides?: Partial<User>): User {
   return {
     _id: new ObjectId().toString(),
     email: "test@example.com",
+    username: "testuser",
     name: "Test User",
     isEmailVerified: true,
     createdAt: new Date(),
@@ -93,10 +94,10 @@ export function createMockNode(moduleId: ObjectId, overrides?: Partial<Node>): N
     _id: new ObjectId(),
     moduleId,
     title: "Test Node",
+    type: "lesson" as const,
     order: 1,
     status: "draft",
-    sections: [
-    ],
+    sections: [],
     metadata: {
       estimatedDuration: 15,
       difficulty: "beginner",

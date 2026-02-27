@@ -15,7 +15,8 @@ export type CourseWSEventName =
   | "snapshot:restored"
   | "presence:joined"
   | "presence:left"
-  | "chat:message";
+  | "chat:message"
+  | "ai:edits_locked";
 
 export interface CourseWSActor {
   id: string;

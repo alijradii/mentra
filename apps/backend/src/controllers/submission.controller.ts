@@ -102,7 +102,7 @@ export async function startSubmission(req: Request, res: Response): Promise<void
  */
 export async function saveAnswers(req: Request, res: Response): Promise<void> {
   try {
-    const { submissionId } = req.params;
+    const submissionId = String(req.params.submissionId);
     if (!ObjectId.isValid(submissionId)) {
       res.status(400).json({ success: false, error: "Invalid submission ID" });
       return;
@@ -146,7 +146,8 @@ export async function saveAnswers(req: Request, res: Response): Promise<void> {
  */
 export async function submitSubmission(req: Request, res: Response): Promise<void> {
   try {
-    const { nodeId, submissionId } = req.params;
+    const nodeId = String(req.params.nodeId);
+    const submissionId = String(req.params.submissionId);
     if (!ObjectId.isValid(submissionId) || !ObjectId.isValid(nodeId)) {
       res.status(400).json({ success: false, error: "Invalid ID" });
       return;
@@ -268,7 +269,7 @@ export async function getMySubmissions(req: Request, res: Response): Promise<voi
  */
 export async function getSubmission(req: Request, res: Response): Promise<void> {
   try {
-    const { submissionId } = req.params;
+    const submissionId = String(req.params.submissionId);
     if (!ObjectId.isValid(submissionId)) {
       res.status(400).json({ success: false, error: "Invalid submission ID" });
       return;
@@ -310,7 +311,8 @@ export async function getSubmission(req: Request, res: Response): Promise<void> 
  */
 export async function listNodeSubmissions(req: Request, res: Response): Promise<void> {
   try {
-    const { courseId, nodeId } = req.params;
+    const courseId = String(req.params.courseId);
+    const nodeId = String(req.params.nodeId);
     if (!ObjectId.isValid(courseId) || !ObjectId.isValid(nodeId)) {
       res.status(400).json({ success: false, error: "Invalid ID" });
       return;
@@ -355,7 +357,8 @@ export async function listNodeSubmissions(req: Request, res: Response): Promise<
  */
 export async function getMentorSubmission(req: Request, res: Response): Promise<void> {
   try {
-    const { courseId, submissionId } = req.params;
+    const courseId = String(req.params.courseId);
+    const submissionId = String(req.params.submissionId);
     if (!ObjectId.isValid(courseId) || !ObjectId.isValid(submissionId)) {
       res.status(400).json({ success: false, error: "Invalid ID" });
       return;
@@ -396,7 +399,8 @@ export async function getMentorSubmission(req: Request, res: Response): Promise<
  */
 export async function gradeSubmission(req: Request, res: Response): Promise<void> {
   try {
-    const { courseId, submissionId } = req.params;
+    const courseId = String(req.params.courseId);
+    const submissionId = String(req.params.submissionId);
     if (!ObjectId.isValid(courseId) || !ObjectId.isValid(submissionId)) {
       res.status(400).json({ success: false, error: "Invalid ID" });
       return;
@@ -462,7 +466,8 @@ export async function gradeSubmission(req: Request, res: Response): Promise<void
  */
 export async function releaseSubmission(req: Request, res: Response): Promise<void> {
   try {
-    const { courseId, submissionId } = req.params;
+    const courseId = String(req.params.courseId);
+    const submissionId = String(req.params.submissionId);
     if (!ObjectId.isValid(courseId) || !ObjectId.isValid(submissionId)) {
       res.status(400).json({ success: false, error: "Invalid ID" });
       return;
@@ -517,7 +522,8 @@ export async function releaseSubmission(req: Request, res: Response): Promise<vo
  */
 export async function releaseAllSubmissions(req: Request, res: Response): Promise<void> {
   try {
-    const { courseId, nodeId } = req.params;
+    const courseId = String(req.params.courseId);
+    const nodeId = String(req.params.nodeId);
     if (!ObjectId.isValid(courseId) || !ObjectId.isValid(nodeId)) {
       res.status(400).json({ success: false, error: "Invalid ID" });
       return;

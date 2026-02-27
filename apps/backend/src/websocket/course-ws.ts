@@ -1,16 +1,16 @@
-import { WebSocketServer, WebSocket } from "ws";
-import type { IncomingMessage } from "http";
-import type { Server } from "http";
-import { URL } from "url";
-import { verifyToken } from "../utils/jwt.js";
-import { findUserById, userDocumentToUser } from "../models/user.js";
+import type { IncomingMessage, Server } from "http";
 import type {
+  CourseWSActor,
   CourseWSEvent,
   CourseWSEventName,
   WSClientMessage,
   WSPresenceListMessage,
-  CourseWSActor,
 } from "shared";
+import { URL } from "url";
+import { WebSocket, WebSocketServer } from "ws";
+import { MentorAIAssistant } from "../ai/mentor-assistant/mentor-ai-assistant.js";
+import { findUserById, userDocumentToUser } from "../models/user.js";
+import { verifyToken } from "../utils/jwt.js";
 
 interface ConnectedClient {
   ws: WebSocket;
@@ -125,6 +125,26 @@ export function broadcastToCourse(
   }
 }
 
+/** Single mentor AI assistant instance; receives chat messages and can run actions (e.g. lock/unlock edits). */
+let mentorAiAssistant: MentorAIAssistant | null = null;
+
+function getMentorAiAssistant(): MentorAIAssistant {
+  if (!mentorAiAssistant) {
+    mentorAiAssistant = new MentorAIAssistant({
+      broadcastToCourse(
+        courseId: string,
+        type: CourseWSEventName,
+        payload: unknown,
+        excludeSocket?: WebSocket,
+        actor?: CourseWSActor
+      ) {
+        broadcastToCourse(courseId, type, payload, excludeSocket, actor);
+      },
+    });
+  }
+  return mentorAiAssistant;
+}
+
 /**
  * Attach the WebSocket server to an existing HTTP server.
  * Clients connect with: ws://<host>/ws?token=<jwt>
@@ -193,6 +213,11 @@ export function attachCourseWebSocket(httpServer: Server) {
             "chat:message",
             { text: msg.text },
             undefined,
+            client.actor
+          );
+          getMentorAiAssistant().handleMessage(
+            client.courseId,
+            msg.text,
             client.actor
           );
         }
