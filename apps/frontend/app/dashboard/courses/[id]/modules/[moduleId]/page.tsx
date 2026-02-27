@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { NodeListItem } from "@/components/courses/node-list-item";
 import { ConfirmDeleteDialog, sectionSummary } from "@/components/courses";
 import { modulesApi, nodesApi, type ModuleDTO, type NodeDTO, ApiError } from "@/lib/api";
+import { useAutoSave } from "@/hooks/use-auto-save";
 
 type ModuleStatus = "draft" | "published" | "archived";
 
@@ -33,8 +34,6 @@ export default function ModuleDetailPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [editStatus, setEditStatus] = useState<ModuleStatus>("draft");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   const [showNewNode, setShowNewNode] = useState(false);
   const [newNodeTitle, setNewNodeTitle] = useState("");
@@ -43,8 +42,16 @@ export default function ModuleDetailPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [nodeToDelete, setNodeToDelete] = useState<NodeDTO | null>(null);
 
-  const [savedOrder, setSavedOrder] = useState(true);
-  const [savingOrder, setSavingOrder] = useState(false);
+  const metaAutoSave = useAutoSave(1500);
+  const latestMeta = useRef({ editTitle, editDesc, editStatus });
+  latestMeta.current = { editTitle, editDesc, editStatus };
+
+  const [orderSaveStatus, setOrderSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const orderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestNodesRef = useRef(nodes);
+  latestNodesRef.current = nodes;
+
+  const initialLoadDone = useRef(false);
 
   useEffect(() => {
     if (!token || !moduleId) return;
@@ -60,6 +67,7 @@ export default function ModuleDetailPage() {
           setEditDesc(modRes.data.description ?? "");
           setEditStatus((modRes.data.status as ModuleStatus) ?? "draft");
           setNodes(nodesRes.data);
+          initialLoadDone.current = true;
         }
       })
       .catch((err) => {
@@ -76,27 +84,27 @@ export default function ModuleDetailPage() {
     return () => { cancelled = true; };
   }, [token, moduleId, courseId, router]);
 
-  const handleSaveModule = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token || !editTitle.trim()) return;
-    setSaving(true);
-    setSaved(false);
-    setError("");
-    try {
-      await modulesApi.update(token, moduleId, {
-        title: editTitle.trim(),
-        description: editDesc.trim() || undefined,
-        status: editStatus,
-      });
-      setModule((prev) => prev ? { ...prev, title: editTitle.trim(), description: editDesc.trim(), status: editStatus } : prev);
-      setSaved(true);
-      setEditing(false);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to update module");
-    } finally {
-      setSaving(false);
-    }
-  };
+  const doSaveMeta = useCallback(async () => {
+    if (!token) return;
+    const { editTitle, editDesc, editStatus } = latestMeta.current;
+    if (!editTitle.trim()) return;
+    await modulesApi.update(token, moduleId, {
+      title: editTitle.trim(),
+      description: editDesc.trim() || undefined,
+      status: editStatus,
+    });
+    setModule((prev) => prev ? {
+      ...prev,
+      title: latestMeta.current.editTitle.trim(),
+      description: latestMeta.current.editDesc.trim(),
+      status: latestMeta.current.editStatus,
+    } : prev);
+  }, [token, moduleId]);
+
+  const triggerMetaSave = useCallback(() => {
+    if (!initialLoadDone.current) return;
+    metaAutoSave.trigger(doSaveMeta);
+  }, [metaAutoSave, doSaveMeta]);
 
   const handleCreateNode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,28 +146,34 @@ export default function ModuleDetailPage() {
     }
   };
 
+  const saveNodeOrder = useCallback(async () => {
+    if (!token || !moduleId) return;
+    setOrderSaveStatus("saving");
+    try {
+      await modulesApi.reorderNodes(token, moduleId, latestNodesRef.current.map((n) => n._id));
+      setOrderSaveStatus("saved");
+    } catch {
+      setOrderSaveStatus("error");
+    }
+  }, [token, moduleId]);
+
   const moveNode = (idx: number, dir: -1 | 1) => {
     const next = [...nodes];
     const target = idx + dir;
     if (target < 0 || target >= next.length) return;
     [next[idx], next[target]] = [next[target], next[idx]];
     setNodes(next);
-    setSavedOrder(false);
+
+    if (orderTimerRef.current) clearTimeout(orderTimerRef.current);
+    setOrderSaveStatus("idle");
+    orderTimerRef.current = setTimeout(() => saveNodeOrder(), 1500);
   };
 
-  const handleSaveNodeOrder = async () => {
-    if (!token || !moduleId) return;
-    setSavingOrder(true);
-    setError("");
-    try {
-      await modulesApi.reorderNodes(token, moduleId, nodes.map((n) => n._id));
-      setSavedOrder(true);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save order");
-    } finally {
-      setSavingOrder(false);
-    }
-  };
+  useEffect(() => {
+    return () => {
+      if (orderTimerRef.current) clearTimeout(orderTimerRef.current);
+    };
+  }, []);
 
   if (!user) return null;
 
@@ -187,13 +201,24 @@ export default function ModuleDetailPage() {
 
       <div className="bg-card border rounded-lg p-6 mb-8">
         {editing ? (
-          <form onSubmit={handleSaveModule} className="space-y-3">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Edit module</h2>
+                {metaAutoSave.status === "saving" && <span className="text-xs text-muted-foreground">Saving...</span>}
+                {metaAutoSave.status === "saved" && <span className="text-xs text-success">Saved</span>}
+                {metaAutoSave.status === "error" && <span className="text-xs text-destructive">Error saving</span>}
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={() => setEditing(false)}>
+                Done
+              </Button>
+            </div>
             <div>
               <Label htmlFor="mod-title">Title</Label>
               <Input
                 id="mod-title"
                 value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
+                onChange={(e) => { setEditTitle(e.target.value); triggerMetaSave(); }}
                 required
                 maxLength={200}
                 className="mt-1"
@@ -205,7 +230,7 @@ export default function ModuleDetailPage() {
               <Textarea
                 id="mod-desc"
                 value={editDesc}
-                onChange={(e) => setEditDesc(e.target.value)}
+                onChange={(e) => { setEditDesc(e.target.value); triggerMetaSave(); }}
                 maxLength={1000}
                 rows={2}
                 className="mt-1"
@@ -216,7 +241,7 @@ export default function ModuleDetailPage() {
               <select
                 id="mod-status"
                 value={editStatus}
-                onChange={(e) => setEditStatus(e.target.value as ModuleStatus)}
+                onChange={(e) => { setEditStatus(e.target.value as ModuleStatus); triggerMetaSave(); }}
                 className={`mt-1 ${SELECT_CLASS}`}
               >
                 <option value="draft">Draft</option>
@@ -224,15 +249,7 @@ export default function ModuleDetailPage() {
                 <option value="archived">Archived</option>
               </select>
             </div>
-            <div className="flex gap-2">
-              <Button type="submit" size="sm" disabled={saving}>
-                {saving ? "Saving..." : "Save"}
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setEditing(false)}>
-                Cancel
-              </Button>
-            </div>
-          </form>
+          </div>
         ) : (
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -245,7 +262,6 @@ export default function ModuleDetailPage() {
                   {module?.status}
                 </span>
               </div>
-              {saved && <p className="text-success text-xs mt-2">Saved.</p>}
             </div>
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
               Edit
@@ -255,26 +271,16 @@ export default function ModuleDetailPage() {
       </div>
 
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-foreground">Pages (nodes)</h2>
-        <div className="flex items-center gap-2">
-          {nodes.length > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={savingOrder || savedOrder}
-              onClick={handleSaveNodeOrder}
-            >
-              {savingOrder ? "Saving…" : "Save order"}
-            </Button>
-          )}
-          <Button size="sm" onClick={() => setShowNewNode((v) => !v)}>
-            {showNewNode ? "Cancel" : "Add page"}
-          </Button>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold text-foreground">Pages (nodes)</h2>
+          {orderSaveStatus === "saving" && <span className="text-xs text-muted-foreground">Saving order...</span>}
+          {orderSaveStatus === "saved" && <span className="text-xs text-success">Order saved</span>}
+          {orderSaveStatus === "error" && <span className="text-xs text-destructive">Failed to save order</span>}
         </div>
+        <Button size="sm" onClick={() => setShowNewNode((v) => !v)}>
+          {showNewNode ? "Cancel" : "Add page"}
+        </Button>
       </div>
-      {nodes.length > 0 && savedOrder === false && (
-        <p className="text-warning text-xs mb-2">Order changed. Click &quot;Save order&quot; to persist.</p>
-      )}
 
       {showNewNode && (
         <form

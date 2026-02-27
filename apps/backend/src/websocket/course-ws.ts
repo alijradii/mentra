@@ -35,39 +35,57 @@ function joinRoom(courseId: string, client: ConnectedClient) {
   }
   rooms.get(courseId)!.add(client);
 
-  // Send current presence list to the newly joined client
   const presenceList: WSPresenceListMessage = {
     type: "presence:list",
     courseId,
-    users: getPresenceList(courseId),
+    users: getPresenceList(courseId, client.actor.id),
   };
   safeSend(client.ws, presenceList);
 
-  // Broadcast presence:joined to others
-  broadcastToCourse(
-    courseId,
-    "presence:joined",
-    { user: client.actor },
-    client.ws
+  const alreadyPresent = Array.from(rooms.get(courseId)!).some(
+    (c) => c !== client && c.actor.id === client.actor.id
   );
+  if (!alreadyPresent) {
+    broadcastToCourse(
+      courseId,
+      "presence:joined",
+      { user: client.actor },
+      client.ws
+    );
+  }
 }
 
 function leaveRoom(courseId: string, client: ConnectedClient) {
   const room = rooms.get(courseId);
   if (!room) return;
   room.delete(client);
+
+  const sameUserStillPresent = Array.from(room).some(
+    (c) => c.actor.id === client.actor.id
+  );
+
   if (room.size === 0) {
     rooms.delete(courseId);
   }
   client.courseId = null;
 
-  broadcastToCourse(courseId, "presence:left", { user: client.actor });
+  if (!sameUserStillPresent) {
+    broadcastToCourse(courseId, "presence:left", { user: client.actor });
+  }
 }
 
-function getPresenceList(courseId: string): CourseWSActor[] {
+function getPresenceList(courseId: string, excludeActorId?: string): CourseWSActor[] {
   const room = rooms.get(courseId);
   if (!room) return [];
-  return Array.from(room).map((c) => c.actor);
+  const seen = new Set<string>();
+  const result: CourseWSActor[] = [];
+  for (const c of room) {
+    if (excludeActorId && c.actor.id === excludeActorId) continue;
+    if (seen.has(c.actor.id)) continue;
+    seen.add(c.actor.id);
+    result.push(c.actor);
+  }
+  return result;
 }
 
 function safeSend(ws: WebSocket, data: object) {

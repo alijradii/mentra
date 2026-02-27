@@ -15,6 +15,7 @@ export default function SignUpPage() {
     username: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -175,6 +176,30 @@ export default function SignUpPage() {
               <p className="text-muted-foreground text-xs mt-1">
                 At least 8 characters
               </p>
+            </div>
+
+            {/* Confirm Password Field */}
+            <div>
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-foreground mb-1"
+              >
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent ${
+                  errors.confirmPassword ? "border-destructive" : "border-border"
+                }`}
+                placeholder="••••••••"
+              />
+              {errors.confirmPassword && (
+                <p className="text-destructive text-sm mt-1">{errors.confirmPassword}</p>
+              )}
             </div>
 
             {/* Submit Button */}

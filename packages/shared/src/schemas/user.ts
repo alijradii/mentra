@@ -1,18 +1,29 @@
 import { z } from "zod";
 
-export const registerSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  username: z
-    .string()
-    .min(3, "Username must be at least 3 characters")
-    .max(30, "Username must be at most 30 characters")
-    .regex(/^[a-z0-9_-]+$/, "Username can only contain lowercase letters, numbers, underscores, and hyphens"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(100, "Password is too long"),
-  name: z.string().min(2, "Name must be at least 2 characters").max(100),
-});
+export const registerSchema = z
+  .object({
+    email: z.string().email("Invalid email address"),
+    username: z
+      .string()
+      .min(3, "Username must be at least 3 characters")
+      .max(30, "Username must be at most 30 characters")
+      .regex(
+        /^[a-z0-9_-]+$/,
+        "Username can only contain lowercase letters, numbers, underscores, and hyphens"
+      ),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .max(100, "Password is too long"),
+    confirmPassword: z
+      .string()
+      .min(1, "Please confirm your password"),
+    name: z.string().min(2, "Name must be at least 2 characters").max(100),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords do not match",
+  });
 
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),

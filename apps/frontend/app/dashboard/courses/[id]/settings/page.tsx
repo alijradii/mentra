@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ConfirmDeleteDialog } from "@/components/courses";
 import { coursesApi, ApiError } from "@/lib/api";
+import { useAutoSave } from "@/hooks/use-auto-save";
 
 type Visibility = "public" | "private";
 type Status = "draft" | "published" | "archived";
@@ -26,11 +27,14 @@ export default function CourseSettingsPage() {
   const [status, setStatus] = useState<Status>("draft");
   const [ownerId, setOwnerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
+
+  const autoSave = useAutoSave(1500);
+  const latestFields = useRef({ title, description, visibility, status });
+  latestFields.current = { title, description, visibility, status };
+  const initialLoadDone = useRef(false);
 
   useEffect(() => {
     if (!token || !id) return;
@@ -44,6 +48,7 @@ export default function CourseSettingsPage() {
           setVisibility((res.data.visibility as Visibility) ?? "public");
           setStatus((res.data.status as Status) ?? "draft");
           setOwnerId(res.data.ownerId ?? null);
+          initialLoadDone.current = true;
         }
       })
       .catch((err) => {
@@ -60,26 +65,23 @@ export default function CourseSettingsPage() {
     return () => { cancelled = true; };
   }, [token, id, router]);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token || !id || !title.trim()) return;
+  const doSave = useCallback(async () => {
+    if (!token || !id) return;
+    const { title, description, visibility, status } = latestFields.current;
+    if (!title.trim()) return;
     setError("");
-    setSaved(false);
-    setSaving(true);
-    try {
-      await coursesApi.update(token, id, {
-        title: title.trim(),
-        description: description.trim(),
-        visibility,
-        status,
-      });
-      setSaved(true);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to update");
-    } finally {
-      setSaving(false);
-    }
-  };
+    await coursesApi.update(token, id, {
+      title: title.trim(),
+      description: description.trim(),
+      visibility,
+      status,
+    });
+  }, [token, id]);
+
+  const triggerSave = useCallback(() => {
+    if (!initialLoadDone.current) return;
+    autoSave.trigger(doSave);
+  }, [autoSave, doSave]);
 
   const handleConfirmDelete = async () => {
     if (!token || !id) return;
@@ -108,7 +110,6 @@ export default function CourseSettingsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
         <Link href="/dashboard/courses" className="hover:text-foreground">My courses</Link>
         <span>/</span>
@@ -117,23 +118,25 @@ export default function CourseSettingsPage() {
         <span className="text-foreground font-medium">Settings</span>
       </div>
 
-      <h1 className="text-2xl font-bold text-foreground mb-6">Course settings</h1>
+      <div className="flex items-center gap-3 mb-6">
+        <h1 className="text-2xl font-bold text-foreground">Course settings</h1>
+        {autoSave.status === "saving" && <span className="text-xs text-muted-foreground">Saving...</span>}
+        {autoSave.status === "saved" && <span className="text-xs text-success">All changes saved</span>}
+        {autoSave.status === "error" && <span className="text-xs text-destructive">Error saving</span>}
+      </div>
 
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
       )}
-      {saved && (
-        <div className="mb-4 p-3 rounded-lg bg-success/15 text-success text-sm">Saved successfully.</div>
-      )}
 
       <div className="max-w-md">
-        <form onSubmit={handleSave} className="space-y-4">
+        <div className="space-y-4">
           <div>
             <Label htmlFor="title">Title</Label>
             <Input
               id="title"
               value={title}
-              onChange={(e) => { setTitle(e.target.value); setSaved(false); }}
+              onChange={(e) => { setTitle(e.target.value); triggerSave(); }}
               placeholder="Course title"
               required
               maxLength={200}
@@ -145,7 +148,7 @@ export default function CourseSettingsPage() {
             <Textarea
               id="description"
               value={description}
-              onChange={(e) => { setDescription(e.target.value); setSaved(false); }}
+              onChange={(e) => { setDescription(e.target.value); triggerSave(); }}
               placeholder="Brief description of the course"
               maxLength={5000}
               rows={4}
@@ -157,7 +160,7 @@ export default function CourseSettingsPage() {
             <select
               id="visibility"
               value={visibility}
-              onChange={(e) => { setVisibility(e.target.value as Visibility); setSaved(false); }}
+              onChange={(e) => { setVisibility(e.target.value as Visibility); triggerSave(); }}
               className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <option value="public">Public</option>
@@ -169,7 +172,7 @@ export default function CourseSettingsPage() {
             <select
               id="status"
               value={status}
-              onChange={(e) => { setStatus(e.target.value as Status); setSaved(false); }}
+              onChange={(e) => { setStatus(e.target.value as Status); triggerSave(); }}
               className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <option value="draft">Draft</option>
@@ -177,15 +180,10 @@ export default function CourseSettingsPage() {
               <option value="archived">Archived</option>
             </select>
           </div>
-          <div className="flex gap-2">
-            <Button type="submit" disabled={saving}>
-              {saving ? "Saving..." : "Save"}
-            </Button>
-            <Button type="button" variant="outline" asChild>
-              <Link href={`/dashboard/courses/${id}`}>Back to course</Link>
-            </Button>
-          </div>
-        </form>
+          <Button variant="outline" asChild>
+            <Link href={`/dashboard/courses/${id}`}>Back to course</Link>
+          </Button>
+        </div>
 
         {user && ownerId && user.id === ownerId && (
           <div className="mt-10 pt-8 border-t">

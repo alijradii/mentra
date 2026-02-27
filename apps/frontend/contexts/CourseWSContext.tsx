@@ -24,7 +24,7 @@ const WS_URL =
 type EventHandler = (event: CourseWSEvent) => void;
 
 interface CourseWSContextValue {
-  /** Who else is currently editing this course */
+  /** Other users currently editing this course (excludes current user) */
   presenceList: CourseWSActor[];
   /** Subscribe to a specific event type. Returns an unsubscribe function. */
   on: (eventName: CourseWSEventName, handler: EventHandler) => () => void;
@@ -37,12 +37,13 @@ const CourseWSContext = createContext<CourseWSContextValue | null>(null);
 interface CourseWSProviderProps {
   courseId: string;
   token: string;
+  userId: string;
   children: ReactNode;
 }
 
 const RECONNECT_DELAY_MS = 3000;
 
-export function CourseWSProvider({ courseId, token, children }: CourseWSProviderProps) {
+export function CourseWSProvider({ courseId, token, userId, children }: CourseWSProviderProps) {
   const [presenceList, setPresenceList] = useState<CourseWSActor[]>([]);
   const [connected, setConnected] = useState(false);
 
@@ -80,11 +81,12 @@ export function CourseWSProvider({ courseId, token, children }: CourseWSProvider
 
         if (msg.type === "presence:list") {
           const presenceMsg = msg as WSPresenceListMessage;
-          setPresenceList(presenceMsg.users);
+          setPresenceList(presenceMsg.users.filter((u) => u.id !== userId));
         } else {
           const wsEvent = msg as CourseWSEvent;
           if (wsEvent.type === "presence:joined") {
             const payload = wsEvent.payload as { user: CourseWSActor };
+            if (payload.user.id === userId) return;
             setPresenceList((prev) => {
               if (prev.some((u) => u.id === payload.user.id)) return prev;
               return [...prev, payload.user];
@@ -111,7 +113,7 @@ export function CourseWSProvider({ courseId, token, children }: CourseWSProvider
     ws.onerror = () => {
       ws.close();
     };
-  }, [courseId, token, dispatchEvent]);
+  }, [courseId, token, userId, dispatchEvent]);
 
   useEffect(() => {
     unmountedRef.current = false;

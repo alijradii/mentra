@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,8 +22,6 @@ interface WSNotification {
 
 let notifCounter = 0;
 
-// ─── Inner component that uses the WS context ───────────────────────────────
-
 function CourseDetailContent() {
   const { user, token } = useAuth();
   const router = useRouter();
@@ -44,12 +42,14 @@ function CourseDetailContent() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [moduleToDelete, setModuleToDelete] = useState<ModuleDTO | null>(null);
 
-  const [savedOrder, setSavedOrder] = useState(true);
-  const [savingOrder, setSavingOrder] = useState(false);
-
   const [activeTab, setActiveTab] = useState<Tab>("modules");
 
   const [notifications, setNotifications] = useState<WSNotification[]>([]);
+
+  const [orderSaveStatus, setOrderSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const orderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestModulesRef = useRef(modules);
+  latestModulesRef.current = modules;
 
   const showNotif = useCallback((message: string) => {
     const notifId = ++notifCounter;
@@ -79,33 +79,44 @@ function CourseDetailContent() {
     }
   }, [token, id]);
 
-  // Subscribe to WS events
   useEffect(() => {
     const unsubscribers = [
       on("module:created", (e: CourseWSEvent) => {
-        showNotif(`Module added by ${e.actor.name}`);
+        if (e.actor.id !== user?.id) {
+          showNotif(`Module added by ${e.actor.name}`);
+        }
         reloadModules();
       }),
       on("module:updated", (e: CourseWSEvent) => {
-        showNotif(`Module updated by ${e.actor.name}`);
+        if (e.actor.id !== user?.id) {
+          showNotif(`Module updated by ${e.actor.name}`);
+        }
         reloadModules();
       }),
       on("module:deleted", (e: CourseWSEvent) => {
-        showNotif(`Module deleted by ${e.actor.name}`);
+        if (e.actor.id !== user?.id) {
+          showNotif(`Module deleted by ${e.actor.name}`);
+        }
         reloadModules();
       }),
       on("modules:reordered", (e: CourseWSEvent) => {
-        showNotif(`Modules reordered by ${e.actor.name}`);
-        reloadModules();
+        if (e.actor.id !== user?.id) {
+          showNotif(`Modules reordered by ${e.actor.name}`);
+          reloadModules();
+        }
       }),
       on("course:updated", (e: CourseWSEvent) => {
-        showNotif(`Course updated by ${e.actor.name}`);
+        if (e.actor.id !== user?.id) {
+          showNotif(`Course updated by ${e.actor.name}`);
+        }
         reloadCourse();
       }),
       on("snapshot:restored", (e: CourseWSEvent) => {
         const payload = e.payload as { label: string; action: string };
         const action = payload.action === "restored" ? "restored" : "created";
-        showNotif(`Snapshot "${payload.label}" ${action} by ${e.actor.name}`);
+        if (e.actor.id !== user?.id) {
+          showNotif(`Snapshot "${payload.label}" ${action} by ${e.actor.name}`);
+        }
         if (payload.action === "restored") {
           reloadCourse();
           reloadModules();
@@ -113,7 +124,7 @@ function CourseDetailContent() {
       }),
     ];
     return () => unsubscribers.forEach((u) => u());
-  }, [on, showNotif, reloadCourse, reloadModules]);
+  }, [on, user?.id, showNotif, reloadCourse, reloadModules]);
 
   useEffect(() => {
     if (!token || !id) return;
@@ -180,28 +191,34 @@ function CourseDetailContent() {
     }
   };
 
+  const saveModuleOrder = useCallback(async () => {
+    if (!token || !id) return;
+    setOrderSaveStatus("saving");
+    try {
+      await coursesApi.reorderModules(token, id, latestModulesRef.current.map((m) => m._id));
+      setOrderSaveStatus("saved");
+    } catch {
+      setOrderSaveStatus("error");
+    }
+  }, [token, id]);
+
   const moveModule = (idx: number, dir: -1 | 1) => {
     const next = [...modules];
     const target = idx + dir;
     if (target < 0 || target >= next.length) return;
     [next[idx], next[target]] = [next[target], next[idx]];
     setModules(next);
-    setSavedOrder(false);
+
+    if (orderTimerRef.current) clearTimeout(orderTimerRef.current);
+    setOrderSaveStatus("idle");
+    orderTimerRef.current = setTimeout(() => saveModuleOrder(), 1500);
   };
 
-  const handleSaveModuleOrder = async () => {
-    if (!token || !id) return;
-    setSavingOrder(true);
-    setError("");
-    try {
-      await coursesApi.reorderModules(token, id, modules.map((m) => m._id));
-      setSavedOrder(true);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save order");
-    } finally {
-      setSavingOrder(false);
-    }
-  };
+  useEffect(() => {
+    return () => {
+      if (orderTimerRef.current) clearTimeout(orderTimerRef.current);
+    };
+  }, []);
 
   if (!user) return null;
 
@@ -222,7 +239,6 @@ function CourseDetailContent() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* WS Notifications */}
       {notifications.length > 0 && (
         <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
           {notifications.map((n) => (
@@ -254,7 +270,6 @@ function CourseDetailContent() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {/* Presence indicators */}
           {presenceList.length > 0 && (
             <div className="flex items-center gap-1.5">
               {presenceList.slice(0, 5).map((u) => (
@@ -286,7 +301,6 @@ function CourseDetailContent() {
         <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
       )}
 
-      {/* Tab bar */}
       <div className="flex gap-1 border-b mb-6">
         {tabs.map((tab) => (
           <button
@@ -306,28 +320,24 @@ function CourseDetailContent() {
       {activeTab === "modules" && (
         <>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">Modules</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold text-foreground">Modules</h2>
+              {orderSaveStatus === "saving" && (
+                <span className="text-xs text-muted-foreground">Saving order...</span>
+              )}
+              {orderSaveStatus === "saved" && (
+                <span className="text-xs text-success">Order saved</span>
+              )}
+              {orderSaveStatus === "error" && (
+                <span className="text-xs text-destructive">Failed to save order</span>
+              )}
+            </div>
             {isMentor && (
-              <div className="flex items-center gap-2">
-                {modules.length > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={savingOrder || savedOrder}
-                    onClick={handleSaveModuleOrder}
-                  >
-                    {savingOrder ? "Saving…" : "Save order"}
-                  </Button>
-                )}
-                <Button size="sm" onClick={() => setShowNewModule((v) => !v)}>
-                  {showNewModule ? "Cancel" : "Add module"}
-                </Button>
-              </div>
+              <Button size="sm" onClick={() => setShowNewModule((v) => !v)}>
+                {showNewModule ? "Cancel" : "Add module"}
+              </Button>
             )}
           </div>
-          {modules.length > 0 && savedOrder === false && (
-            <p className="text-warning text-xs mb-2">Order changed. Click &quot;Save order&quot; to persist.</p>
-          )}
 
           {showNewModule && isMentor && (
             <form
@@ -424,17 +434,15 @@ function CourseDetailContent() {
   );
 }
 
-// ─── Outer wrapper that provides the WS context ─────────────────────────────
-
 export default function CourseDetailPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const params = useParams();
   const id = params?.id as string;
 
-  if (!token || !id) return null;
+  if (!token || !id || !user) return null;
 
   return (
-    <CourseWSProvider courseId={id} token={token}>
+    <CourseWSProvider courseId={id} token={token} userId={user.id}>
       <CourseDetailContent />
     </CourseWSProvider>
   );
