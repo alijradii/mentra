@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { CourseWSProvider, useCourseWS } from "@/contexts/CourseWSContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,18 +13,28 @@ import { NodeListItem } from "@/components/courses/node-list-item";
 import { ConfirmDeleteDialog, sectionSummary } from "@/components/courses";
 import { modulesApi, nodesApi, type ModuleDTO, type NodeDTO, ApiError } from "@/lib/api";
 import { useAutoSave } from "@/hooks/use-auto-save";
+import type { CourseWSEvent } from "shared";
 
 type ModuleStatus = "draft" | "published" | "archived";
 
 const SELECT_CLASS =
   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
-export default function ModuleDetailPage() {
+interface WSNotification {
+  id: number;
+  message: string;
+}
+
+let notifCounter = 0;
+
+function ModuleDetailContent() {
   const { user, token } = useAuth();
   const router = useRouter();
   const params = useParams();
   const courseId = params?.id as string;
   const moduleId = params?.moduleId as string;
+
+  const { on } = useCourseWS();
 
   const [module, setModule] = useState<ModuleDTO | null>(null);
   const [nodes, setNodes] = useState<NodeDTO[]>([]);
@@ -42,6 +53,8 @@ export default function ModuleDetailPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [nodeToDelete, setNodeToDelete] = useState<NodeDTO | null>(null);
 
+  const [notifications, setNotifications] = useState<WSNotification[]>([]);
+
   const metaAutoSave = useAutoSave(1500);
   const latestMeta = useRef({ editTitle, editDesc, editStatus });
   latestMeta.current = { editTitle, editDesc, editStatus };
@@ -52,6 +65,84 @@ export default function ModuleDetailPage() {
   latestNodesRef.current = nodes;
 
   const initialLoadDone = useRef(false);
+
+  const showNotif = useCallback((message: string) => {
+    const notifId = ++notifCounter;
+    setNotifications((prev) => [...prev, { id: notifId, message }]);
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((n) => n.id !== notifId));
+    }, 4000);
+  }, []);
+
+  const reloadNodes = useCallback(async () => {
+    if (!token || !moduleId) return;
+    try {
+      const res = await nodesApi.list(token, moduleId);
+      setNodes(res.data);
+    } catch {
+      // ignore background refresh errors
+    }
+  }, [token, moduleId]);
+
+  const reloadModule = useCallback(async () => {
+    if (!token || !moduleId) return;
+    try {
+      const res = await modulesApi.getById(token, moduleId);
+      setModule(res.data);
+      if (!editing) {
+        setEditTitle(res.data.title);
+        setEditDesc(res.data.description ?? "");
+        setEditStatus((res.data.status as ModuleStatus) ?? "draft");
+      }
+    } catch {
+      // ignore background refresh errors
+    }
+  }, [token, moduleId, editing]);
+
+  useEffect(() => {
+    const unsubscribers = [
+      on("node:created", (e: CourseWSEvent) => {
+        if (e.actor.id !== user?.id) {
+          showNotif(`Page added by ${e.actor.name}`);
+        }
+        reloadNodes();
+      }),
+      on("node:updated", (e: CourseWSEvent) => {
+        if (e.actor.id !== user?.id) {
+          showNotif(`Page updated by ${e.actor.name}`);
+        }
+        reloadNodes();
+      }),
+      on("node:deleted", (e: CourseWSEvent) => {
+        if (e.actor.id !== user?.id) {
+          showNotif(`Page deleted by ${e.actor.name}`);
+        }
+        reloadNodes();
+      }),
+      on("nodes:reordered", (e: CourseWSEvent) => {
+        if (e.actor.id !== user?.id) {
+          showNotif(`Pages reordered by ${e.actor.name}`);
+          reloadNodes();
+        }
+      }),
+      on("module:updated", (e: CourseWSEvent) => {
+        const payload = e.payload as { moduleId?: string };
+        if (payload.moduleId === moduleId && e.actor.id !== user?.id) {
+          showNotif(`Module updated by ${e.actor.name}`);
+          reloadModule();
+        }
+      }),
+      on("snapshot:restored", (e: CourseWSEvent) => {
+        const payload = e.payload as { label: string };
+        if (e.actor.id !== user?.id) {
+          showNotif(`Course restored to snapshot "${payload.label}" by ${e.actor.name}`);
+        }
+        reloadModule();
+        reloadNodes();
+      }),
+    ];
+    return () => unsubscribers.forEach((u) => u());
+  }, [on, user?.id, moduleId, showNotif, reloadNodes, reloadModule]);
 
   useEffect(() => {
     if (!token || !moduleId) return;
@@ -187,6 +278,19 @@ export default function ModuleDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {notifications.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+          {notifications.map((n) => (
+            <div
+              key={n.id}
+              className="bg-foreground text-background text-sm px-4 py-2.5 rounded-lg shadow-lg max-w-xs animate-in fade-in slide-in-from-top-2"
+            >
+              {n.message}
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6 flex-wrap">
         <Link href="/dashboard/courses" className="hover:text-foreground">My courses</Link>
         <span>/</span>
@@ -359,5 +463,19 @@ export default function ModuleDetailPage() {
         )}
       </ConfirmDeleteDialog>
     </div>
+  );
+}
+
+export default function ModuleDetailPage() {
+  const { token, user } = useAuth();
+  const params = useParams();
+  const courseId = params?.id as string;
+
+  if (!token || !courseId || !user) return null;
+
+  return (
+    <CourseWSProvider courseId={courseId} token={token} userId={user.id}>
+      <ModuleDetailContent />
+    </CourseWSProvider>
   );
 }
