@@ -305,3 +305,60 @@
     border-top: 1px solid var(--border);
     margin: 1.5rem 0;
 }
+
+/* Compact markdown for chat bubbles (e.g. Mentor AI sidebar) */
+.markdown-chat {
+    color: inherit;
+    line-height: 1.5;
+}
+.markdown-chat h1,
+.markdown-chat h2,
+.markdown-chat h3,
+.markdown-chat h4,
+.markdown-chat h5,
+.markdown-chat h6 {
+    font-size: inherit;
+    font-weight: 600;
+    margin: 0.5em 0 0.25em;
+}
+.markdown-chat p {
+    margin: 0.5em 0;
+}
+.markdown-chat p:first-child {
+    margin-top: 0;
+}
+.markdown-chat p:last-child {
+    margin-bottom: 0;
+}
+.markdown-chat ul,
+.markdown-chat ol {
+    margin: 0.5em 0;
+    padding-left: 1.25rem;
+}
+.markdown-chat li {
+    margin: 0.125em 0;
+}
+.markdown-chat code {
+    font-size: 0.9em;
+}
+.markdown-chat pre {
+    margin: 0.5em 0;
+    padding: 0.5rem;
+}
+.markdown-chat blockquote {
+    margin: 0.5em 0;
+    padding-left: 0.75rem;
+}
+.markdown-chat a {
+    text-decoration: underline;
+}
+.markdown-chat table {
+    margin: 0.5em 0;
+}
+.markdown-chat th,
+.markdown-chat td {
+    padding: 0.25rem 0.5rem;
+}
+.markdown-chat hr {
+    margin: 0.5em 0;
+}

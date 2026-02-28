@@ -3,12 +3,15 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
+import { ArrowUp } from "lucide-react";
 import { useCourseWS } from "@/contexts/CourseWSContext";
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { CourseWSEvent } from "shared";
 
-export const SIDEBAR_WIDTH = 340;
+export const SIDEBAR_WIDTH = 440;
 
 interface ChatMessage {
     id: string;
@@ -27,6 +30,18 @@ export function AiSidebar() {
     const [isOpen, setIsOpen] = useState(true);
     const listEndRef = useRef<HTMLDivElement>(null);
     const nextIdRef = useRef(0);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    const MIN_TEXTAREA_HEIGHT = 44;
+    const MAX_TEXTAREA_HEIGHT = 200;
+
+    const resizeTextarea = useCallback(() => {
+        const el = textareaRef.current;
+        if (!el) return;
+        el.style.height = "auto";
+        const height = Math.min(MAX_TEXTAREA_HEIGHT, Math.max(MIN_TEXTAREA_HEIGHT, el.scrollHeight));
+        el.style.height = `${height}px`;
+    }, []);
 
     const scrollToBottom = useCallback(() => {
         listEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -54,6 +69,10 @@ export function AiSidebar() {
         scrollToBottom();
     }, [messages, scrollToBottom]);
 
+    useEffect(() => {
+        resizeTextarea();
+    }, [input, resizeTextarea]);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const trimmed = input.trim();
@@ -74,7 +93,7 @@ export function AiSidebar() {
                 {isOpen ? (
                     <>
                         <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-sm font-semibold truncate">Agent Tab</span>
+                            <span className="text-sm font-semibold truncate">Mentor AI</span>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                             {!connected && (
@@ -102,7 +121,7 @@ export function AiSidebar() {
                         className="h-8 w-8 mx-auto"
                         onClick={() => setIsOpen(true)}
                         aria-label="Open sidebar"
-                        title="Agent Tab"
+                        title="Mentor AI Sidebar"
                     >
                         ←
                     </Button>
@@ -133,13 +152,13 @@ export function AiSidebar() {
                                     )}
                                     <div
                                         className={cn(
-                                            "rounded-lg px-3 py-2 text-sm wrap-break-word",
+                                            "rounded-lg px-3 py-2 text-sm wrap-break-word markdown markdown-chat",
                                             msg.isOwn
                                                 ? "bg-primary text-primary-foreground"
                                                 : "bg-muted text-foreground",
                                         )}
                                     >
-                                        {msg.text}
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
                                     </div>
                                 </div>
                             ))}
@@ -147,15 +166,17 @@ export function AiSidebar() {
                         </div>
 
                         {/* Input */}
-                        <form onSubmit={handleSubmit} className="border-t border-border p-2 shrink-0">
-                            <div className="flex gap-2">
+                        <form onSubmit={handleSubmit} className="shrink-0 p-3 pt-0">
+                            <div className="relative rounded-xl border border-border bg-muted/50 shadow-sm focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-card">
                                 <Textarea
+                                    ref={textareaRef}
                                     value={input}
                                     onChange={e => setInput(e.target.value)}
-                                    placeholder="Ask the agent…"
+                                    placeholder="Ask the mentor AI…"
                                     rows={1}
-                                    className="min-h-[40px] max-h-24 resize-none"
+                                    className="min-h-[44px] max-h-[200px] overflow-y-auto resize-none border-0 bg-transparent py-3 pl-4 pr-12 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
                                     onKeyDown={e => {
+                                        // Enter = send, Shift+Enter = new line
                                         if (e.key === "Enter" && !e.shiftKey) {
                                             e.preventDefault();
                                             handleSubmit(e as unknown as React.FormEvent);
@@ -166,13 +187,16 @@ export function AiSidebar() {
                                 <Button
                                     type="submit"
                                     size="icon"
-                                    className="shrink-0 h-10 w-10"
+                                    className="absolute right-2 bottom-2 h-8 w-8 rounded-full shrink-0 shadow-sm"
                                     disabled={!connected || !input.trim()}
                                     aria-label="Send message"
                                 >
-                                    Send
+                                    <ArrowUp className="h-4 w-4" />
                                 </Button>
                             </div>
+                            <p className="mt-1.5 text-[11px] text-muted-foreground px-0.5">
+                                Shift+Enter for new line
+                            </p>
                         </form>
                     </div>
                 </>
