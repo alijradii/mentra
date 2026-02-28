@@ -1,12 +1,9 @@
 import { tool } from "ai";
-import {
-    type CourseOutline,
-    type Node,
-    sectionSchema,
-} from "shared";
+import { type CourseOutline, type Node } from "shared";
 import { z } from "zod";
 import { getDb } from "../../db";
 import { CourseModel } from "../../models/course";
+import { aiSectionInputSchema, hydrateSections } from "./schemas";
 import type { MentorAIActionContext } from "./types";
 
 export const getCourseOutlineTool = (context: MentorAIActionContext) => {
@@ -15,6 +12,8 @@ export const getCourseOutlineTool = (context: MentorAIActionContext) => {
         inputSchema: z.object({
         }),
         execute: async (): Promise<{ success: true; outline: CourseOutline } | { success: false; error: string }> => {
+            context.sendChat("Getting course outline for course " + context.courseId);
+
             const model = new CourseModel(getDb());
             const course = await model.getCourseById(context.courseId);
             if (!course) {
@@ -58,6 +57,7 @@ export const getNodeContentTool = (context: MentorAIActionContext) => {
             nodeId: z.string(),
         }),
         execute: async ({ nodeId }): Promise<{ success: true; node: Node } | { success: false; error: string }> => {
+            context.sendChat("Viewing content of node " + nodeId);
             const model = new CourseModel(getDb());
             const node = await model.getNodeById(nodeId);
 
@@ -72,17 +72,15 @@ export const getNodeContentTool = (context: MentorAIActionContext) => {
 
 export const editNodeSectionsTool = (context: MentorAIActionContext) => {
     return tool({
-        description: "Create a new section inside a node for the module",
+        description: "Replace all sections of a node. Each section needs a 'type' field: 'text', 'embedding', 'quiz', 'code', 'image', or 'video'. Quiz sections also need a 'quizType' field. IDs, order, and timestamps are generated automatically.",
         inputSchema: z.object({
-            nodeId: z.string().describe("ID of the node to add the section to"),
+            nodeId: z.string().describe("ID of the node to edit"),
             sections: z
-                .array(sectionSchema)
-                .min(1, "At least one section is required")
-                .describe(
-                    "List of sections for the node. Each section must have type one of 'text' | 'embedding' | 'quiz' | 'code' | 'image' | 'video' with the required fields for that type"
-                ),
+                .array(aiSectionInputSchema)
+                .min(1, "At least one section is required"),
         }),
-        execute: async ({ nodeId, sections }): Promise<{ success: true; node: Node } | { success: false; error: string }> => {
+        execute: async ({ nodeId, sections }): Promise<{ success: true; message: string } | { success: false; error: string }> => {
+            context.sendChat("Editing sections of node " + nodeId);
             const model = new CourseModel(getDb());
             const node = await model.getNodeById(nodeId);
 
@@ -90,7 +88,13 @@ export const editNodeSectionsTool = (context: MentorAIActionContext) => {
                 return { success: false, error: "Node not found" };
             }
 
-            return { success: true, node: node as unknown as Node<string> };
+            const hydratedSections = hydrateSections(sections) as unknown as import("shared").Section[];
+
+            await model.updateNode(nodeId, {
+                sections: hydratedSections,
+            });
+
+            return { success: true, message: "Sections updated successfully" };
         },
     });
 }

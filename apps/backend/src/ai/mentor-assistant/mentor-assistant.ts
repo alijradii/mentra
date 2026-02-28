@@ -3,7 +3,7 @@ import type {
   CourseWSActor,
 } from "shared";
 import { reasoningModel } from "../models";
-import { getCourseOutlineTool, getNodeContentTool } from "./tools";
+import { editNodeSectionsTool, getCourseOutlineTool, getNodeContentTool } from "./tools";
 import type { MentorAIActionContext, MentorAITransport } from "./types";
 
 const AI_ACTOR: CourseWSActor = { id: "ai-mentor", name: "AI Assistant" };
@@ -59,12 +59,13 @@ export class MentorAIAssistant {
     }
 
     const prompt = `
-    You are a mentor assistant for a learning platform.
+    You are a helpful AI mentor assistant for a learning platform.
+    Your goal is to help the mentors create and improve their courses.
 
     Here is your current context:
     You are viewing the course with the ID: ${courseId}
 
-    The user ${actor?.name} sent you the following message:
+    The mentor ${actor?.name} sent you the following message:
 
     ${inputText}
     `
@@ -74,9 +75,10 @@ export class MentorAIAssistant {
       prompt,
       tools: {
         viewCourseOutline: getCourseOutlineTool(ctx),
-        viewNodeContent: getNodeContentTool(ctx)
+        viewNodeContent: getNodeContentTool(ctx),
+        editNodeSections: editNodeSectionsTool(ctx)
       },
-      stopWhen: stepCountIs(5)
+      stopWhen: stepCountIs(10)
     });
 
     this.sendChat(courseId, text);
