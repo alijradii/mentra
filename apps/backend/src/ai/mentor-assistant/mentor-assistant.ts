@@ -1,28 +1,13 @@
+import { generateText, stepCountIs } from "ai";
 import type {
-  CourseWSEventName,
   CourseWSActor,
 } from "shared";
+import { reasoningModel } from "../models";
+import { getCourseOutlineTool, getNodeContentTool } from "./tools";
+import type { MentorAIActionContext, MentorAITransport } from "./types";
 
 const AI_ACTOR: CourseWSActor = { id: "ai-mentor", name: "AI Assistant" };
 
-export interface MentorAITransport {
-  broadcastToCourse(
-    courseId: string,
-    type: CourseWSEventName,
-    payload: unknown,
-    excludeSocket?: unknown,
-    actor?: CourseWSActor
-  ): void;
-}
-
-export interface MentorAIActionContext {
-  courseId: string;
-  actor?: CourseWSActor;
-  /** Send a chat message to the course room as the AI assistant */
-  sendChat(text: string): void;
-  /** Set the edits-locked state and notify the frontend */
-  setEditsLocked(locked: boolean): void;
-}
 
 export type MentorAIActionHandler = (ctx: MentorAIActionContext) => void | Promise<void>;
 
@@ -41,12 +26,12 @@ export class MentorAIAssistant {
 
   private registerBuiltInActions() {
     this.registerAction("lockedits", (ctx) => {
-      ctx.setEditsLocked(true);
-      ctx.sendChat("Done");
+      this.setEditsLocked(ctx.courseId, true);
+      this.sendChat(ctx.courseId, "Done");
     });
     this.registerAction("unlockedits", (ctx) => {
-      ctx.setEditsLocked(false);
-      ctx.sendChat("Done");
+      this.setEditsLocked(ctx.courseId, false);
+      this.sendChat(ctx.courseId, "Done");
     });
   }
 
@@ -58,11 +43,49 @@ export class MentorAIAssistant {
     this.actions.set(name, handler);
   }
 
-  /**
-   * Handle an incoming message (e.g. from chat). If the message matches a registered action name,
-   * runs that action. Commands are matched as "/name" or "name" (exact string match).
-   */
-  async handleMessage(courseId: string, text: string, actor?: CourseWSActor): Promise<void> {
+  async handleMessage(courseId: string, inputText: string, actor?: CourseWSActor): Promise<void> {
+    const trimmed = inputText.trim();
+    if (!trimmed) return;
+
+    if (trimmed.startsWith("/")) {
+      return this.handleCommand(courseId, inputText, actor);
+    }
+
+    this.setEditsLocked(courseId, true);
+
+    const ctx: MentorAIActionContext = {
+      courseId,
+      actor,
+      sendChat: (text) => this.sendChat(courseId, text),
+      setEditsLocked: (locked) => this.setEditsLocked(courseId, locked)
+    }
+
+    const prompt = `
+    You are a mentor assistant for a learning platform.
+
+    Here is your current context:
+    You are viewing the course with the ID: ${courseId}
+
+    The user ${actor?.name} sent you the following message:
+
+    ${inputText}
+    `
+
+    const { text } = await generateText({
+      model: reasoningModel,
+      prompt,
+      tools: {
+        viewCourseOutline: getCourseOutlineTool(ctx),
+        viewNodeContent: getNodeContentTool(ctx)
+      },
+      stopWhen: stepCountIs(5)
+    });
+
+    this.setEditsLocked(courseId, false);
+    this.sendChat(courseId, text);
+  }
+
+  async handleCommand(courseId: string, text: string, actor?: CourseWSActor): Promise<void> {
     const trimmed = text.trim();
     if (!trimmed) return;
 
@@ -73,8 +96,8 @@ export class MentorAIAssistant {
     const ctx: MentorAIActionContext = {
       courseId,
       actor,
-      sendChat: (msg) => this.sendChat(courseId, msg),
-      setEditsLocked: (locked) => this.setEditsLocked(courseId, locked),
+      sendChat: (text) => this.sendChat(courseId, text),
+      setEditsLocked: (locked) => this.setEditsLocked(courseId, locked)
     };
 
     await Promise.resolve(handler(ctx));

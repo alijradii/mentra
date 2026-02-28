@@ -1,3 +1,36 @@
+import type { NodeType } from "./node";
+
+/**
+ * Concise per-node entry used in a course outline (for AI context).
+ */
+export interface CourseOutlineNode {
+  _id: string;
+  title: string;
+  type: NodeType;
+}
+
+/**
+ * Concise per-module entry used in a course outline (for AI context).
+ */
+export interface CourseOutlineModule {
+  _id: string;
+  title: string;
+  order: number;
+  nodes: CourseOutlineNode[];
+}
+
+/**
+ * Lightweight, flat view of a course intended for AI prompt context.
+ * Contains only the information needed to understand the structure of a course
+ * without embedding full section/content data.
+ */
+export interface CourseOutline {
+  _id: string;
+  title: string;
+  description: string;
+  modules: CourseOutlineModule[];
+}
+
 /**
  * Course - Top-level learning content container
  */

@@ -8,7 +8,7 @@ import type {
 } from "shared";
 import { URL } from "url";
 import { WebSocket, WebSocketServer } from "ws";
-import { MentorAIAssistant } from "../ai/mentor-assistant/mentor-ai-assistant.js";
+import { MentorAIAssistant } from "../ai/mentor-assistant/mentor-assistant.js";
 import { findUserById, userDocumentToUser } from "../models/user.js";
 import { verifyToken } from "../utils/jwt.js";
 
