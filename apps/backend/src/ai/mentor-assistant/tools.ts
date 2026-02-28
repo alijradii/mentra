@@ -1,5 +1,5 @@
 import { tool } from "ai";
-import { type CourseOutline, type Node } from "shared";
+import { type CourseOutline, type CourseOutlineModule, type Node } from "shared";
 import { z } from "zod";
 import { getDb } from "../../db";
 import { CourseModel } from "../../models/course";
@@ -22,7 +22,7 @@ export const getCourseOutlineTool = (context: MentorAIActionContext) => {
 
             const modules = await model.getModulesByCourseId(course._id);
 
-            const outlineModules = await Promise.all(
+            const outlineModules: CourseOutlineModule[] = await Promise.all(
                 modules.map(async (mod) => {
                     const nodes = await model.getNodesByModuleId(mod._id);
                     return {
@@ -33,6 +33,7 @@ export const getCourseOutlineTool = (context: MentorAIActionContext) => {
                             _id: node._id.toString(),
                             title: node.title,
                             type: node.type,
+                            description: node.description,
                         })),
                     };
                 })

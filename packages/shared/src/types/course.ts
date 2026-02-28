@@ -7,6 +7,7 @@ export interface CourseOutlineNode {
   _id: string;
   title: string;
   type: NodeType;
+  description?: string;
 }
 
 /**
