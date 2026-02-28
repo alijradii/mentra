@@ -21,7 +21,7 @@ export const embeddingSectionSchema = baseSectionSchema.extend({
   url: z.string().url(),
   embedType: z.enum(["youtube", "vimeo", "codepen", "codesandbox", "other"]),
   title: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // --- Quiz schemas ---

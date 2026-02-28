@@ -102,7 +102,7 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
     if (!result.success) {
       res.status(400).json({
         error: "Validation failed",
-        details: result.error.errors
+        details: result.error.issues
       });
       return;
     }
@@ -207,7 +207,7 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
     if (!result.success) {
       res.status(400).json({
         error: "Validation failed",
-        details: result.error.errors
+        details: result.error.issues
       });
       return;
     }
@@ -334,7 +334,7 @@ router.patch("/me", authenticate, async (req: Request, res: Response): Promise<v
     if (!result.success) {
       res.status(400).json({
         error: "Validation failed",
-        details: result.error.errors,
+        details: result.error.issues,
       });
       return;
     }
@@ -405,7 +405,7 @@ router.post("/verify-email", async (req: Request, res: Response): Promise<void> 
     if (!result.success) {
       res.status(400).json({
         error: "Validation failed",
-        details: result.error.errors
+        details: result.error.issues
       });
       return;
     }
@@ -527,7 +527,7 @@ router.post("/forgot-password", async (req: Request, res: Response): Promise<voi
     if (!result.success) {
       res.status(400).json({
         error: "Validation failed",
-        details: result.error.errors,
+        details: result.error.issues,
       });
       return;
     }
@@ -588,7 +588,7 @@ router.post("/reset-password", async (req: Request, res: Response): Promise<void
     if (!result.success) {
       res.status(400).json({
         error: "Validation failed",
-        details: result.error.errors,
+        details: result.error.issues,
       });
       return;
     }

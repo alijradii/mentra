@@ -21,7 +21,7 @@ export async function createCourse(req: Request, res: Response): Promise<void> {
       res.status(400).json({
         success: false,
         error: "Validation failed",
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
       return;
     }
@@ -208,7 +208,7 @@ export async function updateCourse(req: Request, res: Response): Promise<void> {
       res.status(400).json({
         success: false,
         error: "Validation failed",
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
       return;
     }
@@ -323,7 +323,7 @@ export async function reorderModules(req: Request, res: Response): Promise<void>
       res.status(400).json({
         success: false,
         error: "Validation failed",
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
       return;
     }

@@ -51,8 +51,6 @@ export class MentorAIAssistant {
       return this.handleCommand(courseId, inputText, actor);
     }
 
-    this.setEditsLocked(courseId, true);
-
     const ctx: MentorAIActionContext = {
       courseId,
       actor,
@@ -81,7 +79,6 @@ export class MentorAIAssistant {
       stopWhen: stepCountIs(5)
     });
 
-    this.setEditsLocked(courseId, false);
     this.sendChat(courseId, text);
   }
 

@@ -1,5 +1,9 @@
 import { tool } from "ai";
-import type { CourseOutline, Node } from "shared";
+import {
+    type CourseOutline,
+    type Node,
+    sectionSchema,
+} from "shared";
 import { z } from "zod";
 import { getDb } from "../../db";
 import { CourseModel } from "../../models/course";
@@ -54,6 +58,31 @@ export const getNodeContentTool = (context: MentorAIActionContext) => {
             nodeId: z.string(),
         }),
         execute: async ({ nodeId }): Promise<{ success: true; node: Node } | { success: false; error: string }> => {
+            const model = new CourseModel(getDb());
+            const node = await model.getNodeById(nodeId);
+
+            if (!node) {
+                return { success: false, error: "Node not found" };
+            }
+
+            return { success: true, node: node as unknown as Node<string> };
+        },
+    });
+}
+
+export const editNodeSectionsTool = (context: MentorAIActionContext) => {
+    return tool({
+        description: "Create a new section inside a node for the module",
+        inputSchema: z.object({
+            nodeId: z.string().describe("ID of the node to add the section to"),
+            sections: z
+                .array(sectionSchema)
+                .min(1, "At least one section is required")
+                .describe(
+                    "List of sections for the node. Each section must have type one of 'text' | 'embedding' | 'quiz' | 'code' | 'image' | 'video' with the required fields for that type"
+                ),
+        }),
+        execute: async ({ nodeId, sections }): Promise<{ success: true; node: Node } | { success: false; error: string }> => {
             const model = new CourseModel(getDb());
             const node = await model.getNodeById(nodeId);
 

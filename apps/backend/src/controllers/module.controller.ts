@@ -84,7 +84,7 @@ export async function createModule(req: Request, res: Response): Promise<void> {
       res.status(400).json({
         success: false,
         error: "Validation failed",
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
       return;
     }
@@ -182,7 +182,7 @@ export async function updateModule(req: Request, res: Response): Promise<void> {
       res.status(400).json({
         success: false,
         error: "Validation failed",
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
       return;
     }
@@ -345,7 +345,7 @@ export async function reorderNodes(req: Request, res: Response): Promise<void> {
       res.status(400).json({
         success: false,
         error: "Validation failed",
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
       return;
     }

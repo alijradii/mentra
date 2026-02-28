@@ -31,7 +31,7 @@ export async function startSubmission(req: Request, res: Response): Promise<void
 
     const validation = startSubmissionSchema.safeParse(req.body);
     if (!validation.success) {
-      res.status(400).json({ success: false, error: "Validation failed", details: validation.error.errors });
+      res.status(400).json({ success: false, error: "Validation failed", details: validation.error.issues });
       return;
     }
 
@@ -110,7 +110,7 @@ export async function saveAnswers(req: Request, res: Response): Promise<void> {
 
     const validation = saveAnswersSchema.safeParse(req.body);
     if (!validation.success) {
-      res.status(400).json({ success: false, error: "Validation failed", details: validation.error.errors });
+      res.status(400).json({ success: false, error: "Validation failed", details: validation.error.issues });
       return;
     }
 
@@ -414,7 +414,7 @@ export async function gradeSubmission(req: Request, res: Response): Promise<void
 
     const validation = gradeSubmissionSchema.safeParse(req.body);
     if (!validation.success) {
-      res.status(400).json({ success: false, error: "Validation failed", details: validation.error.errors });
+      res.status(400).json({ success: false, error: "Validation failed", details: validation.error.issues });
       return;
     }
 

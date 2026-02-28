@@ -94,7 +94,7 @@ export async function createNode(req: Request, res: Response): Promise<void> {
       res.status(400).json({
         success: false,
         error: "Validation failed",
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
       return;
     }
@@ -202,7 +202,7 @@ export async function updateNode(req: Request, res: Response): Promise<void> {
       res.status(400).json({
         success: false,
         error: "Validation failed",
-        details: validation.error.errors,
+        details: validation.error.issues,
       });
       return;
     }
