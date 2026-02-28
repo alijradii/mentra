@@ -55,8 +55,10 @@ export class MentorAIAssistant {
       courseId,
       actor,
       sendChat: (text) => this.sendChat(courseId, text),
-      setEditsLocked: (locked) => this.setEditsLocked(courseId, locked)
-    }
+      setEditsLocked: (locked) => this.setEditsLocked(courseId, locked),
+      broadcastToCourse: (type, payload, excludeSocket, actorOverride) =>
+        this.transport.broadcastToCourse(courseId, type, payload, excludeSocket, actorOverride ?? AI_ACTOR),
+    };
 
     const prompt = `
     You are a helpful AI mentor assistant for a learning platform.
@@ -96,7 +98,9 @@ export class MentorAIAssistant {
       courseId,
       actor,
       sendChat: (text) => this.sendChat(courseId, text),
-      setEditsLocked: (locked) => this.setEditsLocked(courseId, locked)
+      setEditsLocked: (locked) => this.setEditsLocked(courseId, locked),
+      broadcastToCourse: (type, payload, excludeSocket, actorOverride) =>
+        this.transport.broadcastToCourse(courseId, type, payload, excludeSocket, actorOverride ?? AI_ACTOR),
     };
 
     await Promise.resolve(handler(ctx));

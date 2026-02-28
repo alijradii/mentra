@@ -94,6 +94,11 @@ export const editNodeSectionsTool = (context: MentorAIActionContext) => {
                 sections: hydratedSections,
             });
 
+            context.broadcastToCourse("node:updated", {
+                nodeId,
+                sections: hydratedSections,
+            });
+
             return { success: true, message: "Sections updated successfully" };
         },
     });
