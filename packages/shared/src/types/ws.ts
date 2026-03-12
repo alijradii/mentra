@@ -16,7 +16,8 @@ export type CourseWSEventName =
   | "presence:joined"
   | "presence:left"
   | "chat:message"
-  | "ai:edits_locked";
+  | "ai:edits_locked"
+  | "ai:chat_locked";
 
 export interface CourseWSActor {
   id: string;

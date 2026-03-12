@@ -70,9 +70,12 @@ export class MentorAIAssistant {
       actor,
       sendChat: (text) => this.sendChat(courseId, text),
       setEditsLocked: (locked) => this.setEditsLocked(courseId, locked),
+      setChatLocked: (locked) => this.setChatLocked(courseId, locked),
       broadcastToCourse: (type, payload, excludeSocket, actorOverride) =>
         this.transport.broadcastToCourse(courseId, type, payload, excludeSocket, actorOverride ?? AI_ACTOR),
     };
+
+    ctx.setEditsLocked(true);
 
     try {
       // ── Phase 1: Context gathering ──────────────────────────────────────────
@@ -159,6 +162,8 @@ export class MentorAIAssistant {
       const msg = err instanceof Error ? err.message : String(err);
       ctx.sendChat(`❌ Mentor assistant encountered an error: ${msg}`);
     }
+
+    ctx.setEditsLocked(false);
   }
 
   async handleCommand(courseId: string, text: string, actor?: CourseWSActor): Promise<void> {
@@ -174,6 +179,7 @@ export class MentorAIAssistant {
       actor,
       sendChat: (text) => this.sendChat(courseId, text),
       setEditsLocked: (locked) => this.setEditsLocked(courseId, locked),
+      setChatLocked: (locked) => this.setChatLocked(courseId, locked),
       broadcastToCourse: (type, payload, excludeSocket, actorOverride) =>
         this.transport.broadcastToCourse(courseId, type, payload, excludeSocket, actorOverride ?? AI_ACTOR),
     };
@@ -195,6 +201,16 @@ export class MentorAIAssistant {
     this.transport.broadcastToCourse(
       courseId,
       "ai:edits_locked",
+      { locked },
+      undefined,
+      AI_ACTOR
+    );
+  }
+
+  private setChatLocked(courseId: string, locked: boolean): void {
+    this.transport.broadcastToCourse(
+      courseId,
+      "ai:chat_locked",
       { locked },
       undefined,
       AI_ACTOR

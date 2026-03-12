@@ -18,6 +18,8 @@ export interface MentorAIActionContext {
     actor?: CourseWSActor;
     sendChat(text: string): void;
     setEditsLocked(locked: boolean): void;
+    /** Lock or unlock the mentor chat UI independently of edit lock state. */
+    setChatLocked(locked: boolean): void;
     /** Broadcast a course WS event to all clients in the current course room (for real-time updates). */
     broadcastToCourse(
         type: CourseWSEventName,

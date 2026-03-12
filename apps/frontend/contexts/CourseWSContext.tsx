@@ -37,6 +37,11 @@ interface CourseWSContextValue {
    * Used to avoid race conditions. Toggled later by the AI agent; for now frontend-only.
    */
   editsLocked: boolean;
+  /**
+   * When true, mentor chat input should be disabled. This can be controlled
+   * independently of edit locking by the AI agent.
+   */
+  chatLocked: boolean;
 }
 
 const CourseWSContext = createContext<CourseWSContextValue | null>(null);
@@ -54,11 +59,14 @@ export function CourseWSProvider({ courseId, token, userId, children }: CourseWS
   const [presenceList, setPresenceList] = useState<CourseWSActor[]>([]);
   const [connected, setConnected] = useState(false);
   const [editsLocked, setEditsLocked] = useState(false);
+  const [chatLockedExplicit, setChatLockedExplicit] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
   const handlersRef = useRef<Map<CourseWSEventName, Set<EventHandler>>>(new Map());
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unmountedRef = useRef(false);
+
+  const chatLocked = chatLockedExplicit || editsLocked;
 
   const dispatchEvent = useCallback((event: CourseWSEvent) => {
     const handlers = handlersRef.current.get(event.type);
@@ -95,6 +103,9 @@ export function CourseWSProvider({ courseId, token, userId, children }: CourseWS
           if (wsEvent.type === "ai:edits_locked") {
             const payload = wsEvent.payload as { locked: boolean };
             setEditsLocked(Boolean(payload?.locked));
+          } else if (wsEvent.type === "ai:chat_locked") {
+            const payload = wsEvent.payload as { locked: boolean };
+            setChatLockedExplicit(Boolean(payload?.locked));
           }
           if (wsEvent.type === "presence:joined") {
             const payload = wsEvent.payload as { user: CourseWSActor };
@@ -162,7 +173,7 @@ export function CourseWSProvider({ courseId, token, userId, children }: CourseWS
   }, []);
 
   return (
-    <CourseWSContext.Provider value={{ presenceList, on, connected, sendChat, editsLocked }}>
+    <CourseWSContext.Provider value={{ presenceList, on, connected, sendChat, editsLocked, chatLocked }}>
       {children}
     </CourseWSContext.Provider>
   );

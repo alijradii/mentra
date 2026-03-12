@@ -24,7 +24,7 @@ interface ChatMessage {
 
 export function AiSidebar() {
     const { user } = useAuth();
-    const { sendChat, on, connected } = useCourseWS();
+  const { sendChat, on, connected, chatLocked } = useCourseWS();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
     const [isOpen, setIsOpen] = useState(true);
@@ -182,13 +182,13 @@ export function AiSidebar() {
                                             handleSubmit(e as unknown as React.FormEvent);
                                         }
                                     }}
-                                    disabled={!connected}
+              disabled={!connected || chatLocked}
                                 />
                                 <Button
                                     type="submit"
                                     size="icon"
                                     className="absolute right-2 bottom-2 h-8 w-8 rounded-full shrink-0 shadow-sm"
-                                    disabled={!connected || !input.trim()}
+              disabled={!connected || chatLocked || !input.trim()}
                                     aria-label="Send message"
                                 >
                                     <ArrowUp className="h-4 w-4" />
