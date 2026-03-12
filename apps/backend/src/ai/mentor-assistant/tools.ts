@@ -1,10 +1,13 @@
 import { tool } from "ai";
+import { ObjectId } from "mongodb";
 import { type CourseOutline, type CourseOutlineModule, type Node } from "shared";
 import { z } from "zod";
 import { getDb } from "../../db";
 import { CourseModel } from "../../models/course";
 import { aiSectionInputSchema, hydrateSections } from "./schemas";
 import type { MentorAIActionContext } from "./types";
+
+const nodeTypeSchema = z.enum(["lesson", "practice", "quiz"]);
 
 export const getCourseOutlineTool = (context: MentorAIActionContext) => {
     return tool({
@@ -104,3 +107,433 @@ export const editNodeSectionsTool = (context: MentorAIActionContext) => {
         },
     });
 }
+
+export const createModuleTool = (context: MentorAIActionContext) => {
+    return tool({
+        description: "Create a new module (chapter) in the course",
+        inputSchema: z.object({
+            title: z.string().min(1).max(200).describe("Module title"),
+            description: z.string().max(1000).optional().describe("Optional module description"),
+            order: z.number().int().min(0).optional().describe("Order position (0-based). If omitted, appends at end."),
+        }),
+        execute: async ({
+            title,
+            description,
+            order,
+        }): Promise<{ success: true; moduleId: string } | { success: false; error: string }> => {
+            context.sendChat(`Creating module "${title}"`);
+
+            const model = new CourseModel(getDb());
+            const course = await model.getCourseById(context.courseId);
+            if (!course) {
+                return { success: false, error: "Course not found" };
+            }
+
+            const modules = await model.getModulesByCourseId(course._id);
+            const insertOrder =
+                order !== undefined ? order : modules.length;
+
+            const module = await model.createModule({
+                courseId: course._id as ObjectId,
+                title,
+                description,
+                order: insertOrder,
+                nodes: [],
+                status: "draft",
+            });
+
+            context.broadcastToCourse("module:created", module);
+
+            return { success: true, moduleId: module._id.toString() };
+        },
+    });
+};
+
+export const deleteModuleTool = (context: MentorAIActionContext) => {
+    return tool({
+        description: "Delete a module and all its nodes",
+        inputSchema: z.object({
+            moduleId: z.string().describe("ID of the module to delete"),
+        }),
+        execute: async ({
+            moduleId,
+        }): Promise<{ success: true; message: string } | { success: false; error: string }> => {
+            context.sendChat(`Deleting module ${moduleId}`);
+
+            const model = new CourseModel(getDb());
+            const module = await model.getModuleById(moduleId);
+            if (!module) {
+                return { success: false, error: "Module not found" };
+            }
+            if (module.courseId.toString() !== context.courseId) {
+                return { success: false, error: "Module does not belong to this course" };
+            }
+
+            const deleted = await model.deleteModule(moduleId, true);
+            if (!deleted) {
+                return { success: false, error: "Failed to delete module" };
+            }
+
+            context.broadcastToCourse("module:deleted", { moduleId });
+
+            return { success: true, message: "Module deleted successfully" };
+        },
+    });
+};
+
+export const reorderModulesTool = (context: MentorAIActionContext) => {
+    return tool({
+        description: "Reorder modules within the course. Provide module IDs in the desired order.",
+        inputSchema: z.object({
+            moduleIds: z
+                .array(z.string())
+                .min(1)
+                .describe("Module IDs in the new order"),
+        }),
+        execute: async ({
+            moduleIds,
+        }): Promise<{ success: true; message: string } | { success: false; error: string }> => {
+            context.sendChat("Reordering modules");
+
+            const model = new CourseModel(getDb());
+            const course = await model.getCourseById(context.courseId);
+            if (!course) {
+                return { success: false, error: "Course not found" };
+            }
+
+            const ok = await model.reorderModules(context.courseId, moduleIds);
+            if (!ok) {
+                return { success: false, error: "Invalid module list (must include all course modules)" };
+            }
+
+            context.broadcastToCourse("modules:reordered", { moduleIds });
+
+            return { success: true, message: "Modules reordered successfully" };
+        },
+    });
+};
+
+export const createNodeTool = (context: MentorAIActionContext) => {
+    return tool({
+        description: "Create a new node (lesson, practice, or quiz page) in a module",
+        inputSchema: z.object({
+            moduleId: z.string().describe("ID of the module to add the node to"),
+            title: z.string().min(1).max(200).describe("Node title"),
+            description: z.string().max(1000).optional().describe("Optional description"),
+            type: nodeTypeSchema.default("lesson").describe("Node type: lesson, practice, or quiz"),
+            order: z.number().int().min(0).optional().describe("Order position (0-based). If omitted, appends at end."),
+        }),
+        execute: async ({
+            moduleId,
+            title,
+            description,
+            type,
+            order,
+        }): Promise<{ success: true; nodeId: string } | { success: false; error: string }> => {
+            context.sendChat(`Creating node "${title}" in module ${moduleId}`);
+
+            const model = new CourseModel(getDb());
+            const module = await model.getModuleById(moduleId);
+            if (!module) {
+                return { success: false, error: "Module not found" };
+            }
+            if (module.courseId.toString() !== context.courseId) {
+                return { success: false, error: "Module does not belong to this course" };
+            }
+
+            const nodes = await model.getNodesByModuleId(moduleId);
+            const insertOrder = order !== undefined ? order : nodes.length;
+
+            const node = await model.createNode({
+                moduleId: module._id as ObjectId,
+                title,
+                description,
+                type,
+                sections: [],
+                order: insertOrder,
+                status: "draft",
+            });
+
+            context.broadcastToCourse("node:created", node);
+
+            return { success: true, nodeId: node._id.toString() };
+        },
+    });
+};
+
+export const createAndPopulateModuleTool = (context: MentorAIActionContext) => {
+    return tool({
+        description:
+            "Create a new module and one or more populated nodes (with sections) inside it.",
+        inputSchema: z.object({
+            title: z.string().min(1).max(200).describe("Module title"),
+            description: z
+                .string()
+                .max(1000)
+                .optional()
+                .describe("Optional module description"),
+            order: z
+                .number()
+                .int()
+                .min(0)
+                .optional()
+                .describe(
+                    "Order position of the new module (0-based). If omitted, appends at end."
+                ),
+            nodes: z
+                .array(
+                    z.object({
+                        title: z
+                            .string()
+                            .min(1)
+                            .max(200)
+                            .describe("Node title"),
+                        description: z
+                            .string()
+                            .max(1000)
+                            .optional()
+                            .describe("Optional node description"),
+                        type: nodeTypeSchema
+                            .default("lesson")
+                            .describe("Node type: lesson, practice, or quiz"),
+                        order: z
+                            .number()
+                            .int()
+                            .min(0)
+                            .optional()
+                            .describe(
+                                "Order position within the new module (0-based). If omitted, nodes are appended in the given order."
+                            ),
+                        sections: z
+                            .array(aiSectionInputSchema)
+                            .min(1, "At least one section is required")
+                            .describe(
+                                "Sections that will make up the node content."
+                            ),
+                    })
+                )
+                .min(1)
+                .describe(
+                    "Nodes to create inside the new module, each with its own sections."
+                ),
+        }),
+        execute: async ({
+            title,
+            description,
+            order,
+            nodes,
+        }): Promise<
+            | { success: true; moduleId: string; nodeIds: string[] }
+            | { success: false; error: string }
+        > => {
+            context.sendChat(
+                `Creating module "${title}" with ${nodes.length} populated node(s)`
+            );
+
+            const model = new CourseModel(getDb());
+            const course = await model.getCourseById(context.courseId);
+            if (!course) {
+                return { success: false, error: "Course not found" };
+            }
+
+            const existingModules = await model.getModulesByCourseId(
+                course._id
+            );
+            const insertOrder =
+                order !== undefined ? order : existingModules.length;
+
+            const module = await model.createModule({
+                courseId: course._id as ObjectId,
+                title,
+                description,
+                order: insertOrder,
+                nodes: [],
+                status: "draft",
+            });
+
+            const createdNodeIds: string[] = [];
+
+            for (let index = 0; index < nodes.length; index++) {
+                const nodeSpec = nodes[index];
+                const hydratedSections =
+                    hydrateSections(nodeSpec.sections) as unknown as import("shared").Section[];
+
+                const nodeOrder =
+                    nodeSpec.order !== undefined ? nodeSpec.order : index;
+
+                const node = await model.createNode({
+                    moduleId: module._id as ObjectId,
+                    title: nodeSpec.title,
+                    description: nodeSpec.description,
+                    type: nodeSpec.type,
+                    sections: hydratedSections,
+                    order: nodeOrder,
+                    status: "draft",
+                });
+
+                createdNodeIds.push(node._id.toString());
+
+                context.broadcastToCourse("node:created", node);
+            }
+
+            context.broadcastToCourse("module:created", module);
+
+            return {
+                success: true,
+                moduleId: module._id.toString(),
+                nodeIds: createdNodeIds,
+            };
+        },
+    });
+};
+
+export const createAndPopulateNodeTool = (context: MentorAIActionContext) => {
+    return tool({
+        description:
+            "Create a new node in an existing module and immediately populate it with sections.",
+        inputSchema: z.object({
+            moduleId: z
+                .string()
+                .describe("ID of the module to add the node to"),
+            title: z.string().min(1).max(200).describe("Node title"),
+            description: z
+                .string()
+                .max(1000)
+                .optional()
+                .describe("Optional description"),
+            type: nodeTypeSchema
+                .default("lesson")
+                .describe("Node type: lesson, practice, or quiz"),
+            order: z
+                .number()
+                .int()
+                .min(0)
+                .optional()
+                .describe(
+                    "Order position (0-based). If omitted, appends at end."
+                ),
+            sections: z
+                .array(aiSectionInputSchema)
+                .min(1, "At least one section is required")
+                .describe("Sections that will make up the node content."),
+        }),
+        execute: async ({
+            moduleId,
+            title,
+            description,
+            type,
+            order,
+            sections,
+        }): Promise<
+            | { success: true; nodeId: string }
+            | { success: false; error: string }
+        > => {
+            context.sendChat(
+                `Creating and populating node "${title}" in module ${moduleId}`
+            );
+
+            const model = new CourseModel(getDb());
+            const module = await model.getModuleById(moduleId);
+            if (!module) {
+                return { success: false, error: "Module not found" };
+            }
+            if (module.courseId.toString() !== context.courseId) {
+                return {
+                    success: false,
+                    error: "Module does not belong to this course",
+                };
+            }
+
+            const existingNodes = await model.getNodesByModuleId(moduleId);
+            const insertOrder =
+                order !== undefined ? order : existingNodes.length;
+
+            const hydratedSections =
+                hydrateSections(sections) as unknown as import("shared").Section[];
+
+            const node = await model.createNode({
+                moduleId: module._id as ObjectId,
+                title,
+                description,
+                type,
+                sections: hydratedSections,
+                order: insertOrder,
+                status: "draft",
+            });
+
+            context.broadcastToCourse("node:created", node);
+
+            return { success: true, nodeId: node._id.toString() };
+        },
+    });
+};
+
+export const deleteNodeTool = (context: MentorAIActionContext) => {
+    return tool({
+        description: "Delete a node",
+        inputSchema: z.object({
+            nodeId: z.string().describe("ID of the node to delete"),
+        }),
+        execute: async ({
+            nodeId,
+        }): Promise<{ success: true; message: string } | { success: false; error: string }> => {
+            context.sendChat(`Deleting node ${nodeId}`);
+
+            const model = new CourseModel(getDb());
+            const node = await model.getNodeById(nodeId);
+            if (!node) {
+                return { success: false, error: "Node not found" };
+            }
+            const module = await model.getModuleById(node.moduleId);
+            if (!module || module.courseId.toString() !== context.courseId) {
+                return { success: false, error: "Node does not belong to this course" };
+            }
+
+            const deleted = await model.deleteNode(nodeId);
+            if (!deleted) {
+                return { success: false, error: "Failed to delete node" };
+            }
+
+            context.broadcastToCourse("node:deleted", { nodeId });
+
+            return { success: true, message: "Node deleted successfully" };
+        },
+    });
+};
+
+export const reorderNodesTool = (context: MentorAIActionContext) => {
+    return tool({
+        description: "Reorder nodes within a module. Provide node IDs in the desired order.",
+        inputSchema: z.object({
+            moduleId: z.string().describe("ID of the module containing the nodes"),
+            nodeIds: z
+                .array(z.string())
+                .min(1)
+                .describe("Node IDs in the new order"),
+        }),
+        execute: async ({
+            moduleId,
+            nodeIds,
+        }): Promise<{ success: true; message: string } | { success: false; error: string }> => {
+            context.sendChat(`Reordering nodes in module ${moduleId}`);
+
+            const model = new CourseModel(getDb());
+            const module = await model.getModuleById(moduleId);
+            if (!module) {
+                return { success: false, error: "Module not found" };
+            }
+            if (module.courseId.toString() !== context.courseId) {
+                return { success: false, error: "Module does not belong to this course" };
+            }
+
+            const ok = await model.reorderNodes(moduleId, nodeIds);
+            if (!ok) {
+                return { success: false, error: "Invalid node list (must include all module nodes)" };
+            }
+
+            context.broadcastToCourse("nodes:reordered", { moduleId, nodeIds });
+
+            return { success: true, message: "Nodes reordered successfully" };
+        },
+    });
+};

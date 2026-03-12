@@ -14,3 +14,6 @@ export * from "./user";
 // Real-time collaboration
 export * from "./ws";
 export * from "./snapshot";
+
+// AI Mentor orchestration
+export * from "./plan";
