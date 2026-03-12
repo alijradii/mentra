@@ -1,5 +1,6 @@
 import { Output, ToolLoopAgent, generateText, stepCountIs } from "ai";
 import type {
+  ChatMessagePayload,
   CourseWSActor,
 } from "shared";
 import { reasoningModel } from "../models";
@@ -38,14 +39,41 @@ export class MentorAIAssistant {
     this.registerBuiltInActions();
   }
 
+  /**
+   * Low-level helper to send a typed AI chat payload to all mentors
+   * in the course room.
+   */
+  private sendAiMessage(courseId: string, payload: ChatMessagePayload): void {
+    this.transport.broadcastToCourse(
+      courseId,
+      "chat:message",
+      payload,
+      undefined,
+      AI_ACTOR
+    );
+  }
+
+  /**
+   * Convenience helper for status/log-style messages coming from the
+   * mentor assistant and its tools. These are rendered separately
+   * from normal chat bubbles on the frontend.
+   */
+  private sendStatus(courseId: string, text: string, phase?: ChatMessagePayload["phase"]): void {
+    this.sendAiMessage(courseId, {
+      text,
+      kind: "ai-log",
+      phase,
+    });
+  }
+
   private registerBuiltInActions() {
     this.registerAction("lockedits", (ctx) => {
       this.setEditsLocked(ctx.courseId, true);
-      this.sendChat(ctx.courseId, "Done");
+      this.sendStatus(ctx.courseId, "Done");
     });
     this.registerAction("unlockedits", (ctx) => {
       this.setEditsLocked(ctx.courseId, false);
-      this.sendChat(ctx.courseId, "Done");
+      this.sendStatus(ctx.courseId, "Done");
     });
   }
 
@@ -68,7 +96,7 @@ export class MentorAIAssistant {
     const ctx: MentorAIActionContext = {
       courseId,
       actor,
-      sendChat: (text) => this.sendChat(courseId, text),
+      sendChat: (text) => this.sendStatus(courseId, text),
       setEditsLocked: (locked) => this.setEditsLocked(courseId, locked),
       setChatLocked: (locked) => this.setChatLocked(courseId, locked),
       broadcastToCourse: (type, payload, excludeSocket, actorOverride) =>
@@ -83,7 +111,7 @@ export class MentorAIAssistant {
       // course freely. We deliberately do NOT request a structured output here
       // because mixing tools + Output.object in generateText causes
       // AI_NoOutputGeneratedError with Gemini models.
-      ctx.sendChat("🔍 Gathering course context...");
+      this.sendStatus(courseId, "🔍 Gathering course context...", "context");
 
       const contextPrompt = buildContextPrompt({ courseId, inputText, actor });
 
@@ -97,7 +125,7 @@ export class MentorAIAssistant {
         stopWhen: stepCountIs(8),
       });
 
-      ctx.sendChat(`📋 Context gathered. Building execution plan...`);
+      this.sendStatus(courseId, "📋 Context gathered. Building execution plan...", "context");
 
       // ── Phase 2: Plan generation ────────────────────────────────────────────
       // Use generateObject (no tools) with the gathered context to produce a
@@ -113,8 +141,12 @@ export class MentorAIAssistant {
         })
       });
 
-      ctx.sendChat(`✅ Plan ready – ${plan.todoPoints.length} step(s) to execute:`);
-      ctx.sendChat(plan.todoPoints.map((p, i) => `${i + 1}. [${p.action}] ${p.content}`).join("\n"));
+      ctx.broadcastToCourse("ai:plan", { todoPoints: plan.todoPoints });
+      this.sendStatus(
+        courseId,
+        `✅ Plan ready – ${plan.todoPoints.length} step(s) to execute.`,
+        "planning",
+      );
 
       // ── Phase 3: Execution ──────────────────────────────────────────────────
       // A ToolLoopAgent executes each to-do point in isolation. Each run gets
@@ -142,25 +174,25 @@ export class MentorAIAssistant {
         const todo = plan.todoPoints[i];
         const stepLabel = `Step ${i + 1}/${plan.todoPoints.length} [${todo.action}]: ${todo.content}`;
 
-        ctx.sendChat(`⚙️ Starting ${stepLabel}`);
+        this.sendStatus(courseId, `⚙️ Starting ${stepLabel}`, "execution");
 
         try {
           const result = await executorAgent.generate({
             prompt: buildExecutionPrompt(plan, todo),
           });
 
-          ctx.sendChat(`✅ Completed ${stepLabel}\n${result.text}`);
+          this.sendStatus(courseId, `✅ Completed ${stepLabel}\n${result.text}`, "execution");
         } catch (stepErr) {
           const msg = stepErr instanceof Error ? stepErr.message : String(stepErr);
-          ctx.sendChat(`❌ Failed ${stepLabel}\nError: ${msg}`);
+          this.sendStatus(courseId, `❌ Failed ${stepLabel}\nError: ${msg}`, "execution");
           // Continue with remaining steps rather than aborting the whole plan.
         }
       }
 
-      ctx.sendChat("🎉 All steps have been processed.");
+      this.sendStatus(courseId, "🎉 All steps have been processed.", "summary");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      ctx.sendChat(`❌ Mentor assistant encountered an error: ${msg}`);
+      this.sendStatus(courseId, `❌ Mentor assistant encountered an error: ${msg}`, "summary");
     }
 
     ctx.setEditsLocked(false);
@@ -177,7 +209,7 @@ export class MentorAIAssistant {
     const ctx: MentorAIActionContext = {
       courseId,
       actor,
-      sendChat: (text) => this.sendChat(courseId, text),
+      sendChat: (text) => this.sendStatus(courseId, text),
       setEditsLocked: (locked) => this.setEditsLocked(courseId, locked),
       setChatLocked: (locked) => this.setChatLocked(courseId, locked),
       broadcastToCourse: (type, payload, excludeSocket, actorOverride) =>
@@ -188,13 +220,10 @@ export class MentorAIAssistant {
   }
 
   private sendChat(courseId: string, text: string): void {
-    this.transport.broadcastToCourse(
-      courseId,
-      "chat:message",
-      { text },
-      undefined,
-      AI_ACTOR
-    );
+    // Backwards-compatible helper; currently delegates to status-style
+    // messages so that all mentor AI output can be rendered in the
+    // dedicated activity log UI.
+    this.sendStatus(courseId, text);
   }
 
   private setEditsLocked(courseId: string, locked: boolean): void {

@@ -1,5 +1,6 @@
 import type { IncomingMessage, Server } from "http";
 import type {
+  ChatMessagePayload,
   CourseWSActor,
   CourseWSEvent,
   CourseWSEventName,
@@ -208,10 +209,14 @@ export function attachCourseWebSocket(httpServer: Server) {
             leaveRoom(client.courseId, client);
           }
         } else if (msg.type === "chat_message" && client.courseId) {
+          const payload: ChatMessagePayload = {
+            text: msg.text,
+            kind: "user",
+          };
           broadcastToCourse(
             client.courseId,
             "chat:message",
-            { text: msg.text },
+            payload,
             undefined,
             client.actor
           );

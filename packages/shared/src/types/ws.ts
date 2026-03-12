@@ -17,7 +17,25 @@ export type CourseWSEventName =
   | "presence:left"
   | "chat:message"
   | "ai:edits_locked"
-  | "ai:chat_locked";
+  | "ai:chat_locked"
+  | "ai:plan";
+
+/**
+ * Optional metadata describing how a chat message should be rendered.
+ * Kept intentionally loose so older clients that only read `text` continue to work.
+ */
+export type ChatMessageKind = "user" | "assistant" | "ai-log" | "ai-plan";
+
+export interface ChatMessagePayload {
+  text: string;
+  /** High-level origin/kind of the message (user, assistant reply, AI status log, or structured plan). */
+  kind?: ChatMessageKind;
+  /**
+   * Optional phase of the mentor AI run this message belongs to.
+   * Useful for grouping logs in the UI.
+   */
+  phase?: "context" | "planning" | "execution" | "summary";
+}
 
 export interface CourseWSActor {
   id: string;
