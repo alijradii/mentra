@@ -132,8 +132,19 @@ export default function LearnCourseOverviewPage() {
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div className="flex-1 min-w-0">
                         <h1 className="text-2xl font-bold text-foreground">{course?.title}</h1>
-                        {course?.author?.name && (
-                            <p className="text-sm text-muted-foreground mt-0.5">by {course.author.name}</p>
+                        {(course?.author?.name || course?.author?.avatar) && (
+                            <div className="flex items-center gap-2 mt-0.5">
+                                {course.author.avatar && (
+                                    <img
+                                        src={course.author.avatar}
+                                        alt=""
+                                        className="size-7 rounded-full object-cover shrink-0"
+                                    />
+                                )}
+                                {course.author.name && (
+                                    <p className="text-sm text-muted-foreground">by {course.author.name}</p>
+                                )}
+                            </div>
                         )}
                         {course?.description && (
                             <p className="text-muted-foreground mt-2 text-sm">{course.description}</p>

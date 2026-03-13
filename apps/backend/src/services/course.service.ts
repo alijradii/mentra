@@ -1,10 +1,43 @@
 import { ObjectId } from "mongodb";
 import { getDb } from "../db.js";
 import { getCourseCollection, getEnrollmentCollection } from "../models/course.js";
+import { findUsersByIds } from "../models/user.js";
 
 /**
  * Service for course-related business logic and permission checks
  */
+
+/** Course-like document with author.id (name/avatar may be missing in DB) */
+interface CourseWithAuthorId {
+  author: { id: ObjectId };
+  [key: string]: unknown;
+}
+
+/**
+ * Populate author name and avatar from users collection for courses that only have author.id stored.
+ * Returns new course objects with author: { id, name, avatar? }.
+ */
+export async function populateCourseAuthors<T extends CourseWithAuthorId>(
+  courses: T[]
+): Promise<(Omit<T, "author"> & { author: { id: T["author"]["id"]; name: string; avatar?: string } })[]> {
+  if (courses.length === 0) return [];
+  const authorIds = [...new Set(courses.map((c) => c.author.id.toString()))];
+  const users = await findUsersByIds(authorIds);
+  const userMap = new Map(users.map((u) => [u._id.toString(), { name: u.name, avatar: u.avatar }]));
+
+  return courses.map((course) => {
+    const authorId = course.author.id;
+    const user = userMap.get(authorId.toString());
+    return {
+      ...course,
+      author: {
+        id: authorId,
+        name: user?.name ?? "Unknown",
+        avatar: user?.avatar,
+      },
+    };
+  });
+}
 
 /**
  * Check if user is the course owner

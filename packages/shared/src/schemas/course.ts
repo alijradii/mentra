@@ -3,9 +3,10 @@ import { z } from "zod";
 /**
  * Course schema
  */
+/** Stored in DB with only id; name and avatar are populated from user when returning from API */
 export const courseAuthorSchema = z.object({
   id: z.string().min(1, "Author ID is required"),
-  name: z.string().min(1, "Author name is required"),
+  name: z.string().min(1).optional(),
   avatar: z.string().url().optional(),
 });
 

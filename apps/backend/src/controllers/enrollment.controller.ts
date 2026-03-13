@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { getDb } from "../db.js";
 import { CourseModel, getCourseCollection, getEnrollmentCollection } from "../models/course.js";
+import { populateCourseAuthors } from "../services/course.service.js";
 
 /**
  * Enrollment Controller
@@ -123,7 +124,8 @@ export async function getEnrolledCourses(req: Request, res: Response): Promise<v
         ? await courseCollection.find({ _id: { $in: courseIds } }).toArray()
         : [];
 
-    const courseMap = new Map(courses.map((c) => [c._id.toString(), c]));
+    const populatedCourses = await populateCourseAuthors(courses);
+    const courseMap = new Map(populatedCourses.map((c) => [c._id.toString(), c]));
 
     const result = enrollments.map((enrollment) => ({
       enrollment,

@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import { createCourseSchema, reorderModulesSchema, updateCourseSchema, type CreateCourseDto } from "shared";
 import { getDb } from "../db.js";
 import { CourseModel, getCourseCollection } from "../models/course.js";
-import { canViewCourse, isCourseMentor, isCourseOwner } from "../services/course.service.js";
+import { canViewCourse, isCourseMentor, isCourseOwner, populateCourseAuthors } from "../services/course.service.js";
 import { broadcastToCourse } from "../websocket/course-ws.js";
 
 /**
@@ -39,16 +39,13 @@ export async function createCourse(req: Request, res: Response): Promise<void> {
       mentorIds: [],
       allowedStudentIds: courseData.visibility === "private" ? [] : undefined,
       modules: [],
-      author: {
-        id: new ObjectId(userId),
-        name: req.user!.name,
-        avatar: undefined,
-      },
+      author: { id: new ObjectId(userId) },
     });
+    const [populated] = await populateCourseAuthors([course]);
 
     res.status(201).json({
       success: true,
-      data: course,
+      data: populated,
       message: "Course created successfully",
     });
   } catch (error) {
@@ -78,10 +75,11 @@ export async function getAllCourses(req: Request, res: Response): Promise<void> 
         { mentorIds: new ObjectId(userId) },
       ],
     }).toArray();
+    const populated = await populateCourseAuthors(courses);
 
     res.json({
       success: true,
-      data: courses,
+      data: populated,
     });
   } catch (error) {
     console.error("Error fetching courses:", error);
@@ -112,10 +110,11 @@ export async function getMyCourses(req: Request, res: Response): Promise<void> {
       })
       .sort({ updatedAt: -1 })
       .toArray();
+    const populated = await populateCourseAuthors(courses);
 
     res.json({
       success: true,
-      data: courses,
+      data: populated,
     });
   } catch (error) {
     console.error("Error fetching my courses:", error);
@@ -163,10 +162,11 @@ export async function getCourseById(req: Request, res: Response): Promise<void> 
       });
       return;
     }
+    const [populated] = await populateCourseAuthors([course]);
 
     res.json({
       success: true,
-      data: course,
+      data: populated,
     });
   } catch (error) {
     console.error("Error fetching course:", error);

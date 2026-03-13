@@ -39,9 +39,10 @@ export interface Course<TId = string> {
   _id: TId;
   title: string;
   description: string;
+  /** Author id is stored; name and avatar are populated from user when returned from API */
   author: {
     id: TId;
-    name: string;
+    name?: string;
     avatar?: string;
   };
   ownerId: TId; // The course owner (creator)

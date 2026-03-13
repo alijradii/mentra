@@ -74,6 +74,14 @@ export async function findUserById(id: string): Promise<UserDocument | null> {
   return getUserCollection().findOne({ _id: new ObjectId(id) });
 }
 
+export async function findUsersByIds(ids: string[]): Promise<UserDocument[]> {
+  if (ids.length === 0) return [];
+  const objectIds = ids.map((id) => new ObjectId(id));
+  return getUserCollection()
+    .find({ _id: { $in: objectIds } })
+    .toArray();
+}
+
 export async function verifyPassword(
   password: string,
   hashedPassword: string

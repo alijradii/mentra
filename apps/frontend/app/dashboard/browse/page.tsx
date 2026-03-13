@@ -39,8 +39,19 @@ function CourseCard({
             </span>
           )}
         </div>
-        {course.author?.name && (
-          <p className="text-xs text-muted-foreground mb-2">by {course.author.name}</p>
+        {(course.author?.name || course.author?.avatar) && (
+          <div className="flex items-center gap-2 mb-2">
+            {course.author.avatar && (
+              <img
+                src={course.author.avatar}
+                alt=""
+                className="size-6 rounded-full object-cover shrink-0"
+              />
+            )}
+            {course.author.name && (
+              <p className="text-xs text-muted-foreground">by {course.author.name}</p>
+            )}
+          </div>
         )}
         {course.description && (
           <p className="text-sm text-muted-foreground line-clamp-3">{course.description}</p>
