@@ -35,11 +35,18 @@ export interface ChatMessagePayload {
    * Useful for grouping logs in the UI.
    */
   phase?: "context" | "planning" | "execution" | "summary";
+  /**
+   * Optional remaining AI credits for the sending user (free plan only).
+   * Used by the frontend to show live usage.
+   */
+  remainingCredits?: number;
 }
 
 export interface CourseWSActor {
   id: string;
   name: string;
+  /** Whether this actor currently has access to pro / AI features. */
+  isPro?: boolean;
 }
 
 export interface CourseWSEvent {

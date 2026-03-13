@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { Collection, ObjectId } from "mongodb";
 import type { User } from "shared";
 import { getDb } from "../db";
+import { DAILY_FREE_AI_CREDITS } from "../config/ai";
 
 export interface UserDocument {
   _id: ObjectId;
@@ -11,6 +12,12 @@ export interface UserDocument {
   name: string;
   avatar?: string;
   isEmailVerified: boolean;
+  /** Whether the user has access to pro features (e.g. AI tools). */
+  isPro: boolean;
+  /** Remaining AI credits for the current free tier window. */
+  aiCredits?: number;
+  /** Timestamp (UTC) of the last time AI credits were reset. */
+  aiCreditsLastReset?: Date;
   emailVerificationToken?: string;
   emailVerificationExpires?: Date;
   passwordResetToken?: string;
@@ -42,6 +49,9 @@ export async function createUser(
     password: hashedPassword,
     name,
     isEmailVerified: !emailVerificationToken, // If no token, consider verified (for dev)
+    isPro: false,
+    aiCredits: DAILY_FREE_AI_CREDITS,
+    aiCreditsLastReset: now,
     emailVerificationToken,
     emailVerificationExpires: verificationExpires,
     createdAt: now,
@@ -177,6 +187,9 @@ export function userDocumentToUser(doc: UserDocument): User {
     name: doc.name,
     avatar: doc.avatar,
     isEmailVerified: doc.isEmailVerified,
+    isPro: doc.isPro ?? false,
+    aiCredits: doc.aiCredits,
+    aiCreditsLastReset: doc.aiCreditsLastReset,
     emailVerificationToken: doc.emailVerificationToken,
     emailVerificationExpires: doc.emailVerificationExpires,
     createdAt: doc.createdAt,

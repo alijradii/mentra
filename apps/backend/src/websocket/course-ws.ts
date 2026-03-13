@@ -10,8 +10,10 @@ import type {
 import { URL } from "url";
 import { WebSocket, WebSocketServer } from "ws";
 import { MentorAIAssistant } from "../ai/mentor-assistant/mentor-assistant.js";
-import { findUserById, userDocumentToUser } from "../models/user.js";
+import { findUserById, getUserCollection, userDocumentToUser } from "../models/user.js";
 import { verifyToken } from "../utils/jwt.js";
+import { ensureCreditsFresh } from "../utils/aiCredits";
+import { ObjectId } from "mongodb";
 
 interface ConnectedClient {
   ws: WebSocket;
@@ -182,8 +184,25 @@ export function attachCourseWebSocket(httpServer: Server) {
         return;
       }
 
-      const user = userDocumentToUser(userDoc);
-      const actor: CourseWSActor = { id: user._id, name: user.name };
+      const { updatedDoc, changed } = ensureCreditsFresh(userDoc);
+      if (changed) {
+        await getUserCollection().updateOne(
+          { _id: updatedDoc._id },
+          {
+            $set: {
+              aiCredits: updatedDoc.aiCredits,
+              aiCreditsLastReset: updatedDoc.aiCreditsLastReset,
+            },
+          }
+        );
+      }
+
+      const user = userDocumentToUser(updatedDoc);
+      const actor: CourseWSActor = {
+        id: user._id,
+        name: user.name,
+        isPro: user.isPro,
+      };
 
       wss.handleUpgrade(request, socket, head, (ws) => {
         wss.emit("connection", ws, request, actor);
@@ -198,7 +217,7 @@ export function attachCourseWebSocket(httpServer: Server) {
     const client: ConnectedClient = { ws, actor, courseId: null };
     clients.set(ws, client);
 
-    ws.on("message", (raw) => {
+    ws.on("message", async (raw) => {
       try {
         const msg = JSON.parse(raw.toString()) as WSClientMessage;
 
@@ -209,10 +228,113 @@ export function attachCourseWebSocket(httpServer: Server) {
             leaveRoom(client.courseId, client);
           }
         } else if (msg.type === "chat_message" && client.courseId) {
+          // Fetch latest user doc to enforce AI credits for free users.
+          const userId = client.actor.id;
+          const baseDoc = await getUserCollection().findOne({
+            _id: new ObjectId(userId),
+          });
+          if (!baseDoc) {
+            const denialPayload: ChatMessagePayload = {
+              text: "Unable to load your account. Please refresh the page.",
+              kind: "assistant",
+            };
+            const denialEvent: CourseWSEvent = {
+              type: "chat:message",
+              courseId: client.courseId,
+              actor: { id: "system", name: "System" },
+              payload: denialPayload,
+              timestamp: new Date().toISOString(),
+            };
+            safeSend(client.ws, denialEvent);
+            return;
+          }
+
+          const { updatedDoc, changed } = ensureCreditsFresh(baseDoc);
+          if (changed) {
+            await getUserCollection().updateOne(
+              { _id: updatedDoc._id },
+              {
+                $set: {
+                  aiCredits: updatedDoc.aiCredits,
+                  aiCreditsLastReset: updatedDoc.aiCreditsLastReset,
+                },
+              }
+            );
+          }
+
+          // Pro users are not limited by credits.
+          if (updatedDoc.isPro) {
+            const payload: ChatMessagePayload = {
+              text: msg.text,
+              kind: "user",
+            };
+            broadcastToCourse(
+              client.courseId,
+              "chat:message",
+              payload,
+              undefined,
+              client.actor
+            );
+            await getMentorAiAssistant().handleMessage(
+              client.courseId,
+              msg.text,
+              client.actor
+            );
+            return;
+          }
+
+          const currentCredits = updatedDoc.aiCredits ?? 0;
+          if (currentCredits <= 0) {
+            const denialPayload: ChatMessagePayload = {
+              text:
+                "You have used all of your free Mentor AI credits for today. " +
+                "Your credits will reset at midnight (UTC), or you can upgrade to Pro for unlimited access.",
+              kind: "assistant",
+            };
+            const denialEvent: CourseWSEvent = {
+              type: "chat:message",
+              courseId: client.courseId,
+              actor: { id: "system", name: "System" },
+              payload: denialPayload,
+              timestamp: new Date().toISOString(),
+            };
+            safeSend(client.ws, denialEvent);
+            return;
+          }
+
+          // Atomically decrement a single credit.
+          const decrementResult = await getUserCollection().findOneAndUpdate(
+            { _id: updatedDoc._id, aiCredits: { $gt: 0 } },
+            { $inc: { aiCredits: -1 } },
+            { returnDocument: "after" }
+          );
+
+          const afterDoc = decrementResult ?? updatedDoc;
+          const remainingCredits = afterDoc.aiCredits ?? 0;
+
+          if (!decrementResult) {
+            const denialPayload: ChatMessagePayload = {
+              text:
+                "You have used all of your free Mentor AI credits for today. " +
+                "Your credits will reset at midnight (UTC), or you can upgrade to Pro for unlimited access.",
+              kind: "assistant",
+            };
+            const denialEvent: CourseWSEvent = {
+              type: "chat:message",
+              courseId: client.courseId,
+              actor: { id: "system", name: "System" },
+              payload: denialPayload,
+              timestamp: new Date().toISOString(),
+            };
+            safeSend(client.ws, denialEvent);
+            return;
+          }
+
           const payload: ChatMessagePayload = {
             text: msg.text,
             kind: "user",
           };
+          // Broadcast the user message, and implicitly the AI run that follows.
           broadcastToCourse(
             client.courseId,
             "chat:message",
@@ -220,7 +342,8 @@ export function attachCourseWebSocket(httpServer: Server) {
             undefined,
             client.actor
           );
-          getMentorAiAssistant().handleMessage(
+
+          await getMentorAiAssistant().handleMessage(
             client.courseId,
             msg.text,
             client.actor

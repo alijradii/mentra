@@ -8,6 +8,11 @@ export function toUserDTO(user: User): UserDTO {
     name: user.name,
     avatar: user.avatar,
     isEmailVerified: user.isEmailVerified,
+    isPro: user.isPro,
+    aiCredits: user.aiCredits,
+    aiCreditsLastReset: user.aiCreditsLastReset
+      ? user.aiCreditsLastReset.toISOString()
+      : undefined,
     createdAt: user.createdAt.toISOString(),
   };
 }

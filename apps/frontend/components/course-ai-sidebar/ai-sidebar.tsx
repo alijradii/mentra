@@ -59,6 +59,11 @@ export function AiSidebar() {
     const MIN_TEXTAREA_HEIGHT = 44;
     const MAX_TEXTAREA_HEIGHT = 200;
 
+    const isProUser = user?.isPro ?? false;
+    const [remainingCredits, setRemainingCredits] = useState<number | null>(
+        isProUser ? null : typeof user?.aiCredits === "number" ? user.aiCredits : null,
+    );
+
     const resizeTextarea = useCallback(() => {
         const el = textareaRef.current;
         if (!el) return;
@@ -74,13 +79,23 @@ export function AiSidebar() {
     useEffect(() => {
         const unsub = on("chat:message", (event: CourseWSEvent) => {
             if (event.type !== "chat:message") return;
-            const payload = event.payload as ChatMessagePayload | { text: string } | null;
+            const payload = event.payload as ChatMessagePayload | { text: string; remainingCredits?: number } | null;
             const text = typeof (payload as any)?.text === "string" ? (payload as any).text : "";
             if (!text) return;
 
             const kind: ChatMessagePayload["kind"] =
                 (payload as ChatMessagePayload | null)?.kind ??
                 (event.actor.id === user?.id ? "user" : "assistant");
+
+            // If this is the current user's own chat message or a system
+            // notification about credits, update remaining credits from payload.
+            const creditsFromPayload =
+                typeof (payload as any)?.remainingCredits === "number"
+                    ? (payload as any).remainingCredits
+                    : undefined;
+            if (creditsFromPayload != null && !Number.isNaN(creditsFromPayload)) {
+                setRemainingCredits(creditsFromPayload);
+            }
 
             // AI log-style messages are funneled into a single activity box
             // instead of individual chat bubbles.
@@ -310,7 +325,7 @@ export function AiSidebar() {
                                                 return (
                                                     <div
                                                         key={entry.id}
-                                                        className="rounded-md border border-primary/40 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-3 py-2 space-y-1.5"
+                                                        className="rounded-md border border-primary/40 bg-linear-to-r from-primary/10 via-primary/5 to-transparent px-3 py-2 space-y-1.5"
                                                     >
                                                         <div className="flex items-center justify-between gap-2">
                                                             <div className="flex items-center gap-2">
@@ -402,20 +417,24 @@ export function AiSidebar() {
                                             handleSubmit(e as unknown as React.FormEvent);
                                         }
                                     }}
-              disabled={!connected || chatLocked}
+                                    disabled={!connected || chatLocked}
                                 />
                                 <Button
                                     type="submit"
                                     size="icon"
                                     className="absolute right-2 bottom-2 h-8 w-8 rounded-full shrink-0 shadow-sm"
-              disabled={!connected || chatLocked || !input.trim()}
+                                    disabled={!connected || chatLocked || !input.trim()}
                                     aria-label="Send message"
                                 >
                                     <ArrowUp className="h-4 w-4" />
                                 </Button>
                             </div>
                             <p className="mt-1.5 text-[11px] text-muted-foreground px-0.5">
-                                Shift+Enter for new line
+                                {isProUser
+                                    ? "Shift+Enter for new line"
+                                    : remainingCredits != null
+                                    ? `${remainingCredits} free Mentor AI credit(s) left today. Credits reset at midnight (UTC).`
+                                    : "Free users get a limited number of Mentor AI credits per day. Credits reset at midnight (UTC)."}
                             </p>
                         </form>
                     </div>

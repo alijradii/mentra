@@ -55,9 +55,43 @@ export default function ProfilePage() {
 
     return (
         <div className="max-w-2xl mx-auto px-4 py-8">
-            <h1 className="text-2xl font-bold text-foreground mb-6">Profile</h1>
+            <div className="flex items-center justify-between gap-4 mb-6">
+                <h1 className="text-2xl font-bold text-foreground">Profile</h1>
+                <span
+                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold ${
+                        user.isPro
+                            ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-700"
+                            : "border-border bg-muted text-muted-foreground"
+                    }`}
+                >
+                    <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                            user.isPro ? "bg-emerald-500" : "bg-muted-foreground"
+                        }`}
+                    />
+                    {user.isPro ? "Pro user" : "Free user"}
+                </span>
+            </div>
 
             <div className="space-y-8">
+                {/* Plan & AI usage */}
+                <section className="space-y-2">
+                    <h2 className="text-lg font-semibold text-foreground">Plan & AI usage</h2>
+                    <p className="text-sm text-muted-foreground">
+                        {user.isPro
+                            ? "You are on the Pro plan with unlimited Mentor AI usage."
+                            : "You are on the free plan. You get a limited number of free Mentor AI credits per day."}
+                    </p>
+                    {!user.isPro && (
+                        <p className="text-sm text-muted-foreground">
+                            {typeof user.aiCredits === "number"
+                                ? `You currently have ${user.aiCredits} / 50 free AI credit(s) left for today.`
+                                : "You receive 50 free Mentor AI credits per day."}{" "}
+                            Credits reset daily at midnight (UTC).
+                        </p>
+                    )}
+                </section>
+
                 {/* Avatar */}
                 <section className="flex flex-col gap-4">
                     <Label className="text-sm font-medium text-foreground">Avatar</Label>

@@ -144,6 +144,50 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+          <div className="bg-card rounded-xl shadow-sm border p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-muted-foreground text-sm mb-1">Plan</p>
+                <p className="text-lg font-semibold text-foreground">
+                  {user.isPro ? "Pro" : "Free"}
+                </p>
+              </div>
+              <div
+                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  user.isPro
+                    ? "bg-emerald-500/15 text-emerald-600 border border-emerald-500/40"
+                    : "bg-muted text-muted-foreground border border-border/60"
+                }`}
+              >
+                {user.isPro ? "Pro user" : "Free user"}
+              </div>
+            </div>
+          </div>
+          <div className="bg-card rounded-xl shadow-sm border p-6 md:col-span-3 lg:col-span-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-muted-foreground text-sm mb-1">
+                  Mentor AI usage
+                </p>
+                {user.isPro ? (
+                  <p className="text-lg font-semibold text-foreground">
+                    Unlimited (Pro)
+                  </p>
+                ) : (
+                  <p className="text-lg font-semibold text-foreground">
+                    {typeof user.aiCredits === "number"
+                      ? `${user.aiCredits} / 50 credits left today`
+                      : "50 free credits per day"}
+                  </p>
+                )}
+              </div>
+              {!user.isPro && (
+                <div className="text-xs text-muted-foreground text-right max-w-[160px]">
+                  Free Mentor AI credits reset daily at midnight (UTC).
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Quick Actions */}

@@ -5,6 +5,12 @@ export interface User {
   name: string;
   avatar?: string;
   isEmailVerified: boolean;
+  /** Whether the user has access to pro features (e.g. AI tools). */
+  isPro: boolean;
+  /** Remaining AI credits for the current free tier window (free mentors only). */
+  aiCredits?: number;
+  /** ISO timestamp of the last time AI credits were reset. */
+  aiCreditsLastReset?: Date;
   emailVerificationToken?: string;
   emailVerificationExpires?: Date;
   createdAt: Date;
@@ -18,6 +24,12 @@ export interface UserDTO {
   name: string;
   avatar?: string;
   isEmailVerified: boolean;
+  /** Whether the user has access to pro features (e.g. AI tools). */
+  isPro: boolean;
+  /** Remaining AI credits for the current free tier window (free mentors only). */
+  aiCredits?: number;
+  /** ISO timestamp of the last time AI credits were reset. */
+  aiCreditsLastReset?: string;
   createdAt: string;
 }
 
