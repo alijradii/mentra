@@ -3,12 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowUp } from "lucide-react";
 import { useCourseWS } from "@/contexts/CourseWSContext";
 import { cn } from "@/lib/utils";
+import { ArrowUp } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import type { ChatMessagePayload, CourseWSEvent } from "shared";
 
 export const SIDEBAR_WIDTH = 440;
@@ -84,15 +86,12 @@ export function AiSidebar() {
             if (!text) return;
 
             const kind: ChatMessagePayload["kind"] =
-                (payload as ChatMessagePayload | null)?.kind ??
-                (event.actor.id === user?.id ? "user" : "assistant");
+                (payload as ChatMessagePayload | null)?.kind ?? (event.actor.id === user?.id ? "user" : "assistant");
 
             // If this is the current user's own chat message or a system
             // notification about credits, update remaining credits from payload.
             const creditsFromPayload =
-                typeof (payload as any)?.remainingCredits === "number"
-                    ? (payload as any).remainingCredits
-                    : undefined;
+                typeof (payload as any)?.remainingCredits === "number" ? (payload as any).remainingCredits : undefined;
             if (creditsFromPayload != null && !Number.isNaN(creditsFromPayload)) {
                 setRemainingCredits(creditsFromPayload);
             }
@@ -288,7 +287,12 @@ export function AiSidebar() {
                                                 : "bg-muted text-foreground",
                                         )}
                                     >
-                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm, remarkMath]}
+                                            rehypePlugins={[rehypeKatex]}
+                                        >
+                                            {msg.text}
+                                        </ReactMarkdown>
                                     </div>
                                 </div>
                             ))}
@@ -344,11 +348,15 @@ export function AiSidebar() {
                                                                             step.done
                                                                                 ? "bg-emerald-500 text-white"
                                                                                 : step.failed
-                                                                                ? "bg-destructive text-destructive-foreground"
-                                                                                : "bg-primary/10 text-primary",
+                                                                                  ? "bg-destructive text-destructive-foreground"
+                                                                                  : "bg-primary/10 text-primary",
                                                                         )}
                                                                     >
-                                                                        {step.done ? "✓" : step.failed ? "!" : step.index}
+                                                                        {step.done
+                                                                            ? "✓"
+                                                                            : step.failed
+                                                                              ? "!"
+                                                                              : step.index}
                                                                     </span>
                                                                     <div className="flex-1 space-y-0.5">
                                                                         <div className="flex flex-wrap items-center gap-1">
@@ -433,8 +441,8 @@ export function AiSidebar() {
                                 {isProUser
                                     ? "Shift+Enter for new line"
                                     : remainingCredits != null
-                                    ? `${remainingCredits} free Mentor AI credit(s) left today. Credits reset at midnight (UTC).`
-                                    : "Free users get a limited number of Mentor AI credits per day. Credits reset at midnight (UTC)."}
+                                      ? `${remainingCredits} free Mentor AI credit(s) left today. Credits reset at midnight (UTC).`
+                                      : "Free users get a limited number of Mentor AI credits per day. Credits reset at midnight (UTC)."}
                             </p>
                         </form>
                     </div>

@@ -3,8 +3,9 @@ import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { extractRouterConfig } from "uploadthing/server";
-import { Providers } from "./providers";
+import "katex/dist/katex.min.css";
 import "./globals.css";
+import { Providers } from "./providers";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
