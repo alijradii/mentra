@@ -20,7 +20,8 @@ export default function ForgotPasswordPage() {
         try {
             const result = forgotPasswordSchema.safeParse({ email });
             if (!result.success) {
-                setError(result.error.errors[0]?.message ?? "Invalid email");
+                const firstIssue = result.error.issues[0];
+                setError(firstIssue?.message ?? "Invalid email");
                 setLoading(false);
                 return;
             }

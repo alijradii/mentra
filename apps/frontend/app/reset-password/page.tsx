@@ -29,7 +29,7 @@ function ResetPasswordForm() {
 
         const result = resetPasswordSchema.safeParse({ token, password: formData.password });
         if (!result.success) {
-            setError(result.error.errors[0]?.message ?? "Validation failed");
+            setError(result.error.issues[0]?.message ?? "Validation failed");
             return;
         }
 

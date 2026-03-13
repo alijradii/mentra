@@ -13,6 +13,7 @@ export function createMockUser(overrides?: Partial<User>): User {
     username: "testuser",
     name: "Test User",
     isEmailVerified: true,
+    isPro: false,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
