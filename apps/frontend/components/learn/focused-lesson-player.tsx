@@ -87,35 +87,40 @@ export function FocusedLessonPlayer({
         }
     };
 
-    // Completion celebration screen
+    // Completion celebration screen (fills height so layout is consistent)
     if (showCompletion) {
         return (
-            <CompletionScreen
+            <div className="flex flex-1 flex-col min-h-0">
+                <CompletionScreen
                 nodeTitle={node.title}
                 isLastNode={isLastNode}
                 onBackToMap={onComplete}
             />
+            </div>
         );
     }
 
     if ((node.sections?.length ?? 0) === 0) {
         return (
-            <div className="space-y-8">
-                <p className="text-muted-foreground/80 italic text-sm">
-                    This lesson has no content yet.
-                </p>
-                <div className="pt-6 border-t flex justify-end">
-                    <Button onClick={handleFinish}>Finish</Button>
+            <div className="flex flex-1 flex-col min-h-0">
+                <div className="flex-1" />
+                <div className="space-y-8 shrink-0">
+                    <p className="text-muted-foreground/80 italic text-sm">
+                        This lesson has no content yet.
+                    </p>
+                    <div className="pt-6 border-t flex justify-end">
+                        <Button onClick={handleFinish}>Finish</Button>
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div>
+        <div className="flex flex-1 flex-col min-h-0">
             {/* Page progress bar */}
             {totalPages > 1 && (
-                <div className="flex items-center gap-2 mb-8">
+                <div className="flex items-center gap-2 mb-8 shrink-0">
                     {pages.map((_, i) => (
                         <div
                             key={i}
@@ -134,17 +139,21 @@ export function FocusedLessonPlayer({
                 </div>
             )}
 
-            {/* Sections */}
-            <div className="space-y-8">
-                {currentSections.map((section) => (
-                    <div key={section.id}>
-                        <SectionPreview section={section} onAnswered={handleAnswered} />
-                    </div>
-                ))}
+            {/* Scrollable sections — overflow scroll with scrollbar hidden */}
+            <div
+                className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            >
+                <div className="space-y-8">
+                    {currentSections.map((section) => (
+                        <div key={section.id}>
+                            <SectionPreview section={section} onAnswered={handleAnswered} />
+                        </div>
+                    ))}
+                </div>
             </div>
 
-            {/* Footer navigation */}
-            <div className="mt-10 pt-6 border-t">
+            {/* Footer navigation — stays at bottom */}
+            <div className="mt-10 pt-6 border-t shrink-0">
                 {showQuizWarning && (
                     <p className="text-sm text-destructive mb-3">
                         Please answer all questions on this page before continuing.

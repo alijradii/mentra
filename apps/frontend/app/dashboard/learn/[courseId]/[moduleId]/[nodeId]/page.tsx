@@ -45,6 +45,7 @@ export default function LessonPlayerPage() {
   const [error, setError] = useState("");
   const [marking, setMarking] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
 
   const nodeType = node?.type ?? "lesson";
   const completedNodes = new Set(enrollment?.progress.completedNodes ?? []);
@@ -151,7 +152,7 @@ export default function LessonPlayerPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-64px)] items-center justify-center">
+      <div className="flex h-full min-h-0 items-center justify-center">
         <p className="text-muted-foreground">Loading…</p>
       </div>
     );
@@ -161,18 +162,31 @@ export default function LessonPlayerPage() {
   if (isFocused) {
     const pct = enrollment?.progress.overallPercentage ?? 0;
     return (
-      <div className="flex flex-col h-[calc(100vh-64px)]">
+      <div className="flex flex-col h-full min-h-0">
         {/* Focused header */}
         <header className="shrink-0 border-b bg-card/80 backdrop-blur-sm px-4 py-3 flex items-center gap-3">
-          <Link
-            href={`/dashboard/learn/${courseId}`}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Map
-          </Link>
+          {isDone ? (
+            <Link
+              href={`/dashboard/learn/${courseId}`}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Map
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowQuitConfirm(true)}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Map
+            </button>
+          )}
 
           <div className="w-px h-4 bg-border shrink-0" />
 
@@ -204,15 +218,15 @@ export default function LessonPlayerPage() {
           )}
         </header>
 
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto">
+        {/* Content: fills remaining height so footer stays at bottom; scroll is inside player */}
+        <main className="flex-1 flex flex-col min-h-0">
           {error && (
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6 shrink-0">
               <div className="p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
             </div>
           )}
 
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+          <div className="flex-1 flex flex-col min-h-0 max-w-3xl w-full mx-auto px-4 sm:px-6 py-8">
             {/* Node type badge for non-lesson types */}
             {nodeType !== "lesson" && (
               <div className="mb-6">
@@ -254,6 +268,48 @@ export default function LessonPlayerPage() {
             ) : null}
           </div>
         </main>
+
+        {/* Quit confirmation: lose progress if they leave without finishing */}
+        {showQuitConfirm && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            onClick={() => setShowQuitConfirm(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quit-dialog-title"
+          >
+            <div
+              className="bg-card border rounded-lg shadow-lg max-w-md w-full mx-4 p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="quit-dialog-title" className="text-lg font-semibold text-foreground mb-2">Leave lesson?</h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                You will lose your progress if you quit. Are you sure you want to go back to the map?
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowQuitConfirm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    setShowQuitConfirm(false);
+                    router.push(`/dashboard/learn/${courseId}`);
+                  }}
+                >
+                  Quit
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
