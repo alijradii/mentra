@@ -58,9 +58,10 @@ function CourseCard({
                                 <Image
                                     src={course.author.avatar}
                                     alt={course.author.name ?? ""}
-                                    width={40}
-                                    height={40}
-                                    className="size-10 rounded-full object-cover shrink-0"
+                                    width={100}
+                                    height={100}
+                                    quality={100}
+                                    className="size-8 rounded-full object-cover shrink-0"
                                 />
                             )}
                             {course.author.name && (
