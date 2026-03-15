@@ -236,9 +236,22 @@ function NodeEditorContent() {
           </Button>
         </div>
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">{title}</h1>
-          {description && <p className="text-muted-foreground mt-2 text-base">{description}</p>}
+        <div className="mb-8 rounded-lg border bg-muted/40 px-4 py-3.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
+            Page info
+          </p>
+          <dl className="space-y-1.5 text-sm">
+            <div>
+              <dt className="text-xs text-muted-foreground/80 font-medium">Title</dt>
+              <dd className="text-foreground font-semibold mt-0.5">{title}</dd>
+            </div>
+            {description && (
+              <div>
+                <dt className="text-xs text-muted-foreground/80 font-medium">Description</dt>
+                <dd className="text-muted-foreground mt-0.5">{description}</dd>
+              </div>
+            )}
+          </dl>
         </div>
 
         {sections.length === 0 ? (

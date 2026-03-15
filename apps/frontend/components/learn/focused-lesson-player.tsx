@@ -164,7 +164,7 @@ export function FocusedLessonPlayer({ node, isLastNode, isNodeDone, onComplete }
                             variant={canAdvance ? "default" : "outline"}
                             className={!canAdvance ? "text-muted-foreground border-border cursor-not-allowed" : ""}
                         >
-                            {isNodeDone ? "Back to map" : "Finish"}
+                            Finish
                         </Button>
                     )}
                 </div>
