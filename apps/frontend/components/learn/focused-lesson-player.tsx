@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
 import { SectionPreview } from "@/components/section-preview";
 import { Button } from "@/components/ui/button";
 import type { NodeDTO, SectionDTO } from "@/lib/api";
+import { useCallback, useMemo, useState } from "react";
 
 interface FocusedLessonPlayerProps {
     node: NodeDTO;
@@ -24,15 +24,10 @@ function splitIntoPages(sections: SectionDTO[]): SectionDTO[][] {
         }
     }
     pages.push(current);
-    return pages.filter((p) => p.length > 0);
+    return pages.filter(p => p.length > 0);
 }
 
-export function FocusedLessonPlayer({
-    node,
-    isLastNode,
-    isNodeDone,
-    onComplete,
-}: FocusedLessonPlayerProps) {
+export function FocusedLessonPlayer({ node, isLastNode, isNodeDone, onComplete }: FocusedLessonPlayerProps) {
     const pages = useMemo(() => splitIntoPages(node.sections ?? []), [node.sections]);
 
     const [currentPage, setCurrentPage] = useState(0);
@@ -41,7 +36,7 @@ export function FocusedLessonPlayer({
     const [showCompletion, setShowCompletion] = useState(false);
 
     const handleAnswered = useCallback((sectionId: string) => {
-        setAnsweredIds((prev) => {
+        setAnsweredIds(prev => {
             const next = new Set(prev);
             next.add(sectionId);
             return next;
@@ -52,11 +47,8 @@ export function FocusedLessonPlayer({
     const currentSections = pages[currentPage] ?? [];
 
     const unansweredQuizIds = useMemo(
-        () =>
-            currentSections
-                .filter((s) => s.type === "quiz" && !answeredIds.has(s.id))
-                .map((s) => s.id),
-        [currentSections, answeredIds]
+        () => currentSections.filter(s => s.type === "quiz" && !answeredIds.has(s.id)).map(s => s.id),
+        [currentSections, answeredIds],
     );
 
     const canAdvance = unansweredQuizIds.length === 0;
@@ -69,7 +61,7 @@ export function FocusedLessonPlayer({
             return;
         }
         setShowQuizWarning(false);
-        setCurrentPage((p) => p + 1);
+        setCurrentPage(p => p + 1);
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
@@ -91,11 +83,7 @@ export function FocusedLessonPlayer({
     if (showCompletion) {
         return (
             <div className="flex flex-1 flex-col min-h-0">
-                <CompletionScreen
-                nodeTitle={node.title}
-                isLastNode={isLastNode}
-                onBackToMap={onComplete}
-            />
+                <CompletionScreen nodeTitle={node.title} isLastNode={isLastNode} onBackToMap={onComplete} />
             </div>
         );
     }
@@ -105,9 +93,7 @@ export function FocusedLessonPlayer({
             <div className="flex flex-1 flex-col min-h-0">
                 <div className="flex-1" />
                 <div className="space-y-8 shrink-0">
-                    <p className="text-muted-foreground/80 italic text-sm">
-                        This lesson has no content yet.
-                    </p>
+                    <p className="text-muted-foreground/80 italic text-sm">This lesson has no content yet.</p>
                     <div className="pt-6 border-t flex justify-end">
                         <Button onClick={handleFinish}>Finish</Button>
                     </div>
@@ -125,11 +111,7 @@ export function FocusedLessonPlayer({
                         <div
                             key={i}
                             className={`h-1.5 rounded-full flex-1 transition-colors duration-300 ${
-                                i < currentPage
-                                    ? "bg-primary"
-                                    : i === currentPage
-                                      ? "bg-primary/60"
-                                      : "bg-muted"
+                                i < currentPage ? "bg-primary" : i === currentPage ? "bg-primary/60" : "bg-muted"
                             }`}
                         />
                     ))}
@@ -139,16 +121,16 @@ export function FocusedLessonPlayer({
                 </div>
             )}
 
-            {/* Scrollable sections — overflow scroll with scrollbar hidden */}
-            <div
-                className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            >
-                <div className="space-y-8">
-                    {currentSections.map((section) => (
-                        <div key={section.id}>
-                            <SectionPreview section={section} onAnswered={handleAnswered} />
-                        </div>
-                    ))}
+            {/* Scrollable sections — center vertically when content is short, scroll when long */}
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <div className="min-h-full flex flex-col">
+                    <div className="space-y-8">
+                        {currentSections.map(section => (
+                            <div key={section.id}>
+                                <SectionPreview section={section} onAnswered={handleAnswered} />
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -168,7 +150,12 @@ export function FocusedLessonPlayer({
                         >
                             Next
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                                />
                             </svg>
                         </Button>
                     ) : (
@@ -224,9 +211,7 @@ function CompletionScreen({
             </h2>
             <p className="text-muted-foreground text-base mb-1">{nodeTitle}</p>
             <p className="text-sm text-muted-foreground/60 mb-10">
-                {isLastNode
-                    ? "You've finished every lesson in this course."
-                    : "Great work — keep the streak going!"}
+                {isLastNode ? "You've finished every lesson in this course." : "Great work — keep the streak going!"}
             </p>
 
             {/* CTA */}
