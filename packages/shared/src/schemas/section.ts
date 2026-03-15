@@ -177,6 +177,10 @@ export const videoSectionSchema = baseSectionSchema.extend({
   caption: z.string().optional(),
 });
 
+export const pageBreakSectionSchema = baseSectionSchema.extend({
+  type: z.literal("page-break"),
+});
+
 // Use z.union because the quiz branch is a z.preprocess (ZodEffects),
 // which can't participate in z.discriminatedUnion.
 export const sectionSchema = z.union([
@@ -186,4 +190,5 @@ export const sectionSchema = z.union([
   codeSectionSchema,
   imageSectionSchema,
   videoSectionSchema,
+  pageBreakSectionSchema,
 ]);

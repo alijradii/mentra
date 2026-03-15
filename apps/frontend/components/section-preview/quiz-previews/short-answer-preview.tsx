@@ -7,9 +7,10 @@ import { ResultBanner } from "../result-banner";
 
 interface ShortAnswerPreviewProps {
   section: ShortAnswerQuizSectionDTO;
+  onAnswered?: () => void;
 }
 
-export function ShortAnswerPreview({ section }: ShortAnswerPreviewProps) {
+export function ShortAnswerPreview({ section, onAnswered }: ShortAnswerPreviewProps) {
   const [answer, setAnswer] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -32,7 +33,7 @@ export function ShortAnswerPreview({ section }: ShortAnswerPreviewProps) {
         readOnly={submitted}
       />
       {!submitted ? (
-        <Button size="sm" onClick={() => setSubmitted(true)} disabled={!answer.trim()}>
+        <Button size="sm" onClick={() => { setSubmitted(true); onAnswered?.(); }} disabled={!answer.trim()}>
           Check answer
         </Button>
       ) : (

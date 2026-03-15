@@ -133,7 +133,7 @@ export interface ModuleDTO {
 }
 
 // Section types as returned by the API (dates are ISO strings)
-export type SectionType = "text" | "image" | "video" | "embedding" | "code" | "quiz";
+export type SectionType = "text" | "image" | "video" | "embedding" | "code" | "quiz" | "page-break";
 
 export type QuizType =
   | "mcq"
@@ -285,6 +285,10 @@ export interface TrueFalseQuizSectionDTO extends QuizSectionBaseDTO {
   correctAnswer: boolean;
 }
 
+export interface PageBreakSectionDTO extends BaseSectionDTO {
+  type: "page-break";
+}
+
 export type QuizSectionDTO =
   | MCQQuizSectionDTO
   | SequenceQuizSectionDTO
@@ -301,7 +305,8 @@ export type SectionDTO =
   | VideoSectionDTO
   | EmbeddingSectionDTO
   | CodeSectionDTO
-  | QuizSectionDTO;
+  | QuizSectionDTO
+  | PageBreakSectionDTO;
 
 export type NodeType = "lesson" | "practice" | "quiz";
 

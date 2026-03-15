@@ -7,9 +7,10 @@ import { ResultBanner } from "../result-banner";
 
 interface ClassificationPreviewProps {
   section: ClassificationQuizSectionDTO;
+  onAnswered?: () => void;
 }
 
-export function ClassificationPreview({ section }: ClassificationPreviewProps) {
+export function ClassificationPreview({ section, onAnswered }: ClassificationPreviewProps) {
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
 
@@ -45,7 +46,7 @@ export function ClassificationPreview({ section }: ClassificationPreviewProps) {
         })}
       </div>
       {!submitted ? (
-        <Button size="sm" onClick={() => setSubmitted(true)} disabled={!allFilled}>
+        <Button size="sm" onClick={() => { setSubmitted(true); onAnswered?.(); }} disabled={!allFilled}>
           Check answer
         </Button>
       ) : (

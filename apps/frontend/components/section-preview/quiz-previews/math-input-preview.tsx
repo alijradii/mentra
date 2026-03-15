@@ -8,9 +8,10 @@ import { ResultBanner } from "../result-banner";
 
 interface MathInputPreviewProps {
   section: MathInputQuizSectionDTO;
+  onAnswered?: () => void;
 }
 
-export function MathInputPreview({ section }: MathInputPreviewProps) {
+export function MathInputPreview({ section, onAnswered }: MathInputPreviewProps) {
   const [answer, setAnswer] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -35,7 +36,7 @@ export function MathInputPreview({ section }: MathInputPreviewProps) {
         )}
       </div>
       {!submitted ? (
-        <Button size="sm" onClick={() => setSubmitted(true)} disabled={!answer.trim()}>
+        <Button size="sm" onClick={() => { setSubmitted(true); onAnswered?.(); }} disabled={!answer.trim()}>
           Check answer
         </Button>
       ) : (

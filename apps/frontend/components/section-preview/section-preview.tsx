@@ -8,7 +8,7 @@ import { EmbeddingSectionPreview } from "./embedding-section-preview";
 import { CodeSectionPreview } from "./code-section-preview";
 import { QuizPreview } from "./quiz-previews";
 
-export function SectionPreview({ section }: SectionPreviewProps) {
+export function SectionPreview({ section, onAnswered }: SectionPreviewProps) {
   if (section.type === "text") {
     return <TextSectionPreview section={section} />;
   }
@@ -30,7 +30,16 @@ export function SectionPreview({ section }: SectionPreviewProps) {
   }
 
   if (section.type === "quiz") {
-    return <QuizPreview section={section} />;
+    return (
+      <QuizPreview
+        section={section}
+        onAnswered={onAnswered ? () => onAnswered(section.id) : undefined}
+      />
+    );
+  }
+
+  if (section.type === "page-break") {
+    return null;
   }
 
   return null;

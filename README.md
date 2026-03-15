@@ -50,17 +50,17 @@ bun install
 
 ### Production (PM2)
 
-| Command                  | Description                                                          |
-| ------------------------ | -------------------------------------------------------------------- |
-| `bun run deploy`         | Full deployment: build and start apps with PM2                       |
-| `bun run start`          | Start apps with PM2 (without rebuilding)                             |
-| `bun run stop`           | Stop all PM2 processes                                               |
-| `bun run restart`        | Restart all PM2 processes                                            |
-| `bun run logs`           | View all application logs                                            |
-| `bun run logs:backend`   | View backend logs only                                               |
-| `bun run logs:frontend`  | View frontend logs only                                              |
-| `bun run pm2:status`     | Show PM2 process status                                              |
-| `bun run pm2:monit`      | Real-time monitoring dashboard                                       |
+| Command                 | Description                                    |
+| ----------------------- | ---------------------------------------------- |
+| `bun run deploy`        | Full deployment: build and start apps with PM2 |
+| `bun run start`         | Start apps with PM2 (without rebuilding)       |
+| `bun run stop`          | Stop all PM2 processes                         |
+| `bun run restart`       | Restart all PM2 processes                      |
+| `bun run logs`          | View all application logs                      |
+| `bun run logs:backend`  | View backend logs only                         |
+| `bun run logs:frontend` | View frontend logs only                        |
+| `bun run pm2:status`    | Show PM2 process status                        |
+| `bun run pm2:monit`     | Real-time monitoring dashboard                 |
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for complete production deployment guide.
 

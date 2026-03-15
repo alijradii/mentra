@@ -130,6 +130,8 @@ export function createEmptySection(type: SectionType, order: number): SectionDTO
       return { ...base, type, code: "", language: "javascript" };
     case "quiz":
       return createEmptyQuizData("mcq", base);
+    case "page-break":
+      return { ...base, type };
   }
 }
 
@@ -150,6 +152,8 @@ export function sectionSummary(s: SectionDTO): string {
       const label = QUIZ_TYPE_LABELS.find((l) => l.type === qt)?.label ?? qt;
       return s.question ? `[${label}] ${s.question}` : `[${label}] (no question)`;
     }
+    case "page-break":
+      return "— Page Break —";
   }
 }
 
@@ -160,6 +164,7 @@ export const SECTION_TYPES: { type: SectionType; label: string }[] = [
   { type: "embedding", label: "Embed" },
   { type: "code", label: "Code" },
   { type: "quiz", label: "Quiz" },
+  { type: "page-break", label: "Page Break" },
 ];
 
 export const SELECT_CLASS =

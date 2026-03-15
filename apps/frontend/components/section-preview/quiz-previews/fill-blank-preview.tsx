@@ -7,9 +7,10 @@ import { ResultBanner } from "../result-banner";
 
 interface FillBlankPreviewProps {
   section: FillBlankQuizSectionDTO;
+  onAnswered?: () => void;
 }
 
-export function FillBlankPreview({ section }: FillBlankPreviewProps) {
+export function FillBlankPreview({ section, onAnswered }: FillBlankPreviewProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
 
@@ -87,7 +88,7 @@ export function FillBlankPreview({ section }: FillBlankPreviewProps) {
         </div>
       )}
       {!submitted ? (
-        <Button size="sm" onClick={() => setSubmitted(true)} disabled={!allFilled}>
+        <Button size="sm" onClick={() => { setSubmitted(true); onAnswered?.(); }} disabled={!allFilled}>
           Check answer
         </Button>
       ) : (

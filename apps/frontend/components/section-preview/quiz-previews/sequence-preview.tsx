@@ -47,9 +47,10 @@ function SortableItem({ id, text, locked }: { id: string; text: string; locked: 
 
 interface SequencePreviewProps {
   section: SequenceQuizSectionDTO;
+  onAnswered?: () => void;
 }
 
-export function SequencePreview({ section }: SequencePreviewProps) {
+export function SequencePreview({ section, onAnswered }: SequencePreviewProps) {
   const prefilledSet = useMemo(
     () => new Set((section.prefilledPositions ?? []).map((p) => p.itemId)),
     [section.prefilledPositions]
@@ -106,7 +107,7 @@ export function SequencePreview({ section }: SequencePreviewProps) {
         </SortableContext>
       </DndContext>
       {!submitted ? (
-        <Button size="sm" onClick={() => setSubmitted(true)}>
+        <Button size="sm" onClick={() => { setSubmitted(true); onAnswered?.(); }}>
           Check answer
         </Button>
       ) : (

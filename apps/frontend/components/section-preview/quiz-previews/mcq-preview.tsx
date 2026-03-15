@@ -7,9 +7,10 @@ import { ResultBanner } from "../result-banner";
 
 interface MCQPreviewProps {
   section: MCQQuizSectionDTO;
+  onAnswered?: () => void;
 }
 
-export function MCQPreview({ section }: MCQPreviewProps) {
+export function MCQPreview({ section, onAnswered }: MCQPreviewProps) {
   const isMultiple = section.correctAnswers.length > 1;
   const [selected, setSelected] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
@@ -56,7 +57,7 @@ export function MCQPreview({ section }: MCQPreviewProps) {
         })}
       </div>
       {!submitted ? (
-        <Button size="sm" onClick={() => setSubmitted(true)} disabled={selected.length === 0}>
+        <Button size="sm" onClick={() => { setSubmitted(true); onAnswered?.(); }} disabled={selected.length === 0}>
           Check answer
         </Button>
       ) : (

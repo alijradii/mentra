@@ -7,9 +7,10 @@ import { ResultBanner } from "../result-banner";
 
 interface TrueFalsePreviewProps {
   section: TrueFalseQuizSectionDTO;
+  onAnswered?: () => void;
 }
 
-export function TrueFalsePreview({ section }: TrueFalsePreviewProps) {
+export function TrueFalsePreview({ section, onAnswered }: TrueFalsePreviewProps) {
   const [selected, setSelected] = useState<boolean | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const isCorrect = submitted && selected === section.correctAnswer;
@@ -38,7 +39,7 @@ export function TrueFalsePreview({ section }: TrueFalsePreviewProps) {
         })}
       </div>
       {!submitted ? (
-        <Button size="sm" onClick={() => setSubmitted(true)} disabled={selected === null}>
+        <Button size="sm" onClick={() => { setSubmitted(true); onAnswered?.(); }} disabled={selected === null}>
           Check answer
         </Button>
       ) : (

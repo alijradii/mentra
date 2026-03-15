@@ -1,7 +1,7 @@
 /**
  * Section types for Node content (similar to Jupyter Notebook cells)
  */
-export type SectionType = "text" | "embedding" | "quiz" | "code" | "image" | "video";
+export type SectionType = "text" | "embedding" | "quiz" | "code" | "image" | "video" | "page-break";
 
 export type QuizType =
   | "mcq"
@@ -169,10 +169,15 @@ export interface VideoSection extends BaseSection {
   caption?: string;
 }
 
+export interface PageBreakSection extends BaseSection {
+  type: "page-break";
+}
+
 export type Section =
   | TextSection
   | EmbeddingSection
   | QuizSection
   | CodeSection
   | ImageSection
-  | VideoSection;
+  | VideoSection
+  | PageBreakSection;

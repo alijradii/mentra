@@ -22,29 +22,30 @@ import { ClassificationPreview } from "./classification-preview";
 
 interface QuizPreviewProps {
   section: QuizSectionDTO;
+  onAnswered?: () => void;
 }
 
-export function QuizPreview({ section }: QuizPreviewProps) {
+export function QuizPreview({ section, onAnswered }: QuizPreviewProps) {
   const quizType: QuizType = ("quizType" in section ? section.quizType : "mcq") as QuizType;
 
   const inner = (() => {
     switch (quizType) {
       case "mcq":
-        return <MCQPreview section={section as MCQQuizSectionDTO} />;
+        return <MCQPreview section={section as MCQQuizSectionDTO} onAnswered={onAnswered} />;
       case "true-false":
-        return <TrueFalsePreview section={section as TrueFalseQuizSectionDTO} />;
+        return <TrueFalsePreview section={section as TrueFalseQuizSectionDTO} onAnswered={onAnswered} />;
       case "short-answer":
-        return <ShortAnswerPreview section={section as ShortAnswerQuizSectionDTO} />;
+        return <ShortAnswerPreview section={section as ShortAnswerQuizSectionDTO} onAnswered={onAnswered} />;
       case "sequence":
-        return <SequencePreview section={section as SequenceQuizSectionDTO} />;
+        return <SequencePreview section={section as SequenceQuizSectionDTO} onAnswered={onAnswered} />;
       case "matching":
-        return <MatchingPreview section={section as MatchingQuizSectionDTO} />;
+        return <MatchingPreview section={section as MatchingQuizSectionDTO} onAnswered={onAnswered} />;
       case "fill-blank":
-        return <FillBlankPreview section={section as FillBlankQuizSectionDTO} />;
+        return <FillBlankPreview section={section as FillBlankQuizSectionDTO} onAnswered={onAnswered} />;
       case "math-input":
-        return <MathInputPreview section={section as MathInputQuizSectionDTO} />;
+        return <MathInputPreview section={section as MathInputQuizSectionDTO} onAnswered={onAnswered} />;
       case "classification":
-        return <ClassificationPreview section={section as ClassificationQuizSectionDTO} />;
+        return <ClassificationPreview section={section as ClassificationQuizSectionDTO} onAnswered={onAnswered} />;
       default:
         return <p className="text-muted-foreground text-sm italic">Unknown quiz type.</p>;
     }

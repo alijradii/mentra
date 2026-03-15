@@ -7,6 +7,8 @@ import { VideoSectionForm } from "./video-section-form";
 import { EmbeddingSectionForm } from "./embedding-section-form";
 import { CodeSectionForm } from "./code-section-form";
 import { QuizForm } from "./quiz-form";
+import { PageBreakSectionForm } from "./page-break-section-form";
+import type { PageBreakSectionDTO } from "@/lib/api";
 
 export function SectionForm({ section, onChange }: SectionFormProps) {
   if (section.type === "text") {
@@ -31,6 +33,10 @@ export function SectionForm({ section, onChange }: SectionFormProps) {
 
   if (section.type === "quiz") {
     return <QuizForm section={section} onChange={onChange} />;
+  }
+
+  if (section.type === "page-break") {
+    return <PageBreakSectionForm section={section as PageBreakSectionDTO} />;
   }
 
   return null;

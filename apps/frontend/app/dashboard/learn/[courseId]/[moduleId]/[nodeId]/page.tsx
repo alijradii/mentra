@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import { SectionPreview } from "@/components/section-preview";
+import { LessonPlayer } from "@/components/learn/lesson-player";
+import { FocusedLessonPlayer } from "@/components/learn/focused-lesson-player";
 import { LessonSidebar } from "@/components/learn/lesson-sidebar";
 import { LessonNavigation } from "@/components/learn/lesson-navigation";
 import { PracticePlayer } from "@/components/learn/practice-player";
 import { QuizPlayer } from "@/components/learn/quiz-player";
+import { ProgressBar } from "@/components/shared/progress-bar";
+import { Button } from "@/components/ui/button";
 import type { FlatNode } from "@/components/learn/types";
 import {
   coursesApi,
@@ -25,6 +29,8 @@ export default function LessonPlayerPage() {
   const { token, user } = useAuth();
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const isFocused = searchParams?.get("focused") === "true";
   const courseId = params?.courseId as string;
   const moduleId = params?.moduleId as string;
   const nodeId = params?.nodeId as string;
@@ -124,6 +130,23 @@ export default function LessonPlayerPage() {
     router.push(`/dashboard/learn/${courseId}/${n.moduleId}/${n.nodeId}`);
   };
 
+  // Focused mode: mark complete then return to the map
+  const handleFocusedComplete = useCallback(async () => {
+    if (!token || marking) return;
+    if (!isDone) {
+      setMarking(true);
+      try {
+        const res = await enrollmentApi.updateProgress(token, courseId, nodeId);
+        setEnrollment(res.data);
+      } catch {
+        // silently ignore
+      } finally {
+        setMarking(false);
+      }
+    }
+    router.push(`/dashboard/learn/${courseId}`);
+  }, [token, courseId, nodeId, isDone, marking, router]);
+
   if (!user) return null;
 
   if (loading) {
@@ -134,6 +157,108 @@ export default function LessonPlayerPage() {
     );
   }
 
+  // ─── Focused mode ────────────────────────────────────────────────────────────
+  if (isFocused) {
+    const pct = enrollment?.progress.overallPercentage ?? 0;
+    return (
+      <div className="flex flex-col h-[calc(100vh-64px)]">
+        {/* Focused header */}
+        <header className="shrink-0 border-b bg-card/80 backdrop-blur-sm px-4 py-3 flex items-center gap-3">
+          <Link
+            href={`/dashboard/learn/${courseId}`}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Map
+          </Link>
+
+          <div className="w-px h-4 bg-border shrink-0" />
+
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate">{node?.title}</p>
+            {node?.description && (
+              <p className="text-xs text-muted-foreground truncate hidden sm:block">
+                {node.description}
+              </p>
+            )}
+          </div>
+
+          {enrollment && (
+            <div className="shrink-0 hidden sm:flex items-center gap-2">
+              <div className="w-20">
+                <ProgressBar value={pct} size="sm" />
+              </div>
+              <span className="text-xs text-muted-foreground">{pct}%</span>
+            </div>
+          )}
+
+          {isDone && (
+            <span className="shrink-0 flex items-center gap-1 text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-lg border border-success/20">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+              Done
+            </span>
+          )}
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto">
+          {error && (
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6">
+              <div className="p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>
+            </div>
+          )}
+
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+            {/* Node type badge for non-lesson types */}
+            {nodeType !== "lesson" && (
+              <div className="mb-6">
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                  nodeType === "practice"
+                    ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+                    : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                }`}>
+                  {nodeType === "practice" ? "Practice" : "Quiz"}
+                </span>
+              </div>
+            )}
+
+            {nodeType === "lesson" && node ? (
+              <FocusedLessonPlayer
+                node={node}
+                isLastNode={!nextNode}
+                isNodeDone={isDone}
+                onComplete={handleFocusedComplete}
+              />
+            ) : nodeType === "practice" && node && token ? (
+              <>
+                <PracticePlayer node={node} courseId={courseId} token={token} />
+                <div className="mt-10 pt-6 border-t flex justify-end">
+                  <Button onClick={handleFocusedComplete} disabled={marking}>
+                    {marking ? "Saving…" : isDone ? "Back to map" : "Finish"}
+                  </Button>
+                </div>
+              </>
+            ) : nodeType === "quiz" && node && token ? (
+              <>
+                <QuizPlayer node={node} courseId={courseId} token={token} />
+                <div className="mt-10 pt-6 border-t flex justify-end">
+                  <Button onClick={handleFocusedComplete} disabled={marking}>
+                    {marking ? "Saving…" : isDone ? "Back to map" : "Finish"}
+                  </Button>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ─── Standard mode ────────────────────────────────────────────────────────────
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden">
       <LessonSidebar
@@ -181,17 +306,9 @@ export default function LessonPlayerPage() {
             <PracticePlayer node={node} courseId={courseId} token={token} />
           ) : nodeType === "quiz" && node && token ? (
             <QuizPlayer node={node} courseId={courseId} token={token} />
-          ) : (node?.sections?.length ?? 0) === 0 ? (
-            <p className="text-muted-foreground/80 italic text-sm">This lesson has no content yet.</p>
-          ) : (
-            <div className="space-y-8">
-              {node!.sections.map((section) => (
-                <div key={section.id}>
-                  <SectionPreview section={section} />
-                </div>
-              ))}
-            </div>
-          )}
+          ) : node ? (
+            <LessonPlayer node={node} />
+          ) : null}
 
           <LessonNavigation
             courseId={courseId}

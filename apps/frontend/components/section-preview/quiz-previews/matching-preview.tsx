@@ -8,9 +8,10 @@ import { ResultBanner } from "../result-banner";
 
 interface MatchingPreviewProps {
   section: MatchingQuizSectionDTO;
+  onAnswered?: () => void;
 }
 
-export function MatchingPreview({ section }: MatchingPreviewProps) {
+export function MatchingPreview({ section, onAnswered }: MatchingPreviewProps) {
   const shuffledRight = useMemo(() => shuffle(section.pairs.map((p) => ({ id: p.id, text: p.right }))), [section.pairs]);
   const [matches, setMatches] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -50,7 +51,7 @@ export function MatchingPreview({ section }: MatchingPreviewProps) {
         })}
       </div>
       {!submitted ? (
-        <Button size="sm" onClick={() => setSubmitted(true)} disabled={!allFilled}>
+        <Button size="sm" onClick={() => { setSubmitted(true); onAnswered?.(); }} disabled={!allFilled}>
           Check answer
         </Button>
       ) : (
