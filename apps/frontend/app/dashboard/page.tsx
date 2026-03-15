@@ -183,7 +183,7 @@ export default function DashboardPage() {
               </div>
               {!user.isPro && (
                 <div className="text-xs text-muted-foreground text-right max-w-[160px]">
-                  Free Mentor AI credits reset daily at midnight (UTC).
+                  Credits are based on usage (tokens). Reset daily at midnight (UTC).
                 </div>
               )}
             </div>

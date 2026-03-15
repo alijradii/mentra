@@ -87,7 +87,7 @@ export default function ProfilePage() {
                             {typeof user.aiCredits === "number"
                                 ? `You currently have ${user.aiCredits} / 50 free AI credit(s) left for today.`
                                 : "You receive 50 free Mentor AI credits per day."}{" "}
-                            Credits reset daily at midnight (UTC).
+                            Credits are based on usage (tokens). Credits reset daily at midnight (UTC).
                         </p>
                     )}
                 </section>

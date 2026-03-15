@@ -23,8 +23,18 @@ import type { MentorAIActionContext, MentorAITransport } from "./types";
 
 const AI_ACTOR: CourseWSActor = { id: "ai-mentor", name: "AI Assistant" };
 
+/** Extract total token count from SDK usage (usage or totalUsage). */
+function tokensFromUsage(
+  u: { totalTokens?: number; inputTokens?: number; outputTokens?: number } | undefined
+): number {
+  if (!u) return 0;
+  if (typeof u.totalTokens === "number") return u.totalTokens;
+  return (u.inputTokens ?? 0) + (u.outputTokens ?? 0);
+}
 
 export type MentorAIActionHandler = (ctx: MentorAIActionContext) => void | Promise<void>;
+
+export type HandleMessageResult = { totalTokens: number } | void;
 
 /**
  * Mentor AI assistant: receives messages, runs registered actions (e.g. lockedits, unlockedits),
@@ -85,14 +95,16 @@ export class MentorAIAssistant {
     this.actions.set(name, handler);
   }
 
-  async handleMessage(courseId: string, inputText: string, actor?: CourseWSActor): Promise<void> {
+  async handleMessage(courseId: string, inputText: string, actor?: CourseWSActor): Promise<HandleMessageResult> {
     const trimmed = inputText.trim();
     if (!trimmed) return;
 
     if (trimmed.startsWith("/")) {
-      return this.handleCommand(courseId, inputText, actor);
+      await this.handleCommand(courseId, inputText, actor);
+      return;
     }
 
+    let totalTokens = 0;
     const ctx: MentorAIActionContext = {
       courseId,
       actor,
@@ -115,7 +127,7 @@ export class MentorAIAssistant {
 
       const contextPrompt = buildContextPrompt({ courseId, inputText, actor });
 
-      const { text: contextSummary } = await generateText({
+      const contextResult = await generateText({
         model: reasoningModel,
         prompt: contextPrompt,
         tools: {
@@ -124,6 +136,8 @@ export class MentorAIAssistant {
         },
         stopWhen: stepCountIs(8),
       });
+      totalTokens += tokensFromUsage(contextResult.totalUsage ?? contextResult.usage);
+      const contextSummary = contextResult.text;
 
       this.sendStatus(courseId, "📋 Context gathered. Building execution plan...", "context");
 
@@ -133,13 +147,15 @@ export class MentorAIAssistant {
       // output and does not suffer from the tool/output conflict.
       const planningPrompt = buildPlanningPrompt({ contextSummary, inputText });
 
-      const { output: plan } = await generateText({
+      const planResult = await generateText({
         model: reasoningModel,
         prompt: planningPrompt,
         output: Output.object({
           schema: mentorPlanSchema,
         })
       });
+      totalTokens += tokensFromUsage(planResult.totalUsage ?? planResult.usage);
+      const plan = planResult.output;
 
       ctx.broadcastToCourse("ai:plan", { todoPoints: plan.todoPoints });
       this.sendStatus(
@@ -180,7 +196,7 @@ export class MentorAIAssistant {
           const result = await executorAgent.generate({
             prompt: buildExecutionPrompt(plan, todo),
           });
-
+          totalTokens += tokensFromUsage(result.totalUsage ?? result.usage);
           this.sendStatus(courseId, `✅ Completed ${stepLabel}\n${result.text}`, "execution");
         } catch (stepErr) {
           const msg = stepErr instanceof Error ? stepErr.message : String(stepErr);
@@ -190,6 +206,8 @@ export class MentorAIAssistant {
       }
 
       this.sendStatus(courseId, "🎉 All steps have been processed.", "summary");
+      ctx.setEditsLocked(false);
+      return { totalTokens };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       this.sendStatus(courseId, `❌ Mentor assistant encountered an error: ${msg}`, "summary");

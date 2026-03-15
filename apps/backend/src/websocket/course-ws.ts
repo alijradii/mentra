@@ -12,6 +12,7 @@ import { WebSocket, WebSocketServer } from "ws";
 import { MentorAIAssistant } from "../ai/mentor-assistant/mentor-assistant.js";
 import { findUserById, getUserCollection, userDocumentToUser } from "../models/user.js";
 import { verifyToken } from "../utils/jwt.js";
+import { TOKENS_PER_CREDIT } from "../config/ai.js";
 import { ensureCreditsFresh } from "../utils/aiCredits";
 import { ObjectId } from "mongodb";
 
@@ -302,39 +303,10 @@ export function attachCourseWebSocket(httpServer: Server) {
             return;
           }
 
-          // Atomically decrement a single credit.
-          const decrementResult = await getUserCollection().findOneAndUpdate(
-            { _id: updatedDoc._id, aiCredits: { $gt: 0 } },
-            { $inc: { aiCredits: -1 } },
-            { returnDocument: "after" }
-          );
-
-          const afterDoc = decrementResult ?? updatedDoc;
-          const remainingCredits = afterDoc.aiCredits ?? 0;
-
-          if (!decrementResult) {
-            const denialPayload: ChatMessagePayload = {
-              text:
-                "You have used all of your free Mentor AI credits for today. " +
-                "Your credits will reset at midnight (UTC), or you can upgrade to Pro for unlimited access.",
-              kind: "assistant",
-            };
-            const denialEvent: CourseWSEvent = {
-              type: "chat:message",
-              courseId: client.courseId,
-              actor: { id: "system", name: "System" },
-              payload: denialPayload,
-              timestamp: new Date().toISOString(),
-            };
-            safeSend(client.ws, denialEvent);
-            return;
-          }
-
           const payload: ChatMessagePayload = {
             text: msg.text,
             kind: "user",
           };
-          // Broadcast the user message, and implicitly the AI run that follows.
           broadcastToCourse(
             client.courseId,
             "chat:message",
@@ -343,11 +315,41 @@ export function attachCourseWebSocket(httpServer: Server) {
             client.actor
           );
 
-          await getMentorAiAssistant().handleMessage(
+          const usageResult = await getMentorAiAssistant().handleMessage(
             client.courseId,
             msg.text,
             client.actor
           );
+          const totalTokens = usageResult?.totalTokens ?? 0;
+          const creditsToDeduct = totalTokens > 0 ? Math.ceil(totalTokens / TOKENS_PER_CREDIT) : 0;
+          const deduct = Math.min(creditsToDeduct, currentCredits);
+          let remainingCredits = currentCredits;
+          if (deduct > 0) {
+            const decrementResult = await getUserCollection().findOneAndUpdate(
+              { _id: updatedDoc._id, aiCredits: { $gte: deduct } },
+              { $inc: { aiCredits: -deduct } },
+              { returnDocument: "after" }
+            );
+            if (decrementResult) {
+              remainingCredits = decrementResult.aiCredits ?? currentCredits - deduct;
+            } else {
+              const fresh = await getUserCollection().findOne({ _id: updatedDoc._id });
+              remainingCredits = fresh?.aiCredits ?? 0;
+            }
+          }
+          const creditsPayload: ChatMessagePayload = {
+            text: `You have ${remainingCredits} credits left today.`,
+            kind: "assistant",
+            remainingCredits,
+          };
+          const creditsEvent: CourseWSEvent = {
+            type: "chat:message",
+            courseId: client.courseId,
+            actor: { id: "system", name: "System" },
+            payload: creditsPayload,
+            timestamp: new Date().toISOString(),
+          };
+          safeSend(client.ws, creditsEvent);
         }
       } catch {
         // ignore malformed messages
