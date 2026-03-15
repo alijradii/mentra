@@ -33,12 +33,7 @@ function CourseCard({
         <div className="bg-card border rounded-xl overflow-hidden flex flex-col gap-0 hover:shadow-sm transition-shadow">
             <div className="relative w-full aspect-square bg-muted">
                 {course.thumbnail ? (
-                    <Image
-                        src={course.thumbnail}
-                        alt={course.title}
-                        fill
-                        className="object-cover"
-                    />
+                    <Image src={course.thumbnail} alt={course.title} fill className="object-cover" />
                 ) : (
                     <div className="w-full h-full bg-linear-to-br from-primary/15 to-primary/5 flex items-center justify-center">
                         <span className="text-3xl font-bold text-primary/20 select-none">
@@ -48,58 +43,62 @@ function CourseCard({
                 )}
             </div>
             <div className="p-5 flex flex-col gap-3 flex-1">
-            <div className="flex-1">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                    <h3 className="font-semibold text-foreground text-base leading-snug">{course.title}</h3>
-                    {diff && (
-                        <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-secondary text-primary font-medium">
-                            {DIFFICULTY_LABEL[diff] ?? diff}
-                        </span>
+                <div className="flex-1">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                        <h3 className="font-semibold text-foreground text-base leading-snug">{course.title}</h3>
+                        {diff && (
+                            <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-secondary text-primary font-medium">
+                                {DIFFICULTY_LABEL[diff] ?? diff}
+                            </span>
+                        )}
+                    </div>
+                    {(course.author?.name || course.author?.avatar) && (
+                        <div className="flex items-center gap-2 mb-2">
+                            {course.author.avatar && (
+                                <Image
+                                    src={course.author.avatar}
+                                    alt={course.author.name ?? ""}
+                                    width={40}
+                                    height={40}
+                                    className="size-10 rounded-full object-cover shrink-0"
+                                />
+                            )}
+                            {course.author.name && (
+                                <p className="text-xs text-muted-foreground">by {course.author.name}</p>
+                            )}
+                        </div>
+                    )}
+                    {course.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-3">{course.description}</p>
                     )}
                 </div>
-                {(course.author?.name || course.author?.avatar) && (
-                    <div className="flex items-center gap-2 mb-2">
-                        {course.author.avatar && (
-                            <img
-                                src={course.author.avatar}
-                                alt=""
-                                className="size-6 rounded-full object-cover shrink-0"
-                            />
-                        )}
-                        {course.author.name && <p className="text-xs text-muted-foreground">by {course.author.name}</p>}
-                    </div>
-                )}
-                {course.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-3">{course.description}</p>
-                )}
-            </div>
 
-            <div className="flex items-center gap-3 text-xs text-muted-foreground/80 flex-wrap">
-                {dur && (
-                    <span>
-                        {Math.floor(dur / 60) > 0 ? `${Math.floor(dur / 60)}h ` : ""}
-                        {dur % 60 > 0 ? `${dur % 60}m` : ""}
-                    </span>
-                )}
-                {count > 0 && (
-                    <span>
-                        {count} {count === 1 ? "student" : "students"}
-                    </span>
-                )}
-                {course.metadata?.category && <span>{course.metadata.category}</span>}
-            </div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground/80 flex-wrap">
+                    {dur && (
+                        <span>
+                            {Math.floor(dur / 60) > 0 ? `${Math.floor(dur / 60)}h ` : ""}
+                            {dur % 60 > 0 ? `${dur % 60}m` : ""}
+                        </span>
+                    )}
+                    {count > 0 && (
+                        <span>
+                            {count} {count === 1 ? "student" : "students"}
+                        </span>
+                    )}
+                    {course.metadata?.category && <span>{course.metadata.category}</span>}
+                </div>
 
-            <div className="flex items-center gap-2 pt-1">
-                {enrolled ? (
-                    <Button size="sm" variant="outline" asChild className="flex-1">
-                        <Link href={`/dashboard/learn/${course._id}`}>Continue learning</Link>
-                    </Button>
-                ) : (
-                    <Button size="sm" className="flex-1" disabled={enrolling} onClick={() => onEnroll(course._id)}>
-                        {enrolling ? "Enrolling…" : "Enroll"}
-                    </Button>
-                )}
-            </div>
+                <div className="flex items-center gap-2 pt-1">
+                    {enrolled ? (
+                        <Button size="sm" variant="outline" asChild className="flex-1">
+                            <Link href={`/dashboard/learn/${course._id}`}>Continue learning</Link>
+                        </Button>
+                    ) : (
+                        <Button size="sm" className="flex-1" disabled={enrolling} onClick={() => onEnroll(course._id)}>
+                            {enrolling ? "Enrolling…" : "Enroll"}
+                        </Button>
+                    )}
+                </div>
             </div>
         </div>
     );
