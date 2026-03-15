@@ -19,12 +19,7 @@ export function EnrolledCourseCard({ course, enrollment }: EnrolledCourseCardPro
         >
             <div className="relative w-full aspect-square bg-muted">
                 {course.thumbnail ? (
-                    <Image
-                        src={course.thumbnail}
-                        alt={course.title}
-                        fill
-                        className="object-cover"
-                    />
+                    <Image src={course.thumbnail} alt={course.title} fill className="object-cover" />
                 ) : (
                     <div className="w-full h-full bg-linear-to-br from-primary/15 to-primary/5 flex items-center justify-center">
                         <span className="text-3xl font-bold text-primary/20 select-none">
@@ -48,13 +43,19 @@ export function EnrolledCourseCard({ course, enrollment }: EnrolledCourseCardPro
                     {(course.author?.name || course.author?.avatar) && (
                         <div className="flex items-center gap-2 mb-2">
                             {course.author.avatar && (
-                                <img
+                                <Image
                                     src={course.author.avatar}
                                     alt=""
+                                    loading="lazy"
                                     className="size-6 rounded-full object-cover shrink-0"
+                                    width={200}
+                                    height={200}
+                                    quality={90}
                                 />
                             )}
-                            {course.author.name && <p className="text-xs text-muted-foreground">by {course.author.name}</p>}
+                            {course.author.name && (
+                                <p className="text-xs text-muted-foreground">by {course.author.name}</p>
+                            )}
                         </div>
                     )}
                     {course.description && (

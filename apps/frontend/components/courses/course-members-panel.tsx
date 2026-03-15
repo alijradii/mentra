@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError, mentorsApi, studentsApi, type CourseMemberDTO, type CourseStudentDTO } from "@/lib/api";
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 
 interface Props {
@@ -26,8 +27,15 @@ function UserAvatar({ name, avatar }: { name: string; avatar?: string }) {
 
     if (avatar) {
         return (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatar} alt={name} loading="lazy" className="w-9 h-9 rounded-full object-cover shrink-0" />
+            <Image
+                width={100}
+                height={100}
+                quality={90}
+                src={avatar}
+                alt={name}
+                className="w-9 h-9 rounded-full object-cover shrink-0"
+                loading="lazy"
+            />
         );
     }
 
