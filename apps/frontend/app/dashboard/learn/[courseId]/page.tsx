@@ -1,8 +1,8 @@
 "use client";
 
-import { CourseOutline } from "@/components/learn/course-outline";
-import { CourseMap } from "@/components/learn/course-map";
 import { CourseMembersPanel } from "@/components/courses";
+import { CourseMap } from "@/components/learn/course-map";
+import { CourseOutline } from "@/components/learn/course-outline";
 import { ProgressBar } from "@/components/shared/progress-bar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -133,68 +133,66 @@ export default function LearnCourseOverviewPage() {
             <div className="bg-card border rounded-xl overflow-hidden mb-6">
                 {course?.thumbnail && (
                     <div className="relative w-full aspect-square">
-                        <Image
-                            src={course.thumbnail}
-                            alt={course.title ?? ""}
-                            fill
-                            className="object-cover"
-                        />
+                        <Image src={course.thumbnail} alt={course.title ?? ""} fill className="object-cover" />
                     </div>
                 )}
                 <div className="p-6">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                        <h1 className="text-2xl font-bold text-foreground">{course?.title}</h1>
-                        {(course?.author?.name || course?.author?.avatar) && (
-                            <div className="flex items-center gap-2 mt-0.5">
-                                {course.author.avatar && (
-                                    <img
-                                        src={course.author.avatar}
-                                        alt=""
-                                        className="size-7 rounded-full object-cover shrink-0"
-                                    />
-                                )}
-                                {course.author.name && (
-                                    <p className="text-sm text-muted-foreground">by {course.author.name}</p>
-                                )}
-                            </div>
-                        )}
-                        {course?.description && (
-                            <p className="text-muted-foreground mt-2 text-sm">{course.description}</p>
-                        )}
-                    </div>
-                    {firstIncompleteNode ? (
-                        <Button asChild className="shrink-0">
-                            <Link
-                                href={`/dashboard/learn/${courseId}/${firstIncompleteNode.moduleId}/${firstIncompleteNode.nodeId}`}
-                            >
-                                {pct > 0 ? "Continue" : "Start learning"}
-                            </Link>
-                        </Button>
-                    ) : totalNodes > 0 ? (
-                        <span className="shrink-0 text-sm font-medium text-success bg-success/15 px-3 py-1.5 rounded-lg border border-success/40">
-                            Course complete!
-                        </span>
-                    ) : null}
-                </div>
-
-                {enrollment && totalNodes > 0 && (
-                    <div className="mt-4 space-y-1">
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>{pct}% complete</span>
-                            <span>
-                                {completedNodes.size} / {totalNodes} lessons
-                            </span>
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                            <h1 className="text-2xl font-bold text-foreground">{course?.title}</h1>
+                            {(course?.author?.name || course?.author?.avatar) && (
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    {course.author.avatar && (
+                                        <Image
+                                            src={course.author.avatar}
+                                            alt=""
+                                            height={80}
+                                            width={80}
+                                            quality={90}
+                                            className="size-7 rounded-full object-cover shrink-0"
+                                        />
+                                    )}
+                                    {course.author.name && (
+                                        <p className="text-sm text-muted-foreground">by {course.author.name}</p>
+                                    )}
+                                </div>
+                            )}
+                            {course?.description && (
+                                <p className="text-muted-foreground mt-2 text-sm">{course.description}</p>
+                            )}
                         </div>
-                        <ProgressBar value={pct} />
+                        {firstIncompleteNode ? (
+                            <Button asChild className="shrink-0">
+                                <Link
+                                    href={`/dashboard/learn/${courseId}/${firstIncompleteNode.moduleId}/${firstIncompleteNode.nodeId}`}
+                                >
+                                    {pct > 0 ? "Continue" : "Start learning"}
+                                </Link>
+                            </Button>
+                        ) : totalNodes > 0 ? (
+                            <span className="shrink-0 text-sm font-medium text-success bg-success/15 px-3 py-1.5 rounded-lg border border-success/40">
+                                Course complete!
+                            </span>
+                        ) : null}
                     </div>
-                )}
+
+                    {enrollment && totalNodes > 0 && (
+                        <div className="mt-4 space-y-1">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span>{pct}% complete</span>
+                                <span>
+                                    {completedNodes.size} / {totalNodes} lessons
+                                </span>
+                            </div>
+                            <ProgressBar value={pct} />
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Tab bar */}
             <div className="flex gap-1 border-b mb-6">
-                {(["learning", "content", "members"] as Tab[]).map((tab) => (
+                {(["learning", "content", "members"] as Tab[]).map(tab => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
@@ -204,11 +202,7 @@ export default function LearnCourseOverviewPage() {
                                 : "border-transparent text-muted-foreground hover:text-foreground"
                         }`}
                     >
-                        {tab === "learning"
-                            ? "Learning path"
-                            : tab === "content"
-                              ? "Course content"
-                              : "Members"}
+                        {tab === "learning" ? "Learning path" : tab === "content" ? "Course content" : "Members"}
                     </button>
                 ))}
             </div>
@@ -222,8 +216,8 @@ export default function LearnCourseOverviewPage() {
                 />
             )}
 
-            {activeTab === "content" && (
-                modules.length === 0 ? (
+            {activeTab === "content" &&
+                (modules.length === 0 ? (
                     <p className="text-muted-foreground text-sm">No content available yet.</p>
                 ) : (
                     <CourseOutline
@@ -234,8 +228,7 @@ export default function LearnCourseOverviewPage() {
                         expandedModules={expandedModules}
                         onToggleModule={toggleModule}
                     />
-                )
-            )}
+                ))}
 
             {activeTab === "members" && token && course && (
                 <CourseMembersPanel
