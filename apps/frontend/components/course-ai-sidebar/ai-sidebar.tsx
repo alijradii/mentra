@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCourseWS } from "@/contexts/CourseWSContext";
 import { cn } from "@/lib/utils";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, ChevronDown, ChevronUp } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
@@ -53,7 +53,7 @@ export function AiSidebar() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [activityEntries, setActivityEntries] = useState<ActivityEntry[]>([]);
     const [input, setInput] = useState("");
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
     const listEndRef = useRef<HTMLDivElement>(null);
     const nextIdRef = useRef(0);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -212,15 +212,245 @@ export function AiSidebar() {
 
     if (!user) return null;
 
+    const sidebarContent = (
+        <>
+            {/* Messages + AI plan + activity log */}
+            <div className="flex-1 min-h-0 flex flex-col">
+                <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                    {messages.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-6 px-2">
+                            Get AI assistance while editing your course. Ask for help with structure, content, or ideas.
+                        </p>
+                    )}
+                    {messages.map(msg => (
+                        <div
+                            key={msg.id}
+                            className={cn(
+                                "flex flex-col max-w-[90%]",
+                                msg.isOwn ? "self-end items-end" : "self-start items-start",
+                            )}
+                        >
+                            {!msg.isOwn && (
+                                <span className="text-xs text-muted-foreground mb-0.5">{msg.actorName}</span>
+                            )}
+                            <div
+                                className={cn(
+                                    "rounded-lg px-3 py-2 text-sm wrap-break-word markdown markdown-chat",
+                                    msg.isOwn ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
+                                )}
+                            >
+                                <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                                    {msg.text}
+                                </ReactMarkdown>
+                            </div>
+                        </div>
+                    ))}
+                    {activityEntries.length > 0 && (
+                        <div className="rounded-lg border border-dashed border-border bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground space-y-3">
+                            {/* Header + loading indicator */}
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                    Mentor AI activity
+                                </span>
+                                {activityEntries.some(e => e.type === "log" && e.inProgress) && (
+                                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                        <span className="inline-flex h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                                        <span>Working…</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Skeleton-style loading shimmer while a step is in progress */}
+                            {activityEntries.some(e => e.type === "log" && e.inProgress) && (
+                                <div className="space-y-1.5">
+                                    <div className="h-1.5 w-3/4 rounded bg-muted-foreground/10 animate-pulse" />
+                                    <div className="h-1.5 w-1/2 rounded bg-muted-foreground/10 animate-pulse" />
+                                </div>
+                            )}
+
+                            {/* Entries rendered in chronological order:
+                                        - plan entries show the execution plan with per-step completion
+                                        - log entries show raw status lines
+                                     */}
+                            <div className="space-y-2">
+                                {activityEntries.map(entry => {
+                                    if (entry.type === "plan") {
+                                        return (
+                                            <div
+                                                key={entry.id}
+                                                className="rounded-md border border-primary/40 bg-linear-to-r from-primary/10 via-primary/5 to-transparent px-3 py-2 space-y-1.5"
+                                            >
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+                                                        <span className="text-[11px] font-semibold text-primary uppercase tracking-wide">
+                                                            Execution plan
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <ol className="mt-1 space-y-1.5 text-[11px] text-muted-foreground">
+                                                    {entry.steps.map(step => (
+                                                        <li key={step.index} className="flex items-start gap-2">
+                                                            <span
+                                                                className={cn(
+                                                                    "mt-0.5 h-4 w-4 shrink-0 rounded-full text-[10px] font-semibold flex items-center justify-center",
+                                                                    step.done
+                                                                        ? "bg-emerald-500 text-white"
+                                                                        : step.failed
+                                                                          ? "bg-destructive text-destructive-foreground"
+                                                                          : "bg-primary/10 text-primary",
+                                                                )}
+                                                            >
+                                                                {step.done ? "✓" : step.failed ? "!" : step.index}
+                                                            </span>
+                                                            <div className="flex-1 space-y-0.5">
+                                                                <div className="flex flex-wrap items-center gap-1">
+                                                                    <span className="inline-flex rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary uppercase tracking-wide">
+                                                                        {step.action}
+                                                                    </span>
+                                                                    <span className="text-[11px] text-foreground">
+                                                                        {step.content}
+                                                                    </span>
+                                                                </div>
+                                                                {step.explanation && (
+                                                                    <div className="text-[10px] text-muted-foreground/90">
+                                                                        {step.explanation}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </li>
+                                                    ))}
+                                                </ol>
+                                            </div>
+                                        );
+                                    }
+
+                                    // Log entry
+                                    return (
+                                        <div
+                                            key={entry.id}
+                                            className={cn(
+                                                "whitespace-pre-wrap font-mono text-[11px]",
+                                                entry.inProgress
+                                                    ? "border-l-2 border-primary pl-2 text-foreground"
+                                                    : "pl-1",
+                                            )}
+                                        >
+                                            <div className="flex items-start gap-2">
+                                                <span className="flex-1">{entry.text}</span>
+                                                {entry.inProgress && (
+                                                    <span className="text-[10px] text-primary font-semibold uppercase tracking-wide">
+                                                        Running…
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                    <div ref={listEndRef} />
+                </div>
+
+                {/* Input */}
+                <form onSubmit={handleSubmit} className="shrink-0 p-3 pt-0">
+                    <div className="relative rounded-xl border border-border bg-muted/50 shadow-sm focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-card">
+                        <Textarea
+                            ref={textareaRef}
+                            value={input}
+                            onChange={e => setInput(e.target.value)}
+                            placeholder="Ask the mentor AI…"
+                            rows={1}
+                            className="min-h-[44px] max-h-[200px] overflow-y-auto resize-none border-0 bg-transparent py-3 pl-4 pr-12 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
+                            onKeyDown={e => {
+                                // Enter = send, Shift+Enter = new line
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSubmit(e as unknown as React.FormEvent);
+                                }
+                            }}
+                            disabled={!connected || chatLocked}
+                        />
+                        <Button
+                            type="submit"
+                            size="icon"
+                            className="absolute right-2 bottom-2 h-8 w-8 rounded-full shrink-0 shadow-sm"
+                            disabled={!connected || chatLocked || !input.trim()}
+                            aria-label="Send message"
+                        >
+                            <ArrowUp className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    <p className="mt-1.5 text-[11px] text-muted-foreground px-0.5">
+                        {isProUser
+                            ? "Shift+Enter for new line"
+                            : remainingCredits != null
+                              ? `${remainingCredits} free Mentor AI credit(s) left today. Credits reset at midnight (UTC).`
+                              : "Free users get a limited number of Mentor AI credits per day. Credits reset at midnight (UTC)."}
+                    </p>
+                </form>
+            </div>
+        </>
+    );
+
     return (
-        <aside
-            className="flex min-h-full flex-col border-l border-border bg-card text-card-foreground shrink-0 transition-[width] duration-200 overflow-hidden"
-            style={{ width: isOpen ? SIDEBAR_WIDTH : 44 }}
-        >
-            {/* Header */}
-            <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5 shrink-0 min-w-0">
-                {isOpen ? (
-                    <>
+        <>
+            {/* Desktop: right sidebar — collapses to narrow strip */}
+            <aside
+                className={cn(
+                    "hidden md:flex min-h-full flex-col border-l border-border bg-card text-card-foreground shrink-0 transition-[width] duration-200 overflow-hidden min-w-0",
+                    isOpen ? "w-[440px] max-w-[min(440px,100%)]" : "w-11",
+                )}
+            >
+                <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5 shrink-0 min-w-0">
+                    {isOpen ? (
+                        <>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-sm font-semibold truncate">Mentor AI</span>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                                {!connected && (
+                                    <span className="text-xs text-muted-foreground" title="Reconnecting…">
+                                        Offline
+                                    </span>
+                                )}
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => setIsOpen(false)}
+                                    aria-label="Close sidebar"
+                                >
+                                    →
+                                </Button>
+                            </div>
+                        </>
+                    ) : (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 mx-auto"
+                            onClick={() => setIsOpen(true)}
+                            aria-label="Open sidebar"
+                            title="Mentor AI Sidebar"
+                        >
+                            ←
+                        </Button>
+                    )}
+                </div>
+                {isOpen && sidebarContent}
+            </aside>
+
+            {/* Mobile: full-screen when open, only FAB when closed (no bar, no blocking) */}
+            {isOpen ? (
+                <div
+                    className="fixed inset-0 z-50 flex flex-col w-full h-full bg-card text-card-foreground md:hidden"
+                    style={{ touchAction: "pan-y" }}
+                >
+                    <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5 shrink-0">
                         <div className="flex items-center gap-2 min-w-0">
                             <span className="text-sm font-semibold truncate">Mentor AI</span>
                         </div>
@@ -234,220 +464,37 @@ export function AiSidebar() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
-                                onClick={() => setIsOpen(false)}
-                                aria-label="Close sidebar"
+                                className="h-8 w-8 shrink-0"
+                                onClick={e => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setIsOpen(false);
+                                }}
+                                aria-label="Close mentor panel"
                             >
-                                →
+                                <ChevronDown className="h-4 w-4" />
                             </Button>
                         </div>
-                    </>
-                ) : (
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 mx-auto"
-                        onClick={() => setIsOpen(true)}
-                        aria-label="Open sidebar"
-                        title="Mentor AI Sidebar"
-                    >
-                        ←
-                    </Button>
-                )}
-            </div>
-
-            {isOpen && (
-                <>
-                    {/* Messages + AI plan + activity log */}
-                    <div className="flex-1 min-h-0 flex flex-col">
-                        <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                            {messages.length === 0 && (
-                                <p className="text-sm text-muted-foreground text-center py-6 px-2">
-                                    Get AI assistance while editing your course. Ask for help with structure, content,
-                                    or ideas.
-                                </p>
-                            )}
-                            {messages.map(msg => (
-                                <div
-                                    key={msg.id}
-                                    className={cn(
-                                        "flex flex-col max-w-[90%]",
-                                        msg.isOwn ? "self-end items-end" : "self-start items-start",
-                                    )}
-                                >
-                                    {!msg.isOwn && (
-                                        <span className="text-xs text-muted-foreground mb-0.5">{msg.actorName}</span>
-                                    )}
-                                    <div
-                                        className={cn(
-                                            "rounded-lg px-3 py-2 text-sm wrap-break-word markdown markdown-chat",
-                                            msg.isOwn
-                                                ? "bg-primary text-primary-foreground"
-                                                : "bg-muted text-foreground",
-                                        )}
-                                    >
-                                        <ReactMarkdown
-                                            remarkPlugins={[remarkGfm, remarkMath]}
-                                            rehypePlugins={[rehypeKatex]}
-                                        >
-                                            {msg.text}
-                                        </ReactMarkdown>
-                                    </div>
-                                </div>
-                            ))}
-                            {activityEntries.length > 0 && (
-                                <div className="rounded-lg border border-dashed border-border bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground space-y-3">
-                                    {/* Header + loading indicator */}
-                                    <div className="flex items-center justify-between gap-2">
-                                        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                            Mentor AI activity
-                                        </span>
-                                        {activityEntries.some(e => e.type === "log" && e.inProgress) && (
-                                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                                <span className="inline-flex h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                                                <span>Working…</span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Skeleton-style loading shimmer while a step is in progress */}
-                                    {activityEntries.some(e => e.type === "log" && e.inProgress) && (
-                                        <div className="space-y-1.5">
-                                            <div className="h-1.5 w-3/4 rounded bg-muted-foreground/10 animate-pulse" />
-                                            <div className="h-1.5 w-1/2 rounded bg-muted-foreground/10 animate-pulse" />
-                                        </div>
-                                    )}
-
-                                    {/* Entries rendered in chronological order:
-                                        - plan entries show the execution plan with per-step completion
-                                        - log entries show raw status lines
-                                     */}
-                                    <div className="space-y-2">
-                                        {activityEntries.map(entry => {
-                                            if (entry.type === "plan") {
-                                                return (
-                                                    <div
-                                                        key={entry.id}
-                                                        className="rounded-md border border-primary/40 bg-linear-to-r from-primary/10 via-primary/5 to-transparent px-3 py-2 space-y-1.5"
-                                                    >
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
-                                                                <span className="text-[11px] font-semibold text-primary uppercase tracking-wide">
-                                                                    Execution plan
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <ol className="mt-1 space-y-1.5 text-[11px] text-muted-foreground">
-                                                            {entry.steps.map(step => (
-                                                                <li key={step.index} className="flex items-start gap-2">
-                                                                    <span
-                                                                        className={cn(
-                                                                            "mt-0.5 h-4 w-4 shrink-0 rounded-full text-[10px] font-semibold flex items-center justify-center",
-                                                                            step.done
-                                                                                ? "bg-emerald-500 text-white"
-                                                                                : step.failed
-                                                                                  ? "bg-destructive text-destructive-foreground"
-                                                                                  : "bg-primary/10 text-primary",
-                                                                        )}
-                                                                    >
-                                                                        {step.done
-                                                                            ? "✓"
-                                                                            : step.failed
-                                                                              ? "!"
-                                                                              : step.index}
-                                                                    </span>
-                                                                    <div className="flex-1 space-y-0.5">
-                                                                        <div className="flex flex-wrap items-center gap-1">
-                                                                            <span className="inline-flex rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary uppercase tracking-wide">
-                                                                                {step.action}
-                                                                            </span>
-                                                                            <span className="text-[11px] text-foreground">
-                                                                                {step.content}
-                                                                            </span>
-                                                                        </div>
-                                                                        {step.explanation && (
-                                                                            <div className="text-[10px] text-muted-foreground/90">
-                                                                                {step.explanation}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </li>
-                                                            ))}
-                                                        </ol>
-                                                    </div>
-                                                );
-                                            }
-
-                                            // Log entry
-                                            return (
-                                                <div
-                                                    key={entry.id}
-                                                    className={cn(
-                                                        "whitespace-pre-wrap font-mono text-[11px]",
-                                                        entry.inProgress
-                                                            ? "border-l-2 border-primary pl-2 text-foreground"
-                                                            : "pl-1",
-                                                    )}
-                                                >
-                                                    <div className="flex items-start gap-2">
-                                                        <span className="flex-1">{entry.text}</span>
-                                                        {entry.inProgress && (
-                                                            <span className="text-[10px] text-primary font-semibold uppercase tracking-wide">
-                                                                Running…
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                            <div ref={listEndRef} />
-                        </div>
-
-                        {/* Input */}
-                        <form onSubmit={handleSubmit} className="shrink-0 p-3 pt-0">
-                            <div className="relative rounded-xl border border-border bg-muted/50 shadow-sm focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-card">
-                                <Textarea
-                                    ref={textareaRef}
-                                    value={input}
-                                    onChange={e => setInput(e.target.value)}
-                                    placeholder="Ask the mentor AI…"
-                                    rows={1}
-                                    className="min-h-[44px] max-h-[200px] overflow-y-auto resize-none border-0 bg-transparent py-3 pl-4 pr-12 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
-                                    onKeyDown={e => {
-                                        // Enter = send, Shift+Enter = new line
-                                        if (e.key === "Enter" && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleSubmit(e as unknown as React.FormEvent);
-                                        }
-                                    }}
-                                    disabled={!connected || chatLocked}
-                                />
-                                <Button
-                                    type="submit"
-                                    size="icon"
-                                    className="absolute right-2 bottom-2 h-8 w-8 rounded-full shrink-0 shadow-sm"
-                                    disabled={!connected || chatLocked || !input.trim()}
-                                    aria-label="Send message"
-                                >
-                                    <ArrowUp className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            <p className="mt-1.5 text-[11px] text-muted-foreground px-0.5">
-                                {isProUser
-                                    ? "Shift+Enter for new line"
-                                    : remainingCredits != null
-                                      ? `${remainingCredits} free Mentor AI credit(s) left today. Credits reset at midnight (UTC).`
-                                      : "Free users get a limited number of Mentor AI credits per day. Credits reset at midnight (UTC)."}
-                            </p>
-                        </form>
                     </div>
-                </>
+                    <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{sidebarContent}</div>
+                </div>
+            ) : (
+                <Button
+                    type="button"
+                    variant="default"
+                    size="icon"
+                    className="fixed bottom-6 left-6 z-50 h-12 w-12 -translate-x-1/2 rounded-full shadow-lg md:hidden"
+                    onClick={e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsOpen(true);
+                    }}
+                    aria-label="Open Mentor AI"
+                    title="Mentor AI"
+                >
+                    <ChevronUp className="h-5 w-5" />
+                </Button>
             )}
-        </aside>
+        </>
     );
 }
