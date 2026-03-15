@@ -1,32 +1,32 @@
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { EnrollmentDTO } from "@/lib/api";
+import Link from "next/link";
 import type { FlatNode } from "./types";
 
 interface LessonNavigationProps {
-  courseId: string;
-  enrollment: EnrollmentDTO | null;
-  isDone: boolean;
-  marking: boolean;
-  prevNode: FlatNode | null;
-  nextNode: FlatNode | null;
-  onMarkComplete: () => void;
-  onNavigate: (node: FlatNode) => void;
+    courseId: string;
+    enrollment: EnrollmentDTO | null;
+    isDone: boolean;
+    marking: boolean;
+    prevNode: FlatNode | null;
+    nextNode: FlatNode | null;
+    onMarkComplete: () => void;
+    onNavigate: (node: FlatNode) => void;
 }
 
 export function LessonNavigation({
-  courseId,
-  enrollment,
-  isDone,
-  marking,
-  prevNode,
-  nextNode,
-  onMarkComplete,
-  onNavigate,
+    courseId,
+    enrollment,
+    isDone,
+    marking,
+    prevNode,
+    nextNode,
+    onMarkComplete,
+    onNavigate,
 }: LessonNavigationProps) {
-  return (
-    <div className="mt-12 pt-6 border-t flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
+    return (
+        <div className="mt-12 pt-6 border-t flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            {/* <div className="flex items-center gap-3">
         {enrollment === null ? (
           <Button size="sm" asChild>
             <Link href="/dashboard/browse">Enroll to track progress</Link>
@@ -39,34 +39,33 @@ export function LessonNavigation({
             Completed
           </span>
         ) : (
-          <Button size="sm" variant="outline" disabled={marking} onClick={onMarkComplete}>
-            {marking ? "Marking…" : "Mark as complete"}
-          </Button>
+          // <Button size="sm" variant="outline" disabled={marking} onClick={onMarkComplete}>
+          //   {marking ? "Marking…" : "Mark as complete"}
+          // </Button>
         )}
-      </div>
+      </div> */}
 
-      <div className="flex items-center gap-2">
-        {prevNode && (
-          <Button variant="outline" size="sm" onClick={() => onNavigate(prevNode)}>
-            ← Previous
-          </Button>
-        )}
-        {nextNode ? (
-          <Button
-            size="sm"
-            onClick={() => {
-              if (enrollment && !isDone) onMarkComplete();
-              onNavigate(nextNode);
-            }}
-          >
-            Next →
-          </Button>
-        ) : (
-          <Button size="sm" variant="outline" asChild>
-            <Link href={`/dashboard/learn/${courseId}`}>Back to overview</Link>
-          </Button>
-        )}
-      </div>
-    </div>
-  );
+            <div className="flex items-center gap-2">
+                {prevNode && (
+                    <Button variant="outline" size="sm" onClick={() => onNavigate(prevNode)}>
+                        ← Previous
+                    </Button>
+                )}
+                {nextNode ? (
+                    <Button
+                        size="sm"
+                        onClick={() => {
+                            onNavigate(nextNode);
+                        }}
+                    >
+                        Next →
+                    </Button>
+                ) : (
+                    <Button size="sm" variant="outline" asChild>
+                        <Link href={`/dashboard/learn/${courseId}`}>Back to overview</Link>
+                    </Button>
+                )}
+            </div>
+        </div>
+    );
 }

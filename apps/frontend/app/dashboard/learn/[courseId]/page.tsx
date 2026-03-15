@@ -107,7 +107,7 @@ export default function LearnCourseOverviewPage() {
     }
 
     const totalNodes = modules.reduce((acc, m) => acc + (nodesByModule[m._id]?.length ?? 0), 0);
-    const pct = enrollment?.progress.overallPercentage ?? 0;
+    const pct = Math.round((completedNodes.size / totalNodes) * 100);
 
     const toggleModule = (id: string) => {
         setExpandedModules(prev => {
@@ -164,7 +164,7 @@ export default function LearnCourseOverviewPage() {
                         {firstIncompleteNode ? (
                             <Button asChild className="shrink-0">
                                 <Link
-                                    href={`/dashboard/learn/${courseId}/${firstIncompleteNode.moduleId}/${firstIncompleteNode.nodeId}`}
+                                    href={`/dashboard/learn/${courseId}/${firstIncompleteNode.moduleId}/${firstIncompleteNode.nodeId}?focused=true`}
                                 >
                                     {pct > 0 ? "Continue" : "Start learning"}
                                 </Link>
