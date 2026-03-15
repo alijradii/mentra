@@ -263,23 +263,9 @@ export default function LessonPlayerPage() {
                                 onComplete={handleFocusedComplete}
                             />
                         ) : nodeType === "practice" && node && token ? (
-                            <>
-                                <PracticePlayer node={node} courseId={courseId} token={token} />
-                                <div className="mt-10 pt-6 border-t flex justify-end">
-                                    <Button onClick={handleFocusedComplete} disabled={marking}>
-                                        {marking ? "Saving…" : isDone ? "Back to map" : "Finish"}
-                                    </Button>
-                                </div>
-                            </>
+                            <PracticePlayer node={node} courseId={courseId} token={token} isFocused />
                         ) : nodeType === "quiz" && node && token ? (
-                            <>
-                                <QuizPlayer node={node} courseId={courseId} token={token} />
-                                <div className="mt-10 pt-6 border-t flex justify-end">
-                                    <Button onClick={handleFocusedComplete} disabled={marking}>
-                                        {marking ? "Saving…" : isDone ? "Back to map" : "Finish"}
-                                    </Button>
-                                </div>
-                            </>
+                            <QuizPlayer node={node} courseId={courseId} token={token} isFocused />
                         ) : null}
                     </div>
                 </main>

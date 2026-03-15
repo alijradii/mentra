@@ -15,11 +15,27 @@ interface QuizPlayerProps {
     node: NodeDTO;
     courseId: string;
     token: string;
+    isFocused?: boolean;
 }
 
 type QuizPhase = "info" | "taking" | "submitted" | "released";
 
-export function QuizPlayer({ node, courseId, token }: QuizPlayerProps) {
+function splitIntoPages(sections: SectionDTO[]): SectionDTO[][] {
+    const pages: SectionDTO[][] = [];
+    let current: SectionDTO[] = [];
+    for (const section of sections) {
+        if (section.type === "page-break") {
+            pages.push(current);
+            current = [];
+        } else {
+            current.push(section);
+        }
+    }
+    pages.push(current);
+    return pages.filter(p => p.length > 0);
+}
+
+export function QuizPlayer({ node, courseId, token, isFocused = false }: QuizPlayerProps) {
     const [answers, setAnswers] = useState<Record<string, unknown>>({});
     const [submissions, setSubmissions] = useState<NodeSubmissionDTO[]>([]);
     const [activeSubmission, setActiveSubmission] = useState<NodeSubmissionDTO | null>(null);
@@ -28,6 +44,12 @@ export function QuizPlayer({ node, courseId, token }: QuizPlayerProps) {
     const [loading, setLoading] = useState(true);
     const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const [currentPage, setCurrentPage] = useState(0);
+
+    const pages = splitIntoPages(node.sections);
+    const isMultiPage = isFocused && pages.length > 1;
+    const isLastPage = currentPage === pages.length - 1;
+    const currentSections = isFocused ? (pages[currentPage] ?? []) : node.sections;
 
     const quizSections = node.sections.filter(s => s.type === "quiz");
     const settings = node.settings ?? {};
@@ -134,6 +156,7 @@ export function QuizPlayer({ node, courseId, token }: QuizPlayerProps) {
         setAnswers({});
         setActiveSubmission(null);
         setTimeRemaining(null);
+        setCurrentPage(0);
         setPhase("info");
     };
 
@@ -240,7 +263,23 @@ export function QuizPlayer({ node, courseId, token }: QuizPlayerProps) {
                     </div>
                 )}
 
-                {node.sections.map(section => {
+                {isMultiPage && (
+                    <div className="flex items-center gap-2">
+                        {pages.map((_, i) => (
+                            <div
+                                key={i}
+                                className={`h-1.5 rounded-full flex-1 transition-colors ${
+                                    i < currentPage ? "bg-primary" : i === currentPage ? "bg-primary/60" : "bg-muted"
+                                }`}
+                            />
+                        ))}
+                        <span className="text-xs text-muted-foreground ml-1 shrink-0">
+                            {currentPage + 1} / {pages.length}
+                        </span>
+                    </div>
+                )}
+
+                {currentSections.map(section => {
                     if (section.type === "quiz") {
                         return (
                             <QuizQuestionSection
@@ -259,12 +298,28 @@ export function QuizPlayer({ node, courseId, token }: QuizPlayerProps) {
                 })}
 
                 <div className="pt-4 border-t flex items-center gap-3">
-                    <Button onClick={handleSubmit} disabled={submitting}>
-                        {submitting ? "Submitting..." : "Submit quiz"}
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                        {Object.keys(answers).length}/{quizSections.length} questions answered
-                    </p>
+                    {isMultiPage && !isLastPage ? (
+                        <Button
+                            onClick={() => {
+                                setCurrentPage(p => p + 1);
+                                window.scrollTo({ top: 0, behavior: "smooth" });
+                            }}
+                        >
+                            Next
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                        </Button>
+                    ) : (
+                        <>
+                            <Button onClick={handleSubmit} disabled={submitting}>
+                                {submitting ? "Submitting..." : "Submit quiz"}
+                            </Button>
+                            <p className="text-xs text-muted-foreground">
+                                {Object.keys(answers).length}/{quizSections.length} questions answered
+                            </p>
+                        </>
+                    )}
                 </div>
             </div>
         );
