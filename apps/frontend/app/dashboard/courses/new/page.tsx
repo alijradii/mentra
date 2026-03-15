@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { coursesApi } from "@/lib/api";
 import { ApiError } from "@/lib/api";
+import { UploadButton } from "@/lib/uploadthing";
 
 export default function NewCoursePage() {
   const { user, token } = useAuth();
@@ -17,6 +19,8 @@ export default function NewCoursePage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -30,6 +34,7 @@ export default function NewCoursePage() {
         title: title.trim(),
         description: description.trim(),
         visibility,
+        ...(thumbnail ? { thumbnail } : {}),
       });
       router.push(`/dashboard/courses/${res.data._id}`);
     } catch (err) {
@@ -95,8 +100,53 @@ export default function NewCoursePage() {
               <option value="private">Private</option>
             </select>
           </div>
+          <div>
+            <Label>Thumbnail</Label>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-2">Optional · 1:1 aspect ratio recommended</p>
+            <div className="flex items-start gap-4">
+              <div className="relative w-24 h-24 rounded-lg border bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                {thumbnail ? (
+                  <Image
+                    src={thumbnail}
+                    alt="Course thumbnail"
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <span className="text-xs text-muted-foreground text-center px-2">No thumbnail</span>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <UploadButton
+                  endpoint="courseThumbnail"
+                  onUploadBegin={() => setThumbnailUploading(true)}
+                  onClientUploadComplete={res => {
+                    const first = res?.[0];
+                    const url = first?.url ?? (first as { serverData?: { url?: string } })?.serverData?.url;
+                    if (url) setThumbnail(url);
+                    setThumbnailUploading(false);
+                  }}
+                  onUploadError={e => {
+                    setThumbnailUploading(false);
+                    setError(e.message);
+                  }}
+                  content={{ button: thumbnailUploading ? "Uploading..." : thumbnail ? "Change thumbnail" : "Upload thumbnail" }}
+                  disabled={thumbnailUploading}
+                />
+                {thumbnail && (
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground hover:text-destructive transition-colors text-left"
+                    onClick={() => setThumbnail(null)}
+                  >
+                    Remove thumbnail
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
           <div className="flex gap-2">
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || thumbnailUploading}>
               {loading ? "Creating..." : "Create"}
             </Button>
             <Button type="button" variant="outline" asChild>

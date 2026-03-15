@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCourseWS } from "@/contexts/CourseWSContext";
 import { ApiError, coursesApi, modulesApi, type CourseDTO, type ModuleDTO } from "@/lib/api";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -262,7 +263,20 @@ function CourseDetailContent() {
             </div>
 
             <div className="flex items-start justify-between mb-8">
-                <div>
+                <div className="flex items-start gap-4">
+                    <div className="relative w-16 h-16 rounded-lg border bg-muted overflow-hidden shrink-0">
+                        {course?.thumbnail ? (
+                            <Image
+                                src={course.thumbnail}
+                                alt=""
+                                fill
+                                className="object-cover"
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-linear-to-br from-primary/20 to-primary/5" />
+                        )}
+                    </div>
+                    <div>
                     <h1 className="text-2xl font-bold text-foreground">{course?.title}</h1>
                     {course?.description && (
                         <p className="text-muted-foreground mt-1 text-sm max-w-xl">{course.description}</p>
@@ -275,8 +289,9 @@ function CourseDetailContent() {
                             {course?.visibility}
                         </span>
                     </div>
+                    </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
                     {presenceList.length > 0 && (
                         <div className="flex items-center gap-1.5">
                             {presenceList.slice(0, 5).map(u => (

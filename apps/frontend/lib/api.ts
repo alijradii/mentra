@@ -73,6 +73,7 @@ export interface CourseDTO {
   mentorIds: string[];
   status: string;
   visibility: string;
+  thumbnail?: string;
   author?: { id: string; name: string; avatar?: string };
   metadata?: {
     category?: string;

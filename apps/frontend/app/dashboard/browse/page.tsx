@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { ApiError, coursesApi, enrollmentApi, type CourseDTO } from "@/lib/api";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -29,7 +30,24 @@ function CourseCard({
     const count = course.metadata?.enrollmentCount ?? 0;
 
     return (
-        <div className="bg-card border rounded-xl p-5 flex flex-col gap-3 hover:shadow-sm transition-shadow">
+        <div className="bg-card border rounded-xl overflow-hidden flex flex-col gap-0 hover:shadow-sm transition-shadow">
+            <div className="relative w-full aspect-square bg-muted">
+                {course.thumbnail ? (
+                    <Image
+                        src={course.thumbnail}
+                        alt={course.title}
+                        fill
+                        className="object-cover"
+                    />
+                ) : (
+                    <div className="w-full h-full bg-linear-to-br from-primary/15 to-primary/5 flex items-center justify-center">
+                        <span className="text-3xl font-bold text-primary/20 select-none">
+                            {course.title.charAt(0).toUpperCase()}
+                        </span>
+                    </div>
+                )}
+            </div>
+            <div className="p-5 flex flex-col gap-3 flex-1">
             <div className="flex-1">
                 <div className="flex items-start justify-between gap-2 mb-1">
                     <h3 className="font-semibold text-foreground text-base leading-snug">{course.title}</h3>
@@ -81,6 +99,7 @@ function CourseCard({
                         {enrolling ? "Enrolling…" : "Enroll"}
                     </Button>
                 )}
+            </div>
             </div>
         </div>
     );

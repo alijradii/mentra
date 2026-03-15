@@ -9,6 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCourseWS } from "@/contexts/CourseWSContext";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { ApiError, coursesApi } from "@/lib/api";
+import { UploadButton } from "@/lib/uploadthing";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -27,6 +29,8 @@ export default function CourseSettingsPage() {
     const [description, setDescription] = useState("");
     const [visibility, setVisibility] = useState<Visibility>("public");
     const [status, setStatus] = useState<Status>("draft");
+    const [thumbnail, setThumbnail] = useState<string | null>(null);
+    const [thumbnailUploading, setThumbnailUploading] = useState(false);
     const [ownerId, setOwnerId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [deleting, setDeleting] = useState(false);
@@ -49,6 +53,7 @@ export default function CourseSettingsPage() {
                     setDescription(res.data.description ?? "");
                     setVisibility((res.data.visibility as Visibility) ?? "public");
                     setStatus((res.data.status as Status) ?? "draft");
+                    setThumbnail(res.data.thumbnail ?? null);
                     setOwnerId(res.data.ownerId ?? null);
                     initialLoadDone.current = true;
                 }
@@ -86,6 +91,20 @@ export default function CourseSettingsPage() {
         if (!initialLoadDone.current) return;
         autoSave.trigger(doSave);
     }, [autoSave, doSave]);
+
+    const handleThumbnailUploadComplete = async (res: { url?: string; serverData?: { url?: string } }[]) => {
+        const first = res?.[0];
+        const url = first?.url ?? (first as { serverData?: { url?: string } })?.serverData?.url;
+        if (!url || !token) return;
+        setThumbnail(url);
+        try {
+            await coursesApi.update(token, id, { thumbnail: url });
+        } catch (err) {
+            setError(err instanceof ApiError ? err.message : "Failed to save thumbnail.");
+        } finally {
+            setThumbnailUploading(false);
+        }
+    };
 
     const handleConfirmDelete = async () => {
         if (!token || !id) return;
@@ -213,6 +232,55 @@ export default function CourseSettingsPage() {
                             <option value="published">Published</option>
                             <option value="archived">Archived</option>
                         </select>
+                    </div>
+                    <div>
+                        <Label>Thumbnail</Label>
+                        <p className="text-xs text-muted-foreground mt-0.5 mb-2">1:1 aspect ratio recommended</p>
+                        <div className="flex items-start gap-4">
+                            <div className="relative w-24 h-24 rounded-lg border bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                                {thumbnail ? (
+                                    <Image
+                                        src={thumbnail}
+                                        alt="Course thumbnail"
+                                        fill
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    <span className="text-xs text-muted-foreground text-center px-2">No thumbnail</span>
+                                )}
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <UploadButton
+                                    endpoint="courseThumbnail"
+                                    onUploadBegin={() => setThumbnailUploading(true)}
+                                    onClientUploadComplete={handleThumbnailUploadComplete}
+                                    onUploadError={e => {
+                                        setThumbnailUploading(false);
+                                        setError(e.message);
+                                    }}
+                                    content={{ button: thumbnailUploading ? "Uploading..." : thumbnail ? "Change thumbnail" : "Upload thumbnail" }}
+                                    disabled={editsLocked || thumbnailUploading}
+                                />
+                                {thumbnail && !editsLocked && (
+                                    <button
+                                        type="button"
+                                        className="text-xs text-muted-foreground hover:text-destructive transition-colors text-left"
+                                        onClick={async () => {
+                                            setThumbnail(null);
+                                            if (token) {
+                                                try {
+                                                    await coursesApi.update(token, id, { thumbnail: undefined });
+                                                } catch {
+                                                    // ignore
+                                                }
+                                            }
+                                        }}
+                                    >
+                                        Remove thumbnail
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </div>
                     <Button variant="outline" asChild>
                         <Link href={`/dashboard/courses/${id}`}>Back to course</Link>

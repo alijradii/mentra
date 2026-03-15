@@ -10,7 +10,6 @@ import { findUsersByIds } from "../models/user.js";
 /** Course-like document with author.id (name/avatar may be missing in DB) */
 interface CourseWithAuthorId {
   author: { id: ObjectId };
-  [key: string]: unknown;
 }
 
 /**

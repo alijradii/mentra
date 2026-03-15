@@ -17,6 +17,7 @@ import {
     type ModuleDTO,
     type NodeDTO,
 } from "@/lib/api";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -129,7 +130,18 @@ export default function LearnCourseOverviewPage() {
 
             {error && <div className="mb-4 p-3 rounded-lg bg-destructive/15 text-destructive text-sm">{error}</div>}
 
-            <div className="bg-card border rounded-xl p-6 mb-6">
+            <div className="bg-card border rounded-xl overflow-hidden mb-6">
+                {course?.thumbnail && (
+                    <div className="relative w-full aspect-square">
+                        <Image
+                            src={course.thumbnail}
+                            alt={course.title ?? ""}
+                            fill
+                            className="object-cover"
+                        />
+                    </div>
+                )}
+                <div className="p-6">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div className="flex-1 min-w-0">
                         <h1 className="text-2xl font-bold text-foreground">{course?.title}</h1>
@@ -177,6 +189,7 @@ export default function LearnCourseOverviewPage() {
                         <ProgressBar value={pct} />
                     </div>
                 )}
+                </div>
             </div>
 
             {/* Tab bar */}
