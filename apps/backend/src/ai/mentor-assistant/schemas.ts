@@ -94,6 +94,11 @@ export const aiSectionInputSchema = z.union([
         .describe("Inline video section."),
     z
         .object({
+            type: z.literal("page-break"),
+        })
+        .describe("Visual page break to split content across pages or slides. Use when you want to start a new page/section without adding content."),
+    z
+        .object({
             type: z.literal("quiz"),
             quizType: z.literal("mcq"),
             question: z
