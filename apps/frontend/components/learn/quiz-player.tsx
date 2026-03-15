@@ -1,5 +1,13 @@
 "use client";
 
+import {
+    FocusModeFooter,
+    FocusModeLayout,
+    FocusModePageProgress,
+    getQuizSectionIds,
+    hasAnswer,
+    splitIntoPages,
+} from "@/components/learn/focus-mode";
 import { SectionPreview } from "@/components/section-preview";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +17,7 @@ import {
     type QuestionAnswerDTO,
     type SectionDTO,
 } from "@/lib/api";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface QuizPlayerProps {
     node: NodeDTO;
@@ -19,21 +27,6 @@ interface QuizPlayerProps {
 }
 
 type QuizPhase = "info" | "taking" | "submitted" | "released";
-
-function splitIntoPages(sections: SectionDTO[]): SectionDTO[][] {
-    const pages: SectionDTO[][] = [];
-    let current: SectionDTO[] = [];
-    for (const section of sections) {
-        if (section.type === "page-break") {
-            pages.push(current);
-            current = [];
-        } else {
-            current.push(section);
-        }
-    }
-    pages.push(current);
-    return pages.filter(p => p.length > 0);
-}
 
 export function QuizPlayer({ node, courseId, token, isFocused = false }: QuizPlayerProps) {
     const [answers, setAnswers] = useState<Record<string, unknown>>({});
@@ -46,12 +39,19 @@ export function QuizPlayer({ node, courseId, token, isFocused = false }: QuizPla
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [currentPage, setCurrentPage] = useState(0);
 
-    const pages = splitIntoPages(node.sections);
+    const pages = useMemo(() => splitIntoPages(node.sections), [node.sections]);
     const isMultiPage = isFocused && pages.length > 1;
     const isLastPage = currentPage === pages.length - 1;
     const currentSections = isFocused ? (pages[currentPage] ?? []) : node.sections;
 
-    const quizSections = node.sections.filter(s => s.type === "quiz");
+    const quizSections = node.sections.filter((s) => s.type === "quiz");
+    const currentPageQuizIds = useMemo(() => getQuizSectionIds(currentSections), [currentSections]);
+    const canAdvance = useMemo(
+        () => currentPageQuizIds.every((id) => hasAnswer(answers[id])),
+        [currentPageQuizIds, answers],
+    );
+    const canSubmit = quizSections.every((s) => hasAnswer(answers[s.id]));
+    const [showQuizWarning, setShowQuizWarning] = useState(false);
     const settings = node.settings ?? {};
     const maxAttempts = settings.maxAttempts ?? 1;
     const timeLimit = settings.timeLimit;
@@ -127,7 +127,8 @@ export function QuizPlayer({ node, courseId, token, isFocused = false }: QuizPla
     }, [token, node._id, courseId, timeLimit]);
 
     const handleAnswerChange = (sectionId: string, answer: unknown) => {
-        setAnswers(prev => ({ ...prev, [sectionId]: answer }));
+        setAnswers((prev) => ({ ...prev, [sectionId]: answer }));
+        if (isFocused) setShowQuizWarning(false);
     };
 
     const handleSubmit = useCallback(async () => {
@@ -167,12 +168,19 @@ export function QuizPlayer({ node, courseId, token, isFocused = false }: QuizPla
     };
 
     if (loading) {
+        if (isFocused) {
+            return (
+                <div className="flex flex-1 flex-col min-h-0 items-center justify-center">
+                    <p className="text-muted-foreground text-sm">Loading quiz...</p>
+                </div>
+            );
+        }
         return <p className="text-muted-foreground text-sm">Loading quiz...</p>;
     }
 
     // ── Info phase: show quiz details before starting ──
     if (phase === "info") {
-        return (
+        const infoContent = (
             <div className="space-y-4">
                 <div className="p-5 rounded-lg border bg-card space-y-3">
                     <h2 className="text-lg font-semibold text-foreground">Quiz</h2>
@@ -248,21 +256,127 @@ export function QuizPlayer({ node, courseId, token, isFocused = false }: QuizPla
                 )}
             </div>
         );
+        if (isFocused) {
+            return (
+                <div className="flex flex-1 flex-col min-h-0">
+                    <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                        {infoContent}
+                    </div>
+                </div>
+            );
+        }
+        return infoContent;
     }
+
+    const handleNextPage = () => {
+        if (!canAdvance) {
+            setShowQuizWarning(true);
+            return;
+        }
+        setShowQuizWarning(false);
+        setCurrentPage((p) => p + 1);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
 
     // ── Taking phase: answering questions ──
     if (phase === "taking") {
+        const timerSlot =
+            timeRemaining !== null ? (
+                <div
+                    className={`shrink-0 p-3 rounded-lg border text-sm font-medium flex items-center justify-between mb-4 ${timeRemaining < 60 ? "bg-destructive/15 text-destructive border-destructive/40" : "bg-card"}`}
+                >
+                    <span>Time remaining</span>
+                    <span className="font-mono text-lg">{formatTime(timeRemaining)}</span>
+                </div>
+            ) : undefined;
+
+        const takingContent = (
+            <div className="space-y-6">
+                {currentSections.map((section) => {
+                    if (section.type === "quiz") {
+                        return (
+                            <QuizQuestionSection
+                                key={section.id}
+                                section={section}
+                                answer={answers[section.id]}
+                                onAnswer={(val) => handleAnswerChange(section.id, val)}
+                            />
+                        );
+                    }
+                    return (
+                        <div key={section.id}>
+                            <SectionPreview section={section} />
+                        </div>
+                    );
+                })}
+            </div>
+        );
+
+        if (isFocused) {
+            return (
+                <FocusModeLayout
+                    topSlot={timerSlot}
+                    pageProgress={
+                        isMultiPage ? (
+                            <FocusModePageProgress currentPage={currentPage} totalPages={pages.length} />
+                        ) : undefined
+                    }
+                    footer={
+                        <FocusModeFooter showQuizWarning={showQuizWarning}>
+                            <div className="flex items-center gap-3 w-full justify-end">
+                                {isMultiPage && !isLastPage ? (
+                                    <Button
+                                        onClick={handleNextPage}
+                                        variant={canAdvance ? "default" : "outline"}
+                                        className={
+                                            !canAdvance ? "text-muted-foreground border-border cursor-not-allowed" : ""
+                                        }
+                                    >
+                                        Next
+                                        <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M13 7l5 5m0 0l-5 5m5-5H6"
+                                            />
+                                        </svg>
+                                    </Button>
+                                ) : (
+                                    <>
+                                        <Button
+                                            onClick={handleSubmit}
+                                            disabled={submitting || !canSubmit}
+                                            className={
+                                                !canSubmit
+                                                    ? "text-muted-foreground border-border cursor-not-allowed"
+                                                    : ""
+                                            }
+                                        >
+                                            {submitting ? "Submitting..." : "Submit quiz"}
+                                        </Button>
+                                        <p className="text-xs text-muted-foreground">
+                                            {Object.keys(answers).length}/{quizSections.length} questions answered
+                                        </p>
+                                    </>
+                                )}
+                            </div>
+                        </FocusModeFooter>
+                    }
+                >
+                    {takingContent}
+                </FocusModeLayout>
+            );
+        }
+
         return (
             <div className="space-y-6">
-                {timeRemaining !== null && (
-                    <div
-                        className={`sticky top-0 z-10 p-3 rounded-lg border text-sm font-medium flex items-center justify-between ${timeRemaining < 60 ? "bg-destructive/15 text-destructive border-destructive/40" : "bg-card"}`}
-                    >
-                        <span>Time remaining</span>
-                        <span className="font-mono text-lg">{formatTime(timeRemaining)}</span>
-                    </div>
-                )}
-
+                {timerSlot}
                 {isMultiPage && (
                     <div className="flex items-center gap-2">
                         {pages.map((_, i) => (
@@ -278,36 +392,23 @@ export function QuizPlayer({ node, courseId, token, isFocused = false }: QuizPla
                         </span>
                     </div>
                 )}
-
-                {currentSections.map(section => {
-                    if (section.type === "quiz") {
-                        return (
-                            <QuizQuestionSection
-                                key={section.id}
-                                section={section}
-                                answer={answers[section.id]}
-                                onAnswer={val => handleAnswerChange(section.id, val)}
-                            />
-                        );
-                    }
-                    return (
-                        <div key={section.id}>
-                            <SectionPreview section={section} />
-                        </div>
-                    );
-                })}
-
+                {takingContent}
                 <div className="pt-4 border-t flex items-center gap-3">
                     {isMultiPage && !isLastPage ? (
                         <Button
                             onClick={() => {
-                                setCurrentPage(p => p + 1);
+                                setCurrentPage((p) => p + 1);
                                 window.scrollTo({ top: 0, behavior: "smooth" });
                             }}
                         >
                             Next
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                                />
                             </svg>
                         </Button>
                     ) : (
@@ -327,7 +428,7 @@ export function QuizPlayer({ node, courseId, token, isFocused = false }: QuizPla
 
     // ── Submitted phase: waiting for grading ──
     if (phase === "submitted" && activeSubmission) {
-        return (
+        const submittedContent = (
             <div className="space-y-4">
                 <div className="p-5 rounded-lg border bg-card space-y-2">
                     <h2 className="text-lg font-semibold text-foreground">Quiz submitted</h2>
@@ -348,6 +449,16 @@ export function QuizPlayer({ node, courseId, token, isFocused = false }: QuizPla
                 )}
             </div>
         );
+        if (isFocused) {
+            return (
+                <div className="flex flex-1 flex-col min-h-0">
+                    <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                        {submittedContent}
+                    </div>
+                </div>
+            );
+        }
+        return submittedContent;
     }
 
     // ── Released phase: show grades and feedback ──
@@ -359,7 +470,7 @@ export function QuizPlayer({ node, courseId, token, isFocused = false }: QuizPla
         const passed = settings.passingScore ? pct >= settings.passingScore : true;
         const showCorrect = settings.showCorrectAnswers !== "never";
 
-        return (
+        const releasedContent = (
             <div className="space-y-6">
                 <div className="p-5 rounded-lg border bg-card space-y-2">
                     <h2 className="text-lg font-semibold text-foreground">Quiz results</h2>
@@ -415,6 +526,16 @@ export function QuizPlayer({ node, courseId, token, isFocused = false }: QuizPla
                 )}
             </div>
         );
+        if (isFocused) {
+            return (
+                <div className="flex flex-1 flex-col min-h-0">
+                    <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                        {releasedContent}
+                    </div>
+                </div>
+            );
+        }
+        return releasedContent;
     }
 
     return null;

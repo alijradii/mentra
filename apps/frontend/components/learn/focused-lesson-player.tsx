@@ -1,8 +1,14 @@
 "use client";
 
+import {
+    FocusModeFooter,
+    FocusModeLayout,
+    FocusModePageProgress,
+    splitIntoPages,
+} from "@/components/learn/focus-mode";
 import { SectionPreview } from "@/components/section-preview";
 import { Button } from "@/components/ui/button";
-import type { NodeDTO, SectionDTO } from "@/lib/api";
+import type { NodeDTO } from "@/lib/api";
 import { useCallback, useMemo, useState } from "react";
 
 interface FocusedLessonPlayerProps {
@@ -10,21 +16,6 @@ interface FocusedLessonPlayerProps {
     isLastNode: boolean;
     isNodeDone: boolean;
     onComplete: () => void;
-}
-
-function splitIntoPages(sections: SectionDTO[]): SectionDTO[][] {
-    const pages: SectionDTO[][] = [];
-    let current: SectionDTO[] = [];
-    for (const section of sections) {
-        if (section.type === "page-break") {
-            pages.push(current);
-            current = [];
-        } else {
-            current.push(section);
-        }
-    }
-    pages.push(current);
-    return pages.filter(p => p.length > 0);
 }
 
 export function FocusedLessonPlayer({ node, isLastNode, isNodeDone, onComplete }: FocusedLessonPlayerProps) {
@@ -36,7 +27,7 @@ export function FocusedLessonPlayer({ node, isLastNode, isNodeDone, onComplete }
     const [showCompletion, setShowCompletion] = useState(false);
 
     const handleAnswered = useCallback((sectionId: string) => {
-        setAnsweredIds(prev => {
+        setAnsweredIds((prev) => {
             const next = new Set(prev);
             next.add(sectionId);
             return next;
@@ -47,7 +38,7 @@ export function FocusedLessonPlayer({ node, isLastNode, isNodeDone, onComplete }
     const currentSections = pages[currentPage] ?? [];
 
     const unansweredQuizIds = useMemo(
-        () => currentSections.filter(s => s.type === "quiz" && !answeredIds.has(s.id)).map(s => s.id),
+        () => currentSections.filter((s) => s.type === "quiz" && !answeredIds.has(s.id)).map((s) => s.id),
         [currentSections, answeredIds],
     );
 
@@ -61,7 +52,7 @@ export function FocusedLessonPlayer({ node, isLastNode, isNodeDone, onComplete }
             return;
         }
         setShowQuizWarning(false);
-        setCurrentPage(p => p + 1);
+        setCurrentPage((p) => p + 1);
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
@@ -71,7 +62,6 @@ export function FocusedLessonPlayer({ node, isLastNode, isNodeDone, onComplete }
             return;
         }
         if (isNodeDone) {
-            // Already done — skip celebration, just go back
             onComplete();
         } else {
             setShowCompletion(true);
@@ -79,7 +69,6 @@ export function FocusedLessonPlayer({ node, isLastNode, isNodeDone, onComplete }
         }
     };
 
-    // Completion celebration screen (fills height so layout is consistent)
     if (showCompletion) {
         return (
             <div className="flex flex-1 flex-col min-h-0">
@@ -94,54 +83,22 @@ export function FocusedLessonPlayer({ node, isLastNode, isNodeDone, onComplete }
                 <div className="flex-1" />
                 <div className="space-y-8 shrink-0">
                     <p className="text-muted-foreground/80 italic text-sm">This lesson has no content yet.</p>
-                    <div className="pt-6 border-t flex justify-end">
+                    <FocusModeFooter>
                         <Button onClick={handleFinish}>Finish</Button>
-                    </div>
+                    </FocusModeFooter>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-1 flex-col min-h-0">
-            {/* Page progress bar */}
-            {totalPages > 1 && (
-                <div className="flex items-center gap-2 mb-8 shrink-0">
-                    {pages.map((_, i) => (
-                        <div
-                            key={i}
-                            className={`h-1.5 rounded-full flex-1 transition-colors duration-300 ${
-                                i < currentPage ? "bg-primary" : i === currentPage ? "bg-primary/60" : "bg-muted"
-                            }`}
-                        />
-                    ))}
-                    <span className="text-xs text-muted-foreground ml-1 shrink-0">
-                        {currentPage + 1} / {totalPages}
-                    </span>
-                </div>
-            )}
-
-            {/* Scrollable sections — center vertically when content is short, scroll when long */}
-            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                <div className="min-h-full flex flex-col">
-                    <div className="space-y-8">
-                        {currentSections.map(section => (
-                            <div key={section.id}>
-                                <SectionPreview section={section} onAnswered={handleAnswered} />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* Footer navigation — stays at bottom */}
-            <div className="mt-10 pt-6 border-t shrink-0">
-                {showQuizWarning && (
-                    <p className="text-sm text-destructive mb-3">
-                        Please answer all questions on this page before continuing.
-                    </p>
-                )}
-                <div className="flex justify-end">
+        <FocusModeLayout
+            pageProgress={<FocusModePageProgress currentPage={currentPage} totalPages={totalPages} />}
+            footer={
+                <FocusModeFooter
+                    showQuizWarning={showQuizWarning}
+                    warningMessage="Please answer all questions on this page before continuing."
+                >
                     {!isLastPage ? (
                         <Button
                             onClick={handleNextPage}
@@ -167,9 +124,17 @@ export function FocusedLessonPlayer({ node, isLastNode, isNodeDone, onComplete }
                             Finish
                         </Button>
                     )}
-                </div>
+                </FocusModeFooter>
+            }
+        >
+            <div className="space-y-8">
+                {currentSections.map((section) => (
+                    <div key={section.id}>
+                        <SectionPreview section={section} onAnswered={handleAnswered} />
+                    </div>
+                ))}
             </div>
-        </div>
+        </FocusModeLayout>
     );
 }
 

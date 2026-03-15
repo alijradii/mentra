@@ -1,5 +1,13 @@
 "use client";
 
+import {
+    FocusModeFooter,
+    FocusModeLayout,
+    FocusModePageProgress,
+    getQuizSectionIds,
+    hasAnswer,
+    splitIntoPages,
+} from "@/components/learn/focus-mode";
 import { SectionPreview } from "@/components/section-preview";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,28 +17,13 @@ import {
     type QuestionAnswerDTO,
     type SectionDTO,
 } from "@/lib/api";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 interface PracticePlayerProps {
     node: NodeDTO;
     courseId: string;
     token: string;
     isFocused?: boolean;
-}
-
-function splitIntoPages(sections: SectionDTO[]): SectionDTO[][] {
-    const pages: SectionDTO[][] = [];
-    let current: SectionDTO[] = [];
-    for (const section of sections) {
-        if (section.type === "page-break") {
-            pages.push(current);
-            current = [];
-        } else {
-            current.push(section);
-        }
-    }
-    pages.push(current);
-    return pages.filter(p => p.length > 0);
 }
 
 export function PracticePlayer({ node, courseId, token, isFocused = false }: PracticePlayerProps) {
@@ -42,12 +35,18 @@ export function PracticePlayer({ node, courseId, token, isFocused = false }: Pra
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(0);
 
-    const pages = splitIntoPages(node.sections);
+    const pages = useMemo(() => splitIntoPages(node.sections), [node.sections]);
     const isMultiPage = isFocused && pages.length > 1;
     const isLastPage = currentPage === pages.length - 1;
     const currentSections = isFocused ? (pages[currentPage] ?? []) : node.sections;
 
-    const quizSections = node.sections.filter(s => s.type === "quiz");
+    const quizSections = node.sections.filter((s) => s.type === "quiz");
+    const currentPageQuizIds = useMemo(() => getQuizSectionIds(currentSections), [currentSections]);
+    const canAdvance = useMemo(
+        () => currentPageQuizIds.every((id) => hasAnswer(answers[id])),
+        [currentPageQuizIds, answers],
+    );
+    const [showQuizWarning, setShowQuizWarning] = useState(false);
 
     useEffect(() => {
         submissionsApi
@@ -61,7 +60,8 @@ export function PracticePlayer({ node, courseId, token, isFocused = false }: Pra
     }, [token, node._id]);
 
     const handleAnswerChange = (sectionId: string, answer: unknown) => {
-        setAnswers(prev => ({ ...prev, [sectionId]: answer }));
+        setAnswers((prev) => ({ ...prev, [sectionId]: answer }));
+        if (isFocused) setShowQuizWarning(false);
     };
 
     const handleSubmit = useCallback(async () => {
@@ -103,7 +103,7 @@ export function PracticePlayer({ node, courseId, token, isFocused = false }: Pra
         const max = submission.maxScore;
         const pct = max > 0 ? Math.round((score / max) * 100) : 0;
 
-        return (
+        const resultsContent = (
             <div className="space-y-6">
                 <div className="p-4 rounded-lg border bg-card">
                     <h2 className="text-lg font-semibold text-foreground mb-1">Results</h2>
@@ -158,34 +158,122 @@ export function PracticePlayer({ node, courseId, token, isFocused = false }: Pra
                 )}
             </div>
         );
+
+        if (isFocused) {
+            return (
+                <div className="flex flex-1 flex-col min-h-0">
+                    <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                        {resultsContent}
+                    </div>
+                </div>
+            );
+        }
+        return resultsContent;
+    }
+
+    const canSubmit = quizSections.length > 0 && quizSections.every((s) => hasAnswer(answers[s.id]));
+
+    const handleNextPage = () => {
+        if (!canAdvance) {
+            setShowQuizWarning(true);
+            return;
+        }
+        setShowQuizWarning(false);
+        setCurrentPage((p) => p + 1);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    if (isFocused) {
+        return (
+            <FocusModeLayout
+                pageProgress={
+                    isMultiPage ? (
+                        <FocusModePageProgress currentPage={currentPage} totalPages={pages.length} />
+                    ) : undefined
+                }
+                footer={
+                    <FocusModeFooter showQuizWarning={showQuizWarning}>
+                        {isMultiPage && !isLastPage ? (
+                            <Button
+                                onClick={handleNextPage}
+                                variant={canAdvance ? "default" : "outline"}
+                                className={
+                                    !canAdvance ? "text-muted-foreground border-border cursor-not-allowed" : ""
+                                }
+                            >
+                                Next
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M13 7l5 5m0 0l-5 5m5-5H6"
+                                    />
+                                </svg>
+                            </Button>
+                        ) : quizSections.length > 0 ? (
+                            <Button
+                                onClick={handleSubmit}
+                                disabled={submitting || !canSubmit}
+                                className={!canSubmit ? "text-muted-foreground border-border cursor-not-allowed" : ""}
+                            >
+                                {submitting ? "Submitting..." : "Submit answers"}
+                            </Button>
+                        ) : null}
+                    </FocusModeFooter>
+                }
+            >
+                <div className="space-y-8">
+                    {currentSections.map((section) => {
+                        if (section.type === "quiz") {
+                            return (
+                                <PracticeQuizSection
+                                    key={section.id}
+                                    section={section}
+                                    answer={answers[section.id]}
+                                    onAnswer={(val) => handleAnswerChange(section.id, val)}
+                                />
+                            );
+                        }
+                        return (
+                            <div key={section.id}>
+                                <SectionPreview section={section} />
+                            </div>
+                        );
+                    })}
+                </div>
+                {pastAttempts.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-sm font-semibold text-muted-foreground mb-2">Past attempts</h3>
+                        <div className="space-y-1">
+                            {pastAttempts.map((a) => (
+                                <div
+                                    key={a._id}
+                                    className="flex items-center justify-between text-sm px-3 py-2 rounded bg-background border"
+                                >
+                                    <span>Attempt #{a.attemptNumber}</span>
+                                    <span className="font-medium">
+                                        {a.autoScore ?? 0}/{a.maxScore}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </FocusModeLayout>
+        );
     }
 
     return (
         <div className="space-y-8">
-            {isMultiPage && (
-                <div className="flex items-center gap-2">
-                    {pages.map((_, i) => (
-                        <div
-                            key={i}
-                            className={`h-1.5 rounded-full flex-1 transition-colors ${
-                                i < currentPage ? "bg-primary" : i === currentPage ? "bg-primary/60" : "bg-muted"
-                            }`}
-                        />
-                    ))}
-                    <span className="text-xs text-muted-foreground ml-1 shrink-0">
-                        {currentPage + 1} / {pages.length}
-                    </span>
-                </div>
-            )}
-
-            {currentSections.map(section => {
+            {currentSections.map((section) => {
                 if (section.type === "quiz") {
                     return (
                         <PracticeQuizSection
                             key={section.id}
                             section={section}
                             answer={answers[section.id]}
-                            onAnswer={val => handleAnswerChange(section.id, val)}
+                            onAnswer={(val) => handleAnswerChange(section.id, val)}
                         />
                     );
                 }
@@ -196,25 +284,11 @@ export function PracticePlayer({ node, courseId, token, isFocused = false }: Pra
                 );
             })}
 
-            {(quizSections.length > 0 || isMultiPage) && (
-                <div className="pt-4 border-t flex items-center gap-3">
-                    {isMultiPage && !isLastPage ? (
-                        <Button
-                            onClick={() => {
-                                setCurrentPage(p => p + 1);
-                                window.scrollTo({ top: 0, behavior: "smooth" });
-                            }}
-                        >
-                            Next
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                            </svg>
-                        </Button>
-                    ) : quizSections.length > 0 ? (
-                        <Button onClick={handleSubmit} disabled={submitting}>
-                            {submitting ? "Submitting..." : "Submit answers"}
-                        </Button>
-                    ) : null}
+            {quizSections.length > 0 && (
+                <div className="pt-4 border-t">
+                    <Button onClick={handleSubmit} disabled={submitting}>
+                        {submitting ? "Submitting..." : "Submit answers"}
+                    </Button>
                 </div>
             )}
 
@@ -222,7 +296,7 @@ export function PracticePlayer({ node, courseId, token, isFocused = false }: Pra
                 <div className="mt-6">
                     <h3 className="text-sm font-semibold text-muted-foreground mb-2">Past attempts</h3>
                     <div className="space-y-1">
-                        {pastAttempts.map(a => (
+                        {pastAttempts.map((a) => (
                             <div
                                 key={a._id}
                                 className="flex items-center justify-between text-sm px-3 py-2 rounded bg-background border"
