@@ -13,11 +13,17 @@ interface ImageSectionPreviewProps {
 export function ImageSectionPreview({ section }: ImageSectionPreviewProps) {
   if (!section.url)
     return <p className="text-muted-foreground/80 text-sm italic">No image URL provided.</p>;
+
+  const src =
+    section.url.startsWith("http://") || section.url.startsWith("https://")
+      ? `/api/image-proxy?url=${encodeURIComponent(section.url)}`
+      : section.url;
+
   return (
     <figure>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={section.url}
+        src={src}
         alt={section.alt || ""}
         className="max-w-full h-auto rounded-lg"
         loading="lazy"
