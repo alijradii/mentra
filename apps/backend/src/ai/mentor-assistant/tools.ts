@@ -108,6 +108,130 @@ export const editNodeSectionsTool = (context: MentorAIActionContext) => {
     });
 }
 
+export const appendToNodeTool = (context: MentorAIActionContext) => {
+    return tool({
+        description:
+            "Append ONE new section to the end of a node. The section must include a 'type' field: 'text', 'embedding', 'quiz', 'code', 'image', 'video', or 'page-break'. IDs, order, and timestamps are generated automatically.",
+        inputSchema: z.object({
+            nodeId: z.string().describe("ID of the node to append the section to"),
+            section: aiSectionInputSchema.describe("The section to append"),
+        }),
+        execute: async ({
+            nodeId,
+            section,
+        }): Promise<
+            | { success: true; message: string; sectionId: string }
+            | { success: false; error: string }
+        > => {
+            context.sendChat(`Appending a section to node ${nodeId}`);
+            const model = new CourseModel(getDb());
+            const node = await model.getNodeById(nodeId);
+
+            if (!node) {
+                return { success: false, error: "Node not found" };
+            }
+
+            // Ensure the node belongs to the current course.
+            const module = await model.getModuleById(node.moduleId);
+            if (!module || module.courseId.toString() !== context.courseId) {
+                return { success: false, error: "Node does not belong to this course" };
+            }
+
+            const existingSections = (node.sections ?? []) as unknown as import("shared").Section[];
+            const nextOrder = existingSections.length;
+
+            const [hydrated] = hydrateSections([section]) as unknown as import("shared").Section[];
+            const appendedSection = { ...hydrated, order: nextOrder } as import("shared").Section;
+
+            const updatedSections = [...existingSections, appendedSection];
+
+            const ok = await model.updateNode(nodeId, {
+                sections: updatedSections,
+            });
+            if (!ok) {
+                return { success: false, error: "Failed to append section" };
+            }
+
+            context.broadcastToCourse("node:updated", {
+                nodeId,
+                sections: updatedSections,
+            });
+
+            return {
+                success: true,
+                message: "Section appended successfully",
+                sectionId: (appendedSection as any).id ?? "",
+            };
+        },
+    });
+};
+
+export const editNodeSectionTool = (context: MentorAIActionContext) => {
+    return tool({
+        description:
+            "Edit (replace) ONE existing section in a node by sectionId. The new section must include a 'type' field: 'text', 'embedding', 'quiz', 'code', 'image', 'video', or 'page-break'. The section's id/order/createdAt are preserved; other fields are replaced and timestamps updated.",
+        inputSchema: z.object({
+            nodeId: z.string().describe("ID of the node containing the section"),
+            sectionId: z.string().min(1).describe("ID of the section to modify"),
+            section: aiSectionInputSchema.describe("The replacement section content"),
+        }),
+        execute: async ({
+            nodeId,
+            sectionId,
+            section,
+        }): Promise<
+            | { success: true; message: string }
+            | { success: false; error: string }
+        > => {
+            context.sendChat(`Editing section ${sectionId} in node ${nodeId}`);
+            const model = new CourseModel(getDb());
+            const node = await model.getNodeById(nodeId);
+
+            if (!node) {
+                return { success: false, error: "Node not found" };
+            }
+
+            // Ensure the node belongs to the current course.
+            const module = await model.getModuleById(node.moduleId);
+            if (!module || module.courseId.toString() !== context.courseId) {
+                return { success: false, error: "Node does not belong to this course" };
+            }
+
+            const existingSections = (node.sections ?? []) as unknown as import("shared").Section[];
+            const index = existingSections.findIndex((s: any) => s?.id === sectionId);
+            if (index === -1) {
+                return { success: false, error: "Section not found" };
+            }
+
+            const existing = existingSections[index] as any;
+
+            const [hydrated] = hydrateSections([section]) as unknown as import("shared").Section[];
+            const replacement = {
+                ...hydrated,
+                id: existing.id,
+                order: existing.order,
+                createdAt: existing.createdAt,
+                updatedAt: new Date(),
+            } as import("shared").Section;
+
+            const updatedSections = [...existingSections];
+            updatedSections[index] = replacement;
+
+            const ok = await model.updateNode(nodeId, { sections: updatedSections });
+            if (!ok) {
+                return { success: false, error: "Failed to update section" };
+            }
+
+            context.broadcastToCourse("node:updated", {
+                nodeId,
+                sections: updatedSections,
+            });
+
+            return { success: true, message: "Section updated successfully" };
+        },
+    });
+};
+
 export const createModuleTool = (context: MentorAIActionContext) => {
     return tool({
         description: "Create a new module (chapter) in the course",

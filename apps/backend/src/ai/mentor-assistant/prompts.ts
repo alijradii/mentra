@@ -39,7 +39,7 @@ Based on the context below, produce a structured execution plan.
 RULES:
 - Each to-do point must map to exactly ONE of these action types:
   create_module | create_node | modify_node | create_and_populate_module |
-  create_and_populate_node | delete_node | delete_module
+  create_and_populate_node | delete_node | delete_module | append_to_node | edit_node_section
 - Include the relevant moduleId and/or nodeId in each step when they are known.
 - Prefer small, concrete, single-responsibility steps.
 - Do NOT invent IDs – use only IDs found in the context summary.

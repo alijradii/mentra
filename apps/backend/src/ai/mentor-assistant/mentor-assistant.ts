@@ -9,6 +9,8 @@ import { buildContextPrompt, buildExecutionPrompt, buildPlanningPrompt, executor
 import {
   createAndPopulateModuleTool,
   createAndPopulateNodeTool,
+  appendToNodeTool,
+  editNodeSectionTool,
   createModuleTool,
   createNodeTool,
   deleteModuleTool,
@@ -175,6 +177,8 @@ export class MentorAIAssistant {
           viewCourseOutline: getCourseOutlineTool(ctx),
           viewNodeContent: getNodeContentTool(ctx),
           editNodeSections: editNodeSectionsTool(ctx),
+          appendToNode: appendToNodeTool(ctx),
+          editNodeSection: editNodeSectionTool(ctx),
           createModule: createModuleTool(ctx),
           deleteModule: deleteModuleTool(ctx),
           reorderModules: reorderModulesTool(ctx),
