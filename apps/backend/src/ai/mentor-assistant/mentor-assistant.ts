@@ -97,7 +97,12 @@ export class MentorAIAssistant {
     this.actions.set(name, handler);
   }
 
-  async handleMessage(courseId: string, inputText: string, actor?: CourseWSActor): Promise<HandleMessageResult> {
+  async handleMessage(
+    courseId: string,
+    inputText: string,
+    actor?: CourseWSActor,
+    focus?: { currentNodeId?: string; currentModuleId?: string }
+  ): Promise<HandleMessageResult> {
     const trimmed = inputText.trim();
     if (!trimmed) return;
 
@@ -127,7 +132,13 @@ export class MentorAIAssistant {
       // AI_NoOutputGeneratedError with Gemini models.
       this.sendStatus(courseId, "🔍 Gathering course context...", "context");
 
-      const contextPrompt = buildContextPrompt({ courseId, inputText, actor });
+      const contextPrompt = buildContextPrompt({
+        courseId,
+        inputText,
+        actor,
+        currentNodeId: focus?.currentNodeId,
+        currentModuleId: focus?.currentModuleId,
+      });
 
       const contextResult = await generateText({
         model: reasoningModel,
@@ -147,7 +158,12 @@ export class MentorAIAssistant {
       // Use generateObject (no tools) with the gathered context to produce a
       // structured MentorPlan. generateObject is purpose-built for structured
       // output and does not suffer from the tool/output conflict.
-      const planningPrompt = buildPlanningPrompt({ contextSummary, inputText });
+      const planningPrompt = buildPlanningPrompt({
+        contextSummary,
+        inputText,
+        currentNodeId: focus?.currentNodeId,
+        currentModuleId: focus?.currentModuleId,
+      });
 
       const planResult = await generateText({
         model: reasoningModel,
@@ -198,7 +214,10 @@ export class MentorAIAssistant {
 
         try {
           const result = await executorAgent.generate({
-            prompt: buildExecutionPrompt(plan, todo),
+            prompt: buildExecutionPrompt(plan, todo, {
+              currentNodeId: focus?.currentNodeId,
+              currentModuleId: focus?.currentModuleId,
+            }),
           });
           totalTokens += tokensFromUsage(result.totalUsage ?? result.usage);
           this.sendStatus(courseId, `✅ Completed ${stepLabel}\n${result.text}`, "execution");

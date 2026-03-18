@@ -279,7 +279,11 @@ export function attachCourseWebSocket(httpServer: Server) {
             await getMentorAiAssistant().handleMessage(
               client.courseId,
               msg.text,
-              client.actor
+              client.actor,
+              {
+                currentNodeId: msg.currentNodeId,
+                currentModuleId: msg.currentModuleId,
+              }
             );
             return;
           }
@@ -318,7 +322,11 @@ export function attachCourseWebSocket(httpServer: Server) {
           const usageResult = await getMentorAiAssistant().handleMessage(
             client.courseId,
             msg.text,
-            client.actor
+            client.actor,
+            {
+              currentNodeId: msg.currentNodeId,
+              currentModuleId: msg.currentModuleId,
+            }
           );
           const totalTokens = usageResult?.totalTokens ?? 0;
           const creditsToDeduct = totalTokens > 0 ? Math.ceil(totalTokens / TOKENS_PER_CREDIT) : 0;

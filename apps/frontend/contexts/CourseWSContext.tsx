@@ -31,7 +31,13 @@ interface CourseWSContextValue {
   /** Whether the socket is currently connected */
   connected: boolean;
   /** Send a chat message to all mentors in the course room (ephemeral, not persisted) */
-  sendChat: (text: string) => void;
+  sendChat: (
+    text: string,
+    focus?: {
+      currentNodeId?: string;
+      currentModuleId?: string;
+    }
+  ) => void;
   /**
    * When true, mentors should not make edits (e.g. while the AI agent is working).
    * Used to avoid race conditions. Toggled later by the AI agent; for now frontend-only.
@@ -165,12 +171,22 @@ export function CourseWSProvider({ courseId, token, userId, children }: CourseWS
     []
   );
 
-  const sendChat = useCallback((text: string) => {
+  const sendChat = useCallback(
+    (text: string, focus?: { currentNodeId?: string; currentModuleId?: string }) => {
     const ws = wsRef.current;
     if (ws?.readyState === WebSocket.OPEN && text.trim()) {
-      ws.send(JSON.stringify({ type: "chat_message", text: text.trim() }));
+      ws.send(
+        JSON.stringify({
+          type: "chat_message",
+          text: text.trim(),
+          currentNodeId: focus?.currentNodeId,
+          currentModuleId: focus?.currentModuleId,
+        })
+      );
     }
-  }, []);
+    },
+    []
+  );
 
   return (
     <CourseWSContext.Provider value={{ presenceList, on, connected, sendChat, editsLocked, chatLocked }}>

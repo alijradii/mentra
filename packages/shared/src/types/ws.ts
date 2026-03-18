@@ -73,6 +73,12 @@ export interface WSClientLeaveMessage {
 export interface WSClientChatMessage {
   type: "chat_message";
   text: string;
+  /**
+   * Optional metadata about what the user is currently viewing/editing.
+   * Used by the Mentor AI to bias planning toward the current node/module.
+   */
+  currentNodeId?: string;
+  currentModuleId?: string;
 }
 
 export type WSClientMessage =

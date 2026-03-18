@@ -7,6 +7,7 @@ import { useCourseWS } from "@/contexts/CourseWSContext";
 import { cn } from "@/lib/utils";
 import { ArrowUp, ChevronDown, ChevronUp } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
@@ -50,6 +51,7 @@ type ActivityEntry =
 export function AiSidebar() {
     const { user } = useAuth();
     const { sendChat, on, connected, chatLocked } = useCourseWS();
+    const params = useParams();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [activityEntries, setActivityEntries] = useState<ActivityEntry[]>([]);
     const [input, setInput] = useState("");
@@ -204,9 +206,12 @@ export function AiSidebar() {
         e.preventDefault();
         const trimmed = input.trim();
         if (!trimmed) return;
+        const currentNodeId = typeof (params as any)?.nodeId === "string" ? ((params as any)?.nodeId as string) : undefined;
+        const currentModuleId =
+          typeof (params as any)?.moduleId === "string" ? ((params as any)?.moduleId as string) : undefined;
         // Start a fresh run: clear previous plan and activity log
         setActivityEntries([]);
-        sendChat(trimmed);
+        sendChat(trimmed, { currentNodeId, currentModuleId });
         setInput("");
     };
 
