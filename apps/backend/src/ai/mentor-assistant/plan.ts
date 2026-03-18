@@ -24,7 +24,7 @@ export const toDoPointSchema = z.object({
         ),
 
     action: planTodoActionSchema.describe(
-        "Structured action type describing what this step will actually do. Must be one of: create_module, create_node, modify_node, create_and_populate_module, create_and_populate_node, delete_node, delete_module. These map directly onto the available mentor tools."
+        "Structured action type describing what this step will actually do. Must be one of: create_module, create_node, modify_node, create_and_populate_module, create_and_populate_node, delete_node, delete_module, append_to_node, edit_node_section. These map directly onto the available mentor tools."
     ),
 
     moduleId: z

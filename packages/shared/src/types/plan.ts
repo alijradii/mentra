@@ -10,6 +10,8 @@ export const MENTOR_PLAN_TODO_ACTIONS = [
   "create_and_populate_node",
   "delete_node",
   "delete_module",
+  "append_to_node",
+  "edit_node_section",
 ] as const;
 
 export type MentorPlanTodoAction = (typeof MENTOR_PLAN_TODO_ACTIONS)[number];
