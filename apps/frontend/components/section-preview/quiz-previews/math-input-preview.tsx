@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { MathInputQuizSectionDTO } from "@/lib/api";
-import { KaTeXRender } from "../katex-render";
 import { ResultBanner } from "../result-banner";
+import { MathEnabledText } from "@/components/math/MathEnabledText";
 
 interface MathInputPreviewProps {
   section: MathInputQuizSectionDTO;
@@ -31,7 +31,7 @@ export function MathInputPreview({ section, onAnswered }: MathInputPreviewProps)
         {answer && (
           <div className="p-3 bg-background border rounded-lg text-center">
             <span className="text-xs text-muted-foreground block mb-1">Preview:</span>
-            <KaTeXRender latex={answer} />
+            <MathEnabledText text={answer} variant="block" />
           </div>
         )}
       </div>
@@ -45,7 +45,7 @@ export function MathInputPreview({ section, onAnswered }: MathInputPreviewProps)
           {!isCorrect && (
             <div className="text-xs text-muted-foreground">
               Expected: {section.acceptedAnswers.map((a, i) => (
-                <span key={i} className="inline-block mx-1"><KaTeXRender latex={a} /></span>
+                <span key={i} className="inline-block mx-1"><MathEnabledText text={a} variant="inline" /></span>
               ))}
             </div>
           )}

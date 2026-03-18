@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import type { FillBlankQuizSectionDTO } from "@/lib/api";
 import { ResultBanner } from "../result-banner";
+import { MathEnabledText } from "@/components/math/MathEnabledText";
 
 interface FillBlankPreviewProps {
   section: FillBlankQuizSectionDTO;
@@ -44,38 +45,50 @@ export function FillBlankPreview({ section, onAnswered }: FillBlankPreviewProps)
     <>
       <div className="font-mono text-sm leading-relaxed whitespace-pre-wrap p-4 bg-card border rounded-lg">
         {parts.map((part, i) => {
-          if (part.type === "text") return <span key={i}>{part.value}</span>;
+          if (part.type === "text") return <MathEnabledText key={i} text={part.value} variant="inline" />;
           const val = answers[part.value] ?? "";
           let borderCls = "border-primary/50";
           if (submitted) borderCls = checkBlank(part.value, val) ? "border-success" : "border-destructive";
 
           if (hasWordBank) {
             return (
-              <select
-                key={i}
-                value={val}
-                onChange={(e) => !submitted && setAnswers((prev) => ({ ...prev, [part.value]: e.target.value }))}
-                disabled={submitted}
-                className={`inline-block mx-1 px-2 py-0.5 rounded border-2 bg-background text-sm ${borderCls} ${submitted ? "cursor-default" : ""}`}
-              >
-                <option value="">___</option>
-                {section.wordBank!.map((w, wi) => (
-                  <option key={wi} value={w}>{w}</option>
-                ))}
-              </select>
+              <span key={i} className="inline-block mx-1">
+                <select
+                  value={val}
+                  onChange={(e) => !submitted && setAnswers((prev) => ({ ...prev, [part.value]: e.target.value }))}
+                  disabled={submitted}
+                  className={`w-full px-2 py-0.5 rounded border-2 bg-background text-sm ${borderCls} ${submitted ? "cursor-default" : ""}`}
+                >
+                  <option value="">___</option>
+                  {section.wordBank!.map((w, wi) => (
+                    <option key={wi} value={w}>{w}</option>
+                  ))}
+                </select>
+                {val && (
+                  <div className="mt-1 whitespace-normal">
+                    <MathEnabledText text={val} variant="inline" />
+                  </div>
+                )}
+              </span>
             );
           }
 
           return (
-            <input
-              key={i}
-              type="text"
-              value={val}
-              onChange={(e) => !submitted && setAnswers((prev) => ({ ...prev, [part.value]: e.target.value }))}
-              readOnly={submitted}
-              placeholder="___"
-              className={`inline-block mx-1 px-2 py-0.5 rounded border-2 bg-background text-sm w-28 ${borderCls} focus:outline-none`}
-            />
+            <span key={i} className="inline-block mx-1">
+              <input
+                type="text"
+                value={val}
+                onChange={(e) => !submitted && setAnswers((prev) => ({ ...prev, [part.value]: e.target.value }))}
+                readOnly={submitted}
+                placeholder="___"
+                className={`inline-block px-2 py-0.5 rounded border-2 bg-background text-sm w-28 ${borderCls} focus:outline-none`}
+              />
+              {val && (
+                <div className="mt-1 whitespace-normal">
+                  <MathEnabledText text={val} variant="inline" />
+                </div>
+              )}
+            </span>
           );
         })}
       </div>

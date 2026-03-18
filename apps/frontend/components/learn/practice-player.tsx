@@ -9,6 +9,7 @@ import {
     splitIntoPages,
 } from "@/components/learn/focus-mode";
 import { SectionPreview } from "@/components/section-preview";
+import { MathEnabledText } from "@/components/math/MathEnabledText";
 import { Button } from "@/components/ui/button";
 import {
     submissionsApi,
@@ -333,7 +334,7 @@ function PracticeQuizSection({
 
     return (
         <div className="space-y-3">
-            <p className="font-semibold text-foreground text-base">{quiz.question}</p>
+            <MathEnabledText text={quiz.question} className="font-semibold text-foreground text-base" />
             <InteractiveQuiz quizType={quizType} quiz={quiz} answer={answer} onAnswer={onAnswer} />
         </div>
     );
@@ -399,7 +400,7 @@ function InteractiveMCQ({ quiz, answer, onAnswer }: { quiz: any; answer: unknown
                         onClick={() => toggle(opt.id)}
                         className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors text-sm cursor-pointer ${cls}`}
                     >
-                        {opt.text}
+                        <MathEnabledText text={opt.text} variant="inline" />
                     </button>
                 );
             })}
@@ -425,14 +426,22 @@ function InteractiveTrueFalse({ answer, onAnswer }: { answer: unknown; onAnswer:
 }
 
 function InteractiveShortAnswer({ answer, onAnswer }: { answer: unknown; onAnswer: (v: unknown) => void }) {
+    const v = typeof answer === "string" ? answer : "";
     return (
-        <input
-            type="text"
-            value={typeof answer === "string" ? answer : ""}
-            onChange={e => onAnswer(e.target.value)}
-            placeholder="Type your answer..."
-            className="w-full px-4 py-3 rounded-lg border bg-card text-sm"
-        />
+        <div className="space-y-2">
+            <input
+                type="text"
+                value={v}
+                onChange={e => onAnswer(e.target.value)}
+                placeholder="Type your answer..."
+                className="w-full px-4 py-3 rounded-lg border bg-card text-sm"
+            />
+            {v.trim() && (
+                <div className="p-3 bg-background border rounded-lg text-center">
+                    <MathEnabledText text={v} variant="block" />
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -463,7 +472,9 @@ function InteractiveSequence({
             {currentOrder.map((id, idx) => (
                 <div key={id} className="flex items-center gap-2 px-4 py-2 rounded-lg border bg-card text-sm">
                     <span className="text-muted-foreground w-6">{idx + 1}.</span>
-                    <span className="flex-1">{itemMap.get(id) ?? id}</span>
+                    <span className="flex-1">
+                        <MathEnabledText text={itemMap.get(id) ?? id} variant="inline" />
+                    </span>
                     <button
                         type="button"
                         onClick={() => moveItem(idx, -1)}
@@ -503,20 +514,30 @@ function InteractiveMatching({
         <div className="space-y-2">
             {pairs.map((pair: any) => (
                 <div key={pair.id} className="flex items-center gap-3 text-sm">
-                    <span className="w-1/3 font-medium">{pair.left}</span>
+                    <span className="w-1/3 font-medium">
+                        <MathEnabledText text={pair.left} variant="inline" />
+                    </span>
                     <span className="text-muted-foreground">→</span>
-                    <select
-                        value={current[pair.id] ?? ""}
-                        onChange={e => onAnswer({ ...current, [pair.id]: e.target.value })}
-                        className="flex-1 px-3 py-2 rounded-lg border bg-card text-sm"
-                    >
-                        <option value="">Select...</option>
-                        {rights.map((r: string) => (
-                            <option key={r} value={r}>
-                                {r}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="flex-1">
+                        <select
+                            value={current[pair.id] ?? ""}
+                            onChange={e => onAnswer({ ...current, [pair.id]: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg border bg-card text-sm"
+                        >
+                            <option value="">Select...</option>
+                            {rights.map((r: string) => (
+                                <option key={r} value={r}>
+                                    {r}
+                                </option>
+                            ))}
+                        </select>
+                        {current[pair.id] && (
+                            <div className="mt-1 text-xs text-muted-foreground">
+                                Selected:{" "}
+                                <MathEnabledText text={current[pair.id]} variant="inline" />
+                            </div>
+                        )}
+                    </div>
                 </div>
             ))}
         </div>
@@ -537,17 +558,28 @@ function InteractiveFillBlank({
 
     return (
         <div className="space-y-2">
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{quiz.template}</p>
+            <MathEnabledText
+                text={quiz.template}
+                className="text-sm text-muted-foreground whitespace-pre-wrap"
+            />
             {blanks.map((blank: any, idx: number) => (
-                <div key={blank.id} className="flex items-center gap-2 text-sm">
+                <div key={blank.id} className="flex items-start gap-2 text-sm">
                     <span className="text-muted-foreground">Blank {idx + 1}:</span>
-                    <input
-                        type="text"
-                        value={current[blank.id] ?? ""}
-                        onChange={e => onAnswer({ ...current, [blank.id]: e.target.value })}
-                        placeholder="Your answer..."
-                        className="flex-1 px-3 py-2 rounded-lg border bg-card"
-                    />
+                    <div className="flex-1 space-y-1">
+                        <input
+                            type="text"
+                            value={current[blank.id] ?? ""}
+                            onChange={e => onAnswer({ ...current, [blank.id]: e.target.value })}
+                            placeholder="Your answer..."
+                            className="w-full px-3 py-2 rounded-lg border bg-card"
+                        />
+                        {current[blank.id]?.trim() && (
+                            <div className="text-xs text-muted-foreground">
+                                Answer:{" "}
+                                <MathEnabledText text={current[blank.id]} variant="inline" />
+                            </div>
+                        )}
+                    </div>
                 </div>
             ))}
         </div>
@@ -555,14 +587,22 @@ function InteractiveFillBlank({
 }
 
 function InteractiveMathInput({ answer, onAnswer }: { answer: unknown; onAnswer: (v: unknown) => void }) {
+    const v = typeof answer === "string" ? answer : "";
     return (
-        <input
-            type="text"
-            value={typeof answer === "string" ? answer : ""}
-            onChange={e => onAnswer(e.target.value)}
-            placeholder="Enter expression..."
-            className="w-full px-4 py-3 rounded-lg border bg-card text-sm font-mono"
-        />
+        <div className="space-y-2">
+            <input
+                type="text"
+                value={v}
+                onChange={e => onAnswer(e.target.value)}
+                placeholder="Enter expression..."
+                className="w-full px-4 py-3 rounded-lg border bg-card text-sm font-mono"
+            />
+            {v.trim() && (
+                <div className="p-3 bg-background border rounded-lg text-center">
+                    <MathEnabledText text={v} variant="block" />
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -583,20 +623,36 @@ function InteractiveClassification({
         <div className="space-y-2">
             {items.map((item: any) => (
                 <div key={item.id} className="flex items-center gap-3 text-sm">
-                    <span className="w-1/3 font-medium">{item.text}</span>
+                    <span className="w-1/3 font-medium">
+                        <MathEnabledText text={item.text} variant="inline" />
+                    </span>
                     <span className="text-muted-foreground">→</span>
-                    <select
-                        value={current[item.id] ?? ""}
-                        onChange={e => onAnswer({ ...current, [item.id]: e.target.value })}
-                        className="flex-1 px-3 py-2 rounded-lg border bg-card text-sm"
-                    >
-                        <option value="">Select category...</option>
-                        {categories.map((c: any) => (
-                            <option key={c.id} value={c.id}>
-                                {c.label}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="flex-1">
+                        <select
+                            value={current[item.id] ?? ""}
+                            onChange={e => onAnswer({ ...current, [item.id]: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg border bg-card text-sm"
+                        >
+                            <option value="">Select category...</option>
+                            {categories.map((c: any) => (
+                                <option key={c.id} value={c.id}>
+                                    {c.label}
+                                </option>
+                            ))}
+                        </select>
+                        {current[item.id] && (
+                            <div className="mt-1 text-xs text-muted-foreground">
+                                Selected:{" "}
+                                <MathEnabledText
+                                    text={
+                                        categories.find((c: any) => c.id === current[item.id])?.label ??
+                                        current[item.id]
+                                    }
+                                    variant="inline"
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
             ))}
         </div>

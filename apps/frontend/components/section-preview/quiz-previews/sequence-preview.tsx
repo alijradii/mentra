@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import type { SequenceQuizSectionDTO } from "@/lib/api";
 import { shuffle } from "../utils";
 import { ResultBanner } from "../result-banner";
+import { MathEnabledText } from "@/components/math/MathEnabledText";
 
 function SortableItem({ id, text, locked }: { id: string; text: string; locked: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id, disabled: locked });
@@ -40,7 +41,7 @@ function SortableItem({ id, text, locked }: { id: string; text: string; locked: 
       }`}
     >
       {locked && <span className="text-xs text-muted-foreground mr-2">(fixed)</span>}
-      {text}
+      <MathEnabledText text={text} variant="inline" />
     </div>
   );
 }

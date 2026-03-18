@@ -19,6 +19,7 @@ import { MatchingPreview } from "./matching-preview";
 import { FillBlankPreview } from "./fill-blank-preview";
 import { MathInputPreview } from "./math-input-preview";
 import { ClassificationPreview } from "./classification-preview";
+import { MathEnabledText } from "@/components/math/MathEnabledText";
 
 interface QuizPreviewProps {
   section: QuizSectionDTO;
@@ -53,7 +54,10 @@ export function QuizPreview({ section, onAnswered }: QuizPreviewProps) {
 
   return (
     <div className="space-y-3">
-      <p className="font-semibold text-foreground text-base">{section.question}</p>
+      <MathEnabledText
+        text={section.question}
+        className="font-semibold text-foreground text-base"
+      />
       {inner}
     </div>
   );

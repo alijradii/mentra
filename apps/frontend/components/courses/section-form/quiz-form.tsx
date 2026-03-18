@@ -1,6 +1,5 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type {
@@ -69,11 +68,12 @@ export function QuizForm({ section, onChange }: QuizFormProps) {
 
       <div>
         <Label>Question</Label>
-        <Input
+        <Textarea
           value={section.question}
           onChange={(e) => onChange({ ...section, question: e.target.value })}
           placeholder="Enter the question"
           className="mt-1"
+          rows={4}
         />
       </div>
 

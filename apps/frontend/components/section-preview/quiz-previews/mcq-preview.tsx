@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { MCQQuizSectionDTO } from "@/lib/api";
 import { ResultBanner } from "../result-banner";
+import { MathEnabledText } from "@/components/math/MathEnabledText";
 
 interface MCQPreviewProps {
   section: MCQQuizSectionDTO;
@@ -51,7 +52,7 @@ export function MCQPreview({ section, onAnswered }: MCQPreviewProps) {
               onClick={() => toggle(opt.id)}
               className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors text-sm ${cls} ${submitted ? "cursor-default" : "cursor-pointer"}`}
             >
-              {opt.text}
+                  <MathEnabledText text={opt.text} variant="inline" />
             </button>
           );
         })}

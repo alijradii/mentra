@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { ShortAnswerQuizSectionDTO } from "@/lib/api";
 import { ResultBanner } from "../result-banner";
+import { MathEnabledText } from "@/components/math/MathEnabledText";
 
 interface ShortAnswerPreviewProps {
   section: ShortAnswerQuizSectionDTO;
@@ -24,14 +25,21 @@ export function ShortAnswerPreview({ section, onAnswered }: ShortAnswerPreviewPr
 
   return (
     <>
-      <input
-        type="text"
-        value={answer}
-        onChange={(e) => !submitted && setAnswer(e.target.value)}
-        placeholder="Type your answer…"
-        className="w-full px-4 py-3 rounded-lg border-2 border-border bg-card text-sm focus:outline-none focus:border-primary transition-colors"
-        readOnly={submitted}
-      />
+      <div className="space-y-2">
+        <input
+          type="text"
+          value={answer}
+          onChange={(e) => !submitted && setAnswer(e.target.value)}
+          placeholder="Type your answer…"
+          className="w-full px-4 py-3 rounded-lg border-2 border-border bg-card text-sm focus:outline-none focus:border-primary transition-colors"
+          readOnly={submitted}
+        />
+        {answer.trim() && (
+          <div className="p-3 bg-background border rounded-lg text-center">
+            <MathEnabledText text={answer} variant="block" />
+          </div>
+        )}
+      </div>
       {!submitted ? (
         <Button size="sm" onClick={() => { setSubmitted(true); onAnswered?.(); }} disabled={!answer.trim()}>
           Check answer
@@ -41,7 +49,12 @@ export function ShortAnswerPreview({ section, onAnswered }: ShortAnswerPreviewPr
           <ResultBanner correct={isCorrect} explanation={section.explanation} />
           {!isCorrect && (
             <p className="text-xs text-muted-foreground">
-              Accepted: {section.acceptedAnswers.join(", ")}
+              Accepted:{" "}
+              {section.acceptedAnswers.map((a, i) => (
+                <span key={i} className="inline-block mx-1">
+                  <MathEnabledText text={a} variant="inline" />
+                </span>
+              ))}
             </p>
           )}
         </>
